@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T09:58:24
+#Time when generated: 2026-01-29T10:11:36
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -1566,6 +1566,7 @@ class Request:
     def __init__(self, url: str = None, timeout: int = 600, retries: int = 3, data=None, method: str = None) -> None:
         self.timeout = timeout
         self.retries = retries
+        self._retries = retries
         self.url = url
         self.data = data
         self.method = method
@@ -1582,29 +1583,31 @@ class Request:
         try:
             with urllib.request.urlopen(self.request, timeout=self.timeout) as response:
                 raw = response.read().decode("utf-8", errors="replace")
-                return json.loads(raw) if raw else {}
+                try:
+                    return json.loads(raw) if raw else {}
+                
+                except json.JSONDecodeError as e:
+                    raise RuntimeError(f"[ERROR] invalid JSON response for {self.url}\n{e!r}\n---\n{raw[:200]}") from e
 
         except urllib.error.HTTPError as e:
-            # Retry on 429 + 5xx, fail fast on other 4xx
             raw = e.read().decode("utf-8", errors="replace")
             retryable = (e.code == 429) or (500 <= e.code <= 599)
 
             if retryable and self.retries > 0:
                 self.retries -= 1
-                time.sleep(0.5)  # tiny backoff; keep simple
+                time.sleep(0.5 * (2 ** (self._retries - self.retries)))
                 return self.open()
-
             raise RuntimeError(f"[ERROR] {e.code} for {self.url}\n{raw}") from e
 
-        except (urllib.error.URLError, TimeoutError) as e:
+        except (urllib.error.URLError, TimeoutError, OSError) as e:
             if self.retries > 0:
                 self.retries -= 1
-                time.sleep(0.5)
+                time.sleep(0.5 * (2 ** (self._retries - self.retries)))
                 return self.open()
             raise RuntimeError(f"[ERROR] request failed for {self.url}\n{e!r}") from e
         
-        except json.JSONDecodeError as e:
-            raise RuntimeError(f"[ERROR] invalid JSON response for {self.url}\n{e!r}") from e
+        except Exception as e:
+            raise RuntimeError(f"[ERROR] unexpected error for {self.url}\n{e!r}") from e
 
 ################################################################################
 # FILE 14/21: utils/request.py (END)
@@ -2368,22 +2371,22 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-3D grid partition built: lap 3: 5.120888 seconds, total 5.144874 seconds
-All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 195.28 lookups/second
-Random CONTAINS checks completed in: lap 4: 0.444642 seconds, total 5.589517 seconds
+3D grid partition built: lap 3: 5.080925 seconds, total 5.101967 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 196.81 lookups/second
+Random CONTAINS checks completed in: lap 4: 0.42833 seconds, total 5.530298 seconds
 Now deleting all rows...
-All 10000 rows deleted in: lap 5: 0.338901 seconds, total 5.928418 seconds
+All 10000 rows deleted in: lap 5: 0.361283 seconds, total 5.89158 seconds
 Rebuilding rows after deletion...
-second time 3D grid partition built: lap 6: 0.51968 seconds, total 6.448097 seconds
-All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1924.26 lookups/second
-Second random CONTAINS checks completed in: lap 7: 0.159503 seconds, total 6.6076 seconds
+second time 3D grid partition built: lap 6: 0.529945 seconds, total 6.421526 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1886.99 lookups/second
+Second random CONTAINS checks completed in: lap 7: 0.17358 seconds, total 6.595105 seconds
 ALL TESTS PASSED SUCCESSFULLY!
-main.py: executed in: lap 8: 0.000179 seconds, total 6.607779 seconds
+main.py: executed in: lap 8: 0.000272 seconds, total 6.595377 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2385
+# Total lines in bundle: 2388
 # Total files in bundle: 21
-# Generated at the time: 2026-01-29T09:58:24
+# Generated at the time: 2026-01-29T10:11:36
 --- END OF FILE ---
