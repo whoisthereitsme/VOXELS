@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T15:14:45
+#Time when generated: 2026-01-29T15:17:06
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2178,7 +2178,7 @@ class ROWS:
         self.insert(p0=(ROW.XMIN, ROW.YMIN, ROW.ZMIN), p1=(ROW.XMAX, ROW.YMAX, ROW.ZMAX), mat=mat)  # alive and dirty by default are true so no need to specify : easier to use now!!!
         self.size = ROW.XMAX - ROW.XMIN, ROW.YMAX - ROW.YMIN, ROW.ZMAX - ROW.ZMIN
 
-        self._merge = 5
+        self._merge = 16
         self.__merge = 0
 
     def newn(self, mat:str=None) -> int:
@@ -2277,6 +2277,7 @@ class ROWS:
         self.remove(row=row)  # remove the original row
         if self.__merge % self._merge == 0:
             self.sweep()
+            self.__merge = 0
         self.__merge += 1
 
 
@@ -2366,15 +2367,15 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.659106 seconds, total 5.67952 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 176.71 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.416096 seconds, total 6.095616 seconds
+STEP 1 :  3D grid partition built: lap 3: 5.88354 seconds, total 5.923666 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 169.97 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.49684 seconds, total 6.420506 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.409535 seconds, total 6.505151 seconds
+ - All 10000 rows deleted in: lap 5: 0.429121 seconds, total 6.849627 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.631258 seconds, total 7.136408 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1584.14 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.1879 seconds, total 7.324308 seconds
+ - second time 3D grid partition built: lap 6: 0.65111 seconds, total 7.500737 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1535.84 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.177705 seconds, total 7.678441 seconds
 FINALLY: TESTS PASSED SUCCESSFULLY!
 STEP 3 : Now testing SPLIT functionality...
 WORLD VOLUME BEFORE:  72056357089509375
@@ -3383,27 +3384,27 @@ Material AIR has 1000 rows after SPLIT tests.
 Material WATER has 0 rows after SPLIT tests.
 Material LAVA has 0 rows after SPLIT tests.
 Material GLASS has 0 rows after SPLIT tests.
-Material STONE has 5489 rows after SPLIT tests.
+Material STONE has 5324 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
 WORLD VOLUME AFTER:  72056357089509375
-STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 8.955868 seconds, total 16.280176 seconds
- - SWEEP completed in: lap 9: 0.045592 seconds, total 16.325768 seconds
- - Second SWEEP completed in: lap 10: 0.009631 seconds, total 16.3354 seconds
+STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 7.33504 seconds, total 15.013481 seconds
+ - SWEEP completed in: lap 9: 0.052953 seconds, total 15.066434 seconds
+ - Second SWEEP completed in: lap 10: 0.008626 seconds, total 15.07506 seconds
 WORLD VOLUME AFTER SWEEP:  72056357089509375
 Material AIR has 1000 rows after SWEEP tests.
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
-Material STONE has 5409 rows after SWEEP tests.
+Material STONE has 5188 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
-main.py: executed in: lap 11: 0.006796 seconds, total 16.342196 seconds
+main.py: executed in: lap 11: 0.006631 seconds, total 15.081691 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3405
+# Total lines in bundle: 3406
 # Total files in bundle: 22
-# Generated at the time: 2026-01-29T15:14:45
+# Generated at the time: 2026-01-29T15:17:06
 --- END OF FILE ---

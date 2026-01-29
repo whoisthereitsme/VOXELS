@@ -34,7 +34,7 @@ class ROWS:
         self.insert(p0=(ROW.XMIN, ROW.YMIN, ROW.ZMIN), p1=(ROW.XMAX, ROW.YMAX, ROW.ZMAX), mat=mat)  # alive and dirty by default are true so no need to specify : easier to use now!!!
         self.size = ROW.XMAX - ROW.XMIN, ROW.YMAX - ROW.YMIN, ROW.ZMAX - ROW.ZMIN
 
-        self._merge = 5
+        self._merge = 16
         self.__merge = 0
 
     def newn(self, mat:str=None) -> int:
@@ -133,6 +133,7 @@ class ROWS:
         self.remove(row=row)  # remove the original row
         if self.__merge % self._merge == 0:
             self.sweep()
+            self.__merge = 0
         self.__merge += 1
 
 
