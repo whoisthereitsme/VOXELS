@@ -115,7 +115,7 @@ class ROWS:
                         else:
                             self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
         
-        self.delete(index=ROW.RID(row=row), mat=mat)
+        self.delete(row=row)  # delete the original row
 
 
 

@@ -109,7 +109,7 @@ def main() -> None:
     # 1 row exists normally at tis point -> its created at init with STONE material
     for i in range(10):
         rows.split(pos=(i*10,i*10,i*10), mat="AIR")  # should raise error since no rows exist yet
-        print(f" - SPLIT test {i+1}/10 passed (expected failure on empty ROWS).")
+        print(f" - SPLIT test {i+1}/10 passed.")
 
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
