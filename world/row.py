@@ -35,7 +35,7 @@ class ROW:
     YMAX = 2**YBITS
     ZMAX = 2**ZBITS
     NMAX = XMAX * YMAX * ZMAX
-
+    
 
     # POSITIONS (MIN) — stored in row 0
     IDS_X0 = (0, 0)

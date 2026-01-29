@@ -146,9 +146,9 @@ class BVH:
             mid = self.rows.mats.name2idx[mat]
             row = self.rows.array[mid][rid]
         else:
-            mat_id = int(row[*ROW.MAT])
+            mat_id = int(row[*ROW.IDS_MAT])
             mid = self.rows.mats.id2idx[mat_id]
-            rid = int(row[*ROW.ID])
+            rid = int(row[*ROW.IDS_ID])
 
         xmin, ymin, zmin = ROW.P0(row)
         xmax, ymax, zmax = ROW.P1(row)
@@ -220,9 +220,9 @@ class BVH:
 
     def remove(self, mat:str=None, rid:int=None, row:NDArray[ROW.DTYPE]=None) -> None:
         if row is not None:
-            mat_id = int(row[*ROW.MAT])
+            mat_id = int(row[*ROW.IDS_MAT])
             mid = self.rows.mats.id2idx[mat_id]
-            rid = int(row[*ROW.ID])
+            rid = int(row[*ROW.IDS_ID])
         else:
             mid = self.rows.mats.name2idx[mat]
 
@@ -267,7 +267,6 @@ class BVH:
         leaf_midL = self.leaf_mid; leaf_ridL = self.leaf_rid
         rows_arr = self.rows.array
         idx2name = self.rows.mats.idx2name
-        contains = ROW.CONTAINS
 
         while stack:
             n = stack.pop()
@@ -281,7 +280,7 @@ class BVH:
             if mid != -1:
                 rid = leaf_ridL[n]
                 row = rows_arr[mid][rid]
-                if contains(row=row, pos=pos):
+                if ROW.CONTAINS(row=row, pos=pos):
                     return idx2name[mid], rid, row
                 continue
 

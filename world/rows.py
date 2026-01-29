@@ -34,7 +34,6 @@ class ROWS:
         mat = "STONE"
         self.append(p0=(ROW.XMIN, ROW.YMIN, ROW.ZMIN), p1=(ROW.XMAX, ROW.YMAX, ROW.ZMAX), mat=mat)  # alive and dirty by default are true so no need to specify : easier to use now!!!
 
-
     def newn(self, mat:str=None) -> int:
         mid: int = Materials.name2idx[mat]
         n: int = self.n[mid]
@@ -56,8 +55,9 @@ class ROWS:
     def append(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -> ROWS:
         mid: int = Materials.name2idx[mat]
         rid: int = self.newn(mat=mat)
-        self.array[mid][rid] = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive) # added rid=n so that bvh can use it when i provide a row as argument
-        self.bvh.insert(mat=mat, rid=rid)  # insert into bvh index
+        row = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
+        self.array[mid][rid] = row  # added rid=n so that bvh can use it when i provide a row as argument
+        self.bvh.insert(row=row)  # insert into bvh index
         return self
     
     def delete(self, index:int=None, mat:str=None, row:NDArray[ROW.DTYPE]=None) -> ROWS:
