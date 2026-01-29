@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T13:51:14
+#Time when generated: 2026-01-29T13:51:43
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2302,15 +2302,15 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.704364 seconds, total 5.725819 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 175.30 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.43101 seconds, total 6.156829 seconds
+STEP 1 :  3D grid partition built: lap 3: 5.859086 seconds, total 5.880653 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 170.68 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.387842 seconds, total 6.268494 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.407555 seconds, total 6.564384 seconds
+ - All 10000 rows deleted in: lap 5: 0.398914 seconds, total 6.667409 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.619205 seconds, total 7.183589 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1614.97 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.179325 seconds, total 7.362914 seconds
+ - second time 3D grid partition built: lap 6: 0.620724 seconds, total 7.288132 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1611.02 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.179468 seconds, total 7.4676 seconds
 FINALLY: TESTS PASSED SUCCESSFULLY!
 STEP 3 : Now testing SPLIT functionality...
 WORLD VOLUME BEFORE:  72056357089509375
@@ -3319,16 +3319,16 @@ Material AIR has 1000 rows after SPLIT tests.
 Material WATER has 0 rows after SPLIT tests.
 Material LAVA has 0 rows after SPLIT tests.
 Material GLASS has 0 rows after SPLIT tests.
-Material STONE has 24983 rows after SPLIT tests.
+Material STONE has 25001 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
 WORLD VOLUME AFTER:  72056357089509375
-main.py: executed in: lap 8: 2.215504 seconds, total 9.578418 seconds
+main.py: executed in: lap 8: 2.233584 seconds, total 9.701184 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
 # Total lines in bundle: 3330
 # Total files in bundle: 22
-# Generated at the time: 2026-01-29T13:51:14
+# Generated at the time: 2026-01-29T13:51:43
 --- END OF FILE ---
