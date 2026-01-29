@@ -50,7 +50,6 @@ class ROWS:
         self.m -= 1
         return self.n[mid]
             
-
     def append(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -> ROWS:
         mid: int = Materials.name2idx[mat]
         rid: int = self.newn(mat=mat)
@@ -103,7 +102,7 @@ class ROWS:
         mat0, rid, row = self.find(pos=pos)
         p0 = ROW.P0(row=row)
         p1 = ROW.P1(row=row)
-        self.delete(row=row)  # delete the original row
+        
         x0, y0, z0 = p0
         x1, y1, z1 = pos
         x2, y2, z2 =x1+1, y1+1, z1+1
@@ -113,11 +112,6 @@ class ROWS:
         ys = [[y0, y1], [y1, y2], [y2, y3]]
         zs = [[z0, z1], [z1, z2], [z2, z3]]
 
-        print(f" - Splitting row id={rid} mat={mat0} at pos={pos} into 27 sub-rows...")
-        print(f"   Original row p0={p0} p1={p1}")
-        print(xs, ys, zs)
-        succes = 0
-        fails = 0
         for i, (X0, X1) in enumerate(xs):
             for j, (Y0, Y1) in enumerate(ys):
                 for k, (Z0, Z1) in enumerate(zs):
@@ -128,19 +122,28 @@ class ROWS:
                             succes += 1
                         else:
                             self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
-                            succes += 1
-                    else:
-                        print(f" - WARNING: zero size cube skipped during split at {(X0, Y0, Z0)} -> {(X1, Y1, Z1)}")
-                        fails += 1
 
+        self.delete(row=row)  # delete the original row
 
-        print(f"   Split completed with {succes} new rows created, {fails} zero-size cubes skipped.")
-        
-        
+    def merge(self, mat:str=None, axis:int=None) -> None:
+        mid = Materials.name2idx[mat]
+        n = self.n[mid]
+        if n > 1: # only if 2 or more!
+            merged = True
+            while merged:
+                for row1 in self.array[mid]:
+                    for row2 in self.array[mid]:
+                        if ROW.MERGE(row1=row1, row2=row2, axis=axis):
+                            self.delete(row=row1)
+                            self.delete(row=row2)
+                            p0 = ROW.SORT(p0=ROW.P0(row=row1), p1=ROW.P0(row=row2))[0]      # minium of both rows
+                            p1 = ROW.SORT(p0=ROW.P1(row=row1), p1=ROW.P1(row=row2))[1]      # maximum of both rows
+                            self.append(p0=p0, p1=p1, mat=mat)
+                            self.delete(row=row1)
+                            self.delete(row=row2)
+                        else:
+                            merged = False
 
-
-
-    
 
     def __repr__(self) -> str:
         return self.__str__()
