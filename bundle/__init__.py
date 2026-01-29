@@ -1,7 +1,7 @@
 from .bundle import *
-from .output import *
+from .github import *
 
 __all__ = [
     "Bundle",
-    "Output",
+    "GitHub",
 ]

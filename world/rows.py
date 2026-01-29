@@ -17,7 +17,8 @@ from utils.types import POS, SIZE
 
 
 class ROWS:
-    SIZE = 65536  # 64K rows # for each material
+    SIZE = 65536
+
     def __init__(self) -> None:
         self.size = ROWS.SIZE
         self.mats = Materials()
@@ -82,12 +83,13 @@ class ROWS:
     def find(self, pos:POS=None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
         mat, rid, row = self.bvh.find(pos=pos)
         return (mat, rid, row)
-
-    def len(self) -> int:
-        return len(self.array)
     
+    def get(self, mat:str=None, rid:int=None) -> NDArray[ROW.DTYPE]:
+        return self.array[MATERIALS.IDX[mat]][rid]
+
     def nrows(self, mat:str=None) -> int:
         return self.n[MATERIALS.IDX[mat]]
+    
 
     def __repr__(self) -> str:
         return self.__str__()

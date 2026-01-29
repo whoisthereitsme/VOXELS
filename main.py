@@ -114,16 +114,13 @@ def main() -> None:
 
 if __name__ == "__main__":
     timer.lap()
-    b = Bundle()
-    try:
-        main()
-        timer.print(msg="main.py: executed in")
-    except Exception:
-        traceback.print_exc()
-    finally:
-        b.stop()   
-
-
-
+    with Bundle():
+        try:
+            main()
+            timer.print(msg="main.py: executed in")
+        except Exception:
+            traceback.print_exc()
+        finally:    
+            pass
 
 

@@ -1,12 +1,12 @@
-#Time when generated: 2026-01-29T08:03:11.248931
+#Time when generated: 2026-01-29T09:00:59
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
-Files included: 14
+Files included: 18
 
 
 ################################################################################
-# FILE 1/14: __init__.py (START)
+# FILE 1/18: __init__.py (START)
 ################################################################################
 
 import utils
@@ -17,12 +17,12 @@ __all__ = world.__all__ + utils.__all__ + bundle.__all__
 
 
 ################################################################################
-# FILE 1/14: __init__.py (END)
+# FILE 1/18: __init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 2/14: __main__.py (START)
+# FILE 2/18: __main__.py (START)
 ################################################################################
 
 from main import main
@@ -31,12 +31,536 @@ if __name__ == "__main__":
     main()
 
 ################################################################################
-# FILE 2/14: __main__.py (END)
+# FILE 2/18: __main__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 3/14: main.py (START)
+# FILE 3/18: bundle/__init__.py (START)
+################################################################################
+
+from .bundle import *
+from .github import *
+
+__all__ = [
+    "Bundle",
+    "GitHub",
+]
+
+################################################################################
+# FILE 3/18: bundle/__init__.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 4/18: bundle/bundle.py (START)
+################################################################################
+
+from __future__ import annotations
+import atexit
+import sys
+import threading
+import time
+from pathlib import Path
+from typing import Iterable, Optional, Set, TextIO, Callable
+
+
+from .github import GitHub
+
+
+# ============================================================
+# Bundle builder with integrated output capture (no output.txt, no HTML)
+# ============================================================
+
+class Bundle:
+    class _Tee(TextIO):
+        def __init__(self, original: TextIO, buffer: list[str], lock: threading.Lock) -> None:
+            self._original = original
+            self._buffer = buffer
+            self._lock = lock
+
+            
+
+        def write(self, s: str) -> int:
+            n = self._original.write(s)
+            with self._lock:
+                self._buffer.append(s)
+            return n
+
+        def flush(self) -> None:
+            self._original.flush()
+
+        def isatty(self) -> bool:
+            return getattr(self._original, "isatty", lambda: False)()
+
+        @property
+        def encoding(self):
+            return getattr(self._original, "encoding", "utf-8")
+
+    def __init__(
+        self,
+        *,
+        root: Path | None = None,
+        out_txt: Path | None = None,
+        include_exts: Set[str] | None = None,
+        skip_dirs: Set[str] | None = None,
+        skip_filenames: Set[str] | None = None,
+        max_bytes: int = 2_000_000,
+        overwrite: bool = True,
+        include_stderr: bool = True,
+        marker_prefix: str = "### CAPTURE START ###",
+        auto_end_on_exit: bool = True,
+        auto_end_on_exception: bool = True,
+    ) -> None:
+        self.root = (root if root is not None else Path.cwd()).resolve()
+        self.out_txt = (out_txt if out_txt is not None else (self.root / "bundle" / "bundle.txt")).resolve()
+
+        self.include_exts = include_exts if include_exts is not None else {
+            ".py", ".pyi", ".txt", ".md", ".json", ".toml", ".yaml", ".yml", ".ini", ".cfg", ".bat", ".ps1", ".sh",
+        }
+        self.skip_dirs = skip_dirs if skip_dirs is not None else {
+            ".git", ".hg", ".svn", ".idea", ".vscode",
+            "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".tox",
+            ".venv", "venv", "env",
+            "node_modules", "dist", "build",
+            "atlas", "_old", "__OLD",
+        }
+        self.skip_filenames = skip_filenames if skip_filenames is not None else {".DS_Store", "Thumbs.db"}
+        self.max_bytes = int(max_bytes)
+        self.overwrite = bool(overwrite)
+
+        self.include_stderr = bool(include_stderr)
+        self.marker_prefix = str(marker_prefix)
+
+        self._lock = threading.Lock()
+        self._buf_out: list[str] = []
+        self._buf_err: list[str] = []
+
+        self._orig_stdout: Optional[TextIO] = None
+        self._orig_stderr: Optional[TextIO] = None
+        self._orig_excepthook: Optional[Callable] = None
+        self._ended = False
+
+        self.start_capture()
+
+        if auto_end_on_exit:
+            atexit.register(self.stop_capture_and_write_bundle)
+
+        if auto_end_on_exception:
+            self._install_excepthook()
+
+        self.github = GitHub
+
+    def __enter__(self) -> "Bundle":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        self.stop_capture_and_write_bundle()
+        self.github()
+        return False
+
+    def _install_excepthook(self) -> None:
+        self._orig_excepthook = sys.excepthook
+
+        def hooked(exctype, value, tb) -> None:
+            if self._orig_excepthook is not None:
+                self._orig_excepthook(exctype, value, tb)
+            self.stop_capture_and_write_bundle()
+
+        sys.excepthook = hooked  # type: ignore[assignment]
+
+    def start_capture(self) -> None:
+        self._orig_stdout = sys.stdout
+        self._orig_stderr = sys.stderr
+
+        sys.stdout = self._Tee(self._orig_stdout, self._buf_out, self._lock)  # type: ignore[assignment]
+        if self.include_stderr:
+            sys.stderr = self._Tee(self._orig_stderr, self._buf_err, self._lock)  # type: ignore[assignment]
+
+        print(f"{self.marker_prefix} root={self.root.as_posix()}")
+
+    def stop_capture_and_write_bundle(self) -> Path:
+        captured = self._end_capture_get_text()
+        return self.write_bundle_txt(captured_output=captured)
+
+    def _end_capture_get_text(self) -> str:
+        if self._ended:
+            with self._lock:
+                out_text = "".join(self._buf_out)
+                err_text = "".join(self._buf_err)
+            return self._combine_streams(out_text, err_text)
+
+        self._ended = True
+
+        if self._orig_stdout is not None:
+            sys.stdout = self._orig_stdout  # type: ignore[assignment]
+        if self.include_stderr and self._orig_stderr is not None:
+            sys.stderr = self._orig_stderr  # type: ignore[assignment]
+
+        if self._orig_excepthook is not None:
+            sys.excepthook = self._orig_excepthook  # type: ignore[assignment]
+
+        with self._lock:
+            out_text = "".join(self._buf_out)
+            err_text = "".join(self._buf_err)
+
+        combined = self._combine_streams(out_text, err_text)
+
+        marker_line = f"{self.marker_prefix} root={self.root.as_posix()}"
+        combined = self._keep_after_marker(combined, marker_line)
+        return combined
+
+    def _combine_streams(self, out_text: str, err_text: str) -> str:
+        combined = out_text
+        if self.include_stderr and err_text:
+            if combined and not combined.endswith("\n"):
+                combined += "\n"
+            combined += err_text
+        return combined
+
+    @staticmethod
+    def _keep_after_marker(text: str, marker_line: str) -> str:
+        idx = text.rfind(marker_line)
+        if idx == -1:
+            return text
+        nl = text.find("\n", idx)
+        if nl == -1:
+            return ""
+        return text[nl + 1 :]
+
+    def write_bundle_txt(self, *, captured_output: str) -> Path:
+        self.out_txt.parent.mkdir(parents=True, exist_ok=True)
+        if self.overwrite and self.out_txt.exists():
+            self.out_txt.unlink()
+
+        generated_at = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
+        files = sorted(self._iter_files(self.root), key=lambda p: str(p.relative_to(self.root)).lower())
+
+        lines: list[str] = []
+        lines.append(f"#Time when generated: {generated_at}\n\n")
+        lines.append("### PROJECT BUNDLE ###\n")
+        lines.append(f"Root: {self.root}\n")
+        lines.append(f"Files included: {len(files)}\n\n")
+
+        for i, p in enumerate(files, start=1):
+            rel = p.relative_to(self.root).as_posix()
+
+            lines.append("\n" + "#" * 80 + "\n")
+            lines.append(f"# FILE {i}/{len(files)}: {rel} (START)\n")
+            lines.append("#" * 80 + "\n\n")
+
+            content = self._safe_read_text_lossy(p)
+            if content and not content.endswith("\n"):
+                content += "\n"
+            lines.append(content)
+
+            lines.append("\n" + "#" * 80 + "\n")
+            lines.append(f"# FILE {i}/{len(files)}: {rel} (END)\n")
+            lines.append("#" * 80 + "\n\n")
+
+        if captured_output.strip():
+            lines.append("\n" + "################################################################################\n")
+            lines.append("### CAPTURED OUTPUT (STDOUT/STDERR) ###\n")
+            lines.append("################################################################################\n\n")
+            lines.append(captured_output if captured_output.endswith("\n") else captured_output + "\n")
+            lines.append("\n################################################################################\n")
+            lines.append("### END OF CAPTURED OUTPUT ###\n")
+            lines.append("################################################################################\n")
+
+        final_text = "".join(lines)
+        if not final_text.endswith("\n"):
+            final_text += "\n"
+
+        total_lines = final_text.count("\n")
+        final_text += f"# Total lines in bundle: {total_lines}\n"
+        final_text += f"# Total files in bundle: {len(files)}\n"
+        final_text += f"# Generated at the time: {time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime())}\n"
+        final_text += "--- END OF FILE ---\n"
+
+        self.out_txt.write_text(final_text, encoding="utf-8")
+        return self.out_txt
+
+    def _iter_files(self, root: Path) -> Iterable[Path]:
+        for p in root.rglob("*"):
+            if p.is_dir():
+                continue
+
+            parts = set(p.parts)
+            if any(d in parts for d in self.skip_dirs):
+                continue
+            if p.name in self.skip_filenames:
+                continue
+            if p.suffix.lower() not in self.include_exts:
+                continue
+
+            try:
+                if p.stat().st_size > self.max_bytes:
+                    continue
+            except OSError:
+                continue
+
+            yield p
+
+    @staticmethod
+    def _safe_read_text_lossy(path: Path) -> str:
+        try:
+            return path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            return path.read_text(encoding="utf-8", errors="replace")
+        except OSError as e:
+            return f"<<ERROR READING FILE: {e}>>\n"
+
+
+
+
+
+
+################################################################################
+# FILE 4/18: bundle/bundle.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 5/18: bundle/github.py (START)
+################################################################################
+
+import base64
+import json
+import os
+import threading
+import time
+import urllib.error
+import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterable, Optional, Set
+
+
+
+
+# ============================================================
+# GitHub publisher (single commit, whole project)
+# ============================================================
+@dataclass(frozen=True)
+class FileJob:
+    local_path: Path
+    repo_path: str
+
+
+class GitHub:
+    def __init__(
+        self,
+        owner: str="whoisthereitsme",
+        repo: str="VOXELS",
+        branch: str = "main",
+        project_root: Path = Path.cwd(),
+        token_env: str = "GITHUB_TOKEN",
+        verbose: bool = True,
+        max_workers_blobs: int = 12,
+        commit_message: str = "Publish project snapshot",
+        # filters for what files are included in the upload
+        include_exts: Optional[Set[str]] = None,
+        skip_dirs: Optional[Set[str]] = None,
+        skip_filenames: Optional[Set[str]] = None,
+        max_bytes: int = 2_000_000,
+        skip_binary: bool = True,
+    ) -> None:
+        self.owner = owner
+        self.repo = repo
+        self.branch = branch
+        self.project_root = project_root.resolve()
+        self.token_env = token_env
+        self.verbose = bool(verbose)
+        self.max_workers_blobs = int(max_workers_blobs)
+        self.commit_message = commit_message
+
+        self.include_exts = include_exts
+        self.skip_dirs = skip_dirs or {
+            ".git", ".hg", ".svn",
+            ".idea", ".vscode",
+            "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".tox",
+            ".venv", "venv", "env",
+            "node_modules", "dist", "build",
+            ".gradle", ".terraform",
+            "atlas", "_old", "__OLD",
+        }
+        self.skip_filenames = skip_filenames or {".DS_Store", "Thumbs.db"}
+        self.max_bytes = int(max_bytes)
+        self.skip_binary = bool(skip_binary)
+
+        self._print_lock = threading.Lock()
+
+        self.publish()
+
+    def publish(self) -> None:
+        t0 = time.perf_counter()
+
+        token = os.environ.get(self.token_env, "").strip()
+        if not token:
+            raise SystemExit(
+                f"Missing {self.token_env} environment variable.\n"
+                f"Create a fine-grained PAT (Contents: read+write) for repo {self.owner}/{self.repo}."
+            )
+
+        if not self.project_root.exists() or not self.project_root.is_dir():
+            raise SystemExit(f"PROJECT_ROOT does not exist or is not a directory: {self.project_root}")
+
+        jobs = self._build_jobs()
+        self._log(f"[GITHUB] single-commit publish: {len(jobs)} files from {self.project_root} -> {self.owner}/{self.repo}@{self.branch}")
+
+        head_commit_sha = self._get_branch_head_commit_sha(token)
+        base_tree_sha = self._get_commit_tree_sha(token, head_commit_sha)
+
+        path_to_blob_sha = self._create_blobs_parallel(token, jobs)
+        new_tree_sha = self._create_tree(token, base_tree_sha, path_to_blob_sha)
+        new_commit_sha = self._create_commit(token, new_tree_sha, head_commit_sha)
+        self._update_branch_ref(token, new_commit_sha)
+
+        dt = time.perf_counter() - t0
+        self._log(f"[GITHUB] done: 1 commit, {len(jobs)} files, elapsed {dt:.2f}s. files/sec: {len(jobs)/dt:.1f}")
+
+    # -----------------------------
+    # File enumeration / filters
+    # -----------------------------
+    def _build_jobs(self) -> list[FileJob]:
+        files = sorted(self._iter_project_files(self.project_root), key=lambda p: str(p).lower())
+        return [FileJob(p, p.relative_to(self.project_root).as_posix()) for p in files]
+
+    def _iter_project_files(self, root: Path) -> Iterable[Path]:
+        for p in root.rglob("*"):
+            if p.is_dir():
+                continue
+
+            parts = set(p.parts)
+            if any(d in parts for d in self.skip_dirs):
+                continue
+            if p.name in self.skip_filenames:
+                continue
+            if self.include_exts is not None and p.suffix.lower() not in self.include_exts:
+                continue
+
+            try:
+                if p.stat().st_size > self.max_bytes:
+                    continue
+            except OSError:
+                continue
+
+            if self.skip_binary:
+                try:
+                    data = p.read_bytes()
+                except OSError:
+                    continue
+                if self._looks_binary(data):
+                    continue
+
+            yield p
+
+    @staticmethod
+    def _looks_binary(data: bytes) -> bool:
+        if b"\x00" in data:
+            return True
+        sample = data[:8192]
+        if not sample:
+            return False
+        bad = 0
+        for b in sample:
+            if b in (9, 10, 13) or 32 <= b <= 126:
+                continue
+            bad += 1
+        return (bad / len(sample)) > 0.20
+
+    # -----------------------------
+    # GitHub API core
+    # -----------------------------
+    def _api_request(self, method: str, url: str, token: str, body: Optional[dict] = None) -> dict:
+        data = None
+        if body is not None:
+            data = json.dumps(body).encode("utf-8")
+
+        req = urllib.request.Request(url=url, data=data, method=method)
+        req.add_header("Authorization", f"Bearer {token}")
+        req.add_header("Accept", "application/vnd.github+json")
+        req.add_header("X-GitHub-Api-Version", "2022-11-28")
+        if data is not None:
+            req.add_header("Content-Type", "application/json; charset=utf-8")
+
+        try:
+            with urllib.request.urlopen(req) as resp:
+                raw = resp.read().decode("utf-8")
+                return json.loads(raw) if raw else {}
+        except urllib.error.HTTPError as e:
+            raw = e.read().decode("utf-8", errors="replace")
+            raise RuntimeError(f"GitHub API error {e.code} for {url}\n{raw}") from e
+
+    def _get_branch_head_commit_sha(self, token: str) -> str:
+        url = f"https://api.github.com/repos/{self.owner}/{self.repo}/git/ref/heads/{self.branch}"
+        j = self._api_request("GET", url, token)
+        return j["object"]["sha"]
+
+    def _get_commit_tree_sha(self, token: str, commit_sha: str) -> str:
+        url = f"https://api.github.com/repos/{self.owner}/{self.repo}/git/commits/{commit_sha}"
+        j = self._api_request("GET", url, token)
+        return j["tree"]["sha"]
+
+    def _create_blob(self, token: str, content_bytes: bytes) -> str:
+        url = f"https://api.github.com/repos/{self.owner}/{self.repo}/git/blobs"
+        body = {"content": base64.b64encode(content_bytes).decode("ascii"), "encoding": "base64"}
+        j = self._api_request("POST", url, token, body=body)
+        return j["sha"]
+
+    def _create_blobs_parallel(self, token: str, jobs: list[FileJob]) -> dict[str, str]:
+        out: dict[str, str] = {}
+        lock = threading.Lock()
+
+        def worker(job: FileJob) -> None:
+            data = job.local_path.read_bytes()
+            sha = self._create_blob(token, data)
+            with lock:
+                out[job.repo_path] = sha
+            if self.verbose:
+                self._log(f"    [blob] {job.repo_path}")
+
+        with ThreadPoolExecutor(max_workers=self.max_workers_blobs) as ex:
+            futures = [ex.submit(worker, j) for j in jobs]
+            for fut in as_completed(futures):
+                fut.result()
+
+        return out
+
+    def _create_tree(self, token: str, base_tree_sha: str, path_to_blob_sha: dict[str, str]) -> str:
+        url = f"https://api.github.com/repos/{self.owner}/{self.repo}/git/trees"
+        tree_entries = [
+            {"path": path, "mode": "100644", "type": "blob", "sha": blob_sha}
+            for path, blob_sha in path_to_blob_sha.items()
+        ]
+        body = {"base_tree": base_tree_sha, "tree": tree_entries}
+        j = self._api_request("POST", url, token, body=body)
+        return j["sha"]
+
+    def _create_commit(self, token: str, tree_sha: str, parent_commit_sha: str) -> str:
+        url = f"https://api.github.com/repos/{self.owner}/{self.repo}/git/commits"
+        body = {"message": self.commit_message, "tree": tree_sha, "parents": [parent_commit_sha]}
+        j = self._api_request("POST", url, token, body=body)
+        return j["sha"]
+
+    def _update_branch_ref(self, token: str, new_commit_sha: str) -> None:
+        url = f"https://api.github.com/repos/{self.owner}/{self.repo}/git/refs/heads/{self.branch}"
+        body = {"sha": new_commit_sha, "force": False}
+        self._api_request("PATCH", url, token, body=body)
+
+    def _log(self, msg: str) -> None:
+        with self._print_lock:
+            print(msg)
+
+
+################################################################################
+# FILE 5/18: bundle/github.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 6/18: main.py (START)
 ################################################################################
 
 
@@ -155,27 +679,47 @@ def main() -> None:
 
 if __name__ == "__main__":
     timer.lap()
-    b = Bundle()
-    try:
-        main()
-        timer.print(msg="main.py: executed in")
-    except Exception:
-        traceback.print_exc()
-    finally:
-        b.stop()   
-
-
-
+    with Bundle():
+        try:
+            main()
+            timer.print(msg="main.py: executed in")
+        except Exception:
+            traceback.print_exc()
+        finally:    
+            pass
 
 
 
 ################################################################################
-# FILE 3/14: main.py (END)
+# FILE 6/18: main.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 4/14: utils/__init__.py (START)
+# FILE 7/18: TODO.md (START)
+################################################################################
+
+
+
+
+# ! ROWS
+# TODO: ROWS.SPLIT(pos:POS=None)
+# TODO: ROWS.MERGE(row0:NDARRAY=None, row1:NDARRAY=None)
+# TODO: 
+
+# ! UTILS
+# TODO: 
+
+# ! BUNDLE
+# TODO: CLEANUP!!!
+
+################################################################################
+# FILE 7/18: TODO.md (END)
+################################################################################
+
+
+################################################################################
+# FILE 8/18: utils/__init__.py (START)
 ################################################################################
 
 from .includes import *
@@ -186,12 +730,12 @@ __all__ = [
 ] + inc
 
 ################################################################################
-# FILE 4/14: utils/__init__.py (END)
+# FILE 8/18: utils/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 5/14: utils/bvh.py (START)
+# FILE 9/18: utils/bvh.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -847,12 +1391,12 @@ class BVH_:
         )
 
 ################################################################################
-# FILE 5/14: utils/bvh.py (END)
+# FILE 9/18: utils/bvh.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 6/14: utils/event.py (START)
+# FILE 10/18: utils/event.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -885,12 +1429,12 @@ class Handler:
 
 
 ################################################################################
-# FILE 6/14: utils/event.py (END)
+# FILE 10/18: utils/event.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 7/14: utils/includes.py (START)
+# FILE 11/18: utils/includes.py (START)
 ################################################################################
 
 from __future__ import annotations  # MUST BE FIRST
@@ -980,12 +1524,12 @@ timer.print(msg=f"utils/includes.py: {len(__all__)} modules loaded in")
 timer.reset()
 
 ################################################################################
-# FILE 7/14: utils/includes.py (END)
+# FILE 11/18: utils/includes.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 8/14: utils/schedule.py (START)
+# FILE 12/18: utils/schedule.py (START)
 ################################################################################
 
 import threading
@@ -1149,12 +1693,12 @@ if __name__ == "__main__":
     sched.stop()
 
 ################################################################################
-# FILE 8/14: utils/schedule.py (END)
+# FILE 12/18: utils/schedule.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 9/14: utils/timer.py (START)
+# FILE 13/18: utils/timer.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1245,12 +1789,12 @@ class Timer:
 now = Timer.now # now: now() returns the current time in nanoseconds
 
 ################################################################################
-# FILE 9/14: utils/timer.py (END)
+# FILE 13/18: utils/timer.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 10/14: utils/types.py (START)
+# FILE 14/18: utils/types.py (START)
 ################################################################################
 
 from typing import TypeAlias
@@ -1263,12 +1807,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 10/14: utils/types.py (END)
+# FILE 14/18: utils/types.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 11/14: world/__init__.py (START)
+# FILE 15/18: world/__init__.py (START)
 ################################################################################
 
 from .rows import ROWS, rows
@@ -1289,12 +1833,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 11/14: world/__init__.py (END)
+# FILE 15/18: world/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 12/14: world/materials.py (START)
+# FILE 16/18: world/materials.py (START)
 ################################################################################
 
 
@@ -1392,12 +1936,12 @@ class Materials:
 
 
 ################################################################################
-# FILE 12/14: world/materials.py (END)
+# FILE 16/18: world/materials.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 13/14: world/row.py (START)
+# FILE 17/18: world/row.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1618,12 +2162,12 @@ class ROW:
 
 
 ################################################################################
-# FILE 13/14: world/row.py (END)
+# FILE 17/18: world/row.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 14/14: world/rows.py (START)
+# FILE 18/18: world/rows.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1645,7 +2189,8 @@ from utils.types import POS, SIZE
 
 
 class ROWS:
-    SIZE = 65536  # 64K rows # for each material
+    SIZE = 65536
+
     def __init__(self) -> None:
         self.size = ROWS.SIZE
         self.mats = Materials()
@@ -1710,12 +2255,13 @@ class ROWS:
     def find(self, pos:POS=None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
         mat, rid, row = self.bvh.find(pos=pos)
         return (mat, rid, row)
-
-    def len(self) -> int:
-        return len(self.array)
     
+    def get(self, mat:str=None, rid:int=None) -> NDArray[ROW.DTYPE]:
+        return self.array[MATERIALS.IDX[mat]][rid]
+
     def nrows(self, mat:str=None) -> int:
         return self.n[MATERIALS.IDX[mat]]
+    
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -1731,35 +2277,30 @@ class ROWS:
 rows = ROWS()
 
 ################################################################################
-# FILE 14/14: world/rows.py (END)
+# FILE 18/18: world/rows.py (END)
 ################################################################################
 
-# Total lines in bundle: 1736
-# Total files in bundle: 14
-# Generated at the time: 2026-01-29T08:03:11.252073
---- END OF FILE ---
 
 ################################################################################
-### CAPTURED OUTPUT ###
+### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-### PROGRAM OUTPUT (CAPTURED IN-PROCESS) ###
-Root: C:\VOXELS
-### OUTPUT START ###
-
-3D grid partition built: lap 3: 4.957063 seconds, total 4.983131 seconds
-All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 201.73 lookups/second
-Random CONTAINS checks completed in: lap 4: 0.398972 seconds, total 5.382103 seconds
+3D grid partition built: lap 3: 5.021733 seconds, total 5.056869 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 199.13 lookups/second
+Random CONTAINS checks completed in: lap 4: 0.397401 seconds, total 5.454269 seconds
 Now deleting all rows...
-All 10000 rows deleted in: lap 5: 0.340338 seconds, total 5.722441 seconds
+All 10000 rows deleted in: lap 5: 0.334949 seconds, total 5.789219 seconds
 Rebuilding rows after deletion...
-second time 3D grid partition built: lap 6: 0.520715 seconds, total 6.243156 seconds
-All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1920.44 lookups/second
-Second random CONTAINS checks completed in: lap 7: 0.176746 seconds, total 6.419902 seconds
+second time 3D grid partition built: lap 6: 0.5214 seconds, total 6.310618 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1917.91 lookups/second
+Second random CONTAINS checks completed in: lap 7: 0.177348 seconds, total 6.487967 seconds
 ALL TESTS PASSED SUCCESSFULLY!
-main.py: executed in: lap 8: 0.000161 seconds, total 6.420063 seconds
+main.py: executed in: lap 8: 0.000185 seconds, total 6.488152 seconds
 
-### OUTPUT END ###
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
+# Total lines in bundle: 2302
+# Total files in bundle: 18
+# Generated at the time: 2026-01-29T09:00:59
+--- END OF FILE ---

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import base64
 import json
 import os
@@ -10,39 +8,14 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Iterable
+from typing import Iterable, Optional, Set
 
 
-# -----------------------------
-# Hardcoded defaults
-# -----------------------------
-OWNER = "whoisthereitsme"
-REPO = "VOXELS"
-BRANCH = "main"
-
-PROJECT_ROOT = Path(r"C:\VOXELS")
-
-MAX_BYTES = 2_000_000
-INCLUDE_EXTS: Optional[set[str]] = None
-
-SKIP_DIRS = {
-    ".git", ".hg", ".svn",
-    ".idea", ".vscode",
-    "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".tox",
-    ".venv", "venv", "env",
-    "node_modules", "dist", "build",
-    ".gradle", ".terraform",
-    "atlas", "_old",
-}
-
-SKIP_FILENAMES = {".DS_Store", "Thumbs.db"}
-
-SKIP_BINARY = True
-VERBOSE = True
-
-MAX_WORKERS_BLOBS = 12  # blob creation is network-bound, parallelize here
 
 
+# ============================================================
+# GitHub publisher (single commit, whole project)
+# ============================================================
 @dataclass(frozen=True)
 class FileJob:
     local_path: Path
@@ -52,15 +25,20 @@ class FileJob:
 class GitHub:
     def __init__(
         self,
-        *,
-        owner: str = OWNER,
-        repo: str = REPO,
-        branch: str = BRANCH,
-        project_root: Path = PROJECT_ROOT,
+        owner: str="whoisthereitsme",
+        repo: str="VOXELS",
+        branch: str = "main",
+        project_root: Path = Path.cwd(),
         token_env: str = "GITHUB_TOKEN",
-        verbose: bool = VERBOSE,
-        max_workers_blobs: int = MAX_WORKERS_BLOBS,
+        verbose: bool = True,
+        max_workers_blobs: int = 12,
         commit_message: str = "Publish project snapshot",
+        # filters for what files are included in the upload
+        include_exts: Optional[Set[str]] = None,
+        skip_dirs: Optional[Set[str]] = None,
+        skip_filenames: Optional[Set[str]] = None,
+        max_bytes: int = 2_000_000,
+        skip_binary: bool = True,
     ) -> None:
         self.owner = owner
         self.repo = repo
@@ -71,13 +49,24 @@ class GitHub:
         self.max_workers_blobs = int(max_workers_blobs)
         self.commit_message = commit_message
 
+        self.include_exts = include_exts
+        self.skip_dirs = skip_dirs or {
+            ".git", ".hg", ".svn",
+            ".idea", ".vscode",
+            "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".tox",
+            ".venv", "venv", "env",
+            "node_modules", "dist", "build",
+            ".gradle", ".terraform",
+            "atlas", "_old", "__OLD",
+        }
+        self.skip_filenames = skip_filenames or {".DS_Store", "Thumbs.db"}
+        self.max_bytes = int(max_bytes)
+        self.skip_binary = bool(skip_binary)
+
         self._print_lock = threading.Lock()
 
         self.publish()
 
-    # -----------------------------
-    # Public API
-    # -----------------------------
     def publish(self) -> None:
         t0 = time.perf_counter()
 
@@ -94,27 +83,19 @@ class GitHub:
         jobs = self._build_jobs()
         self._log(f"[GITHUB] single-commit publish: {len(jobs)} files from {self.project_root} -> {self.owner}/{self.repo}@{self.branch}")
 
-        # 1) Resolve HEAD commit and base tree
         head_commit_sha = self._get_branch_head_commit_sha(token)
         base_tree_sha = self._get_commit_tree_sha(token, head_commit_sha)
 
-        # 2) Create blobs (parallel)
         path_to_blob_sha = self._create_blobs_parallel(token, jobs)
-
-        # 3) Create new tree with all changed files (overlay on base tree)
         new_tree_sha = self._create_tree(token, base_tree_sha, path_to_blob_sha)
-
-        # 4) Create commit
         new_commit_sha = self._create_commit(token, new_tree_sha, head_commit_sha)
-
-        # 5) Update ref
         self._update_branch_ref(token, new_commit_sha)
 
         dt = time.perf_counter() - t0
-        self._log(f"[GITHUB] done: 1 commit, {len(jobs)} files, elapsed {dt:.2f}s. files per second: {len(jobs)/dt:.1f}")
+        self._log(f"[GITHUB] done: 1 commit, {len(jobs)} files, elapsed {dt:.2f}s. files/sec: {len(jobs)/dt:.1f}")
 
     # -----------------------------
-    # Job build / filters
+    # File enumeration / filters
     # -----------------------------
     def _build_jobs(self) -> list[FileJob]:
         files = sorted(self._iter_project_files(self.project_root), key=lambda p: str(p).lower())
@@ -126,20 +107,20 @@ class GitHub:
                 continue
 
             parts = set(p.parts)
-            if any(d in parts for d in SKIP_DIRS):
+            if any(d in parts for d in self.skip_dirs):
                 continue
-            if p.name in SKIP_FILENAMES:
+            if p.name in self.skip_filenames:
                 continue
-            if INCLUDE_EXTS is not None and p.suffix.lower() not in INCLUDE_EXTS:
+            if self.include_exts is not None and p.suffix.lower() not in self.include_exts:
                 continue
+
             try:
-                if p.stat().st_size > MAX_BYTES:
+                if p.stat().st_size > self.max_bytes:
                     continue
             except OSError:
                 continue
 
-            # optional binary skip
-            if SKIP_BINARY:
+            if self.skip_binary:
                 try:
                     data = p.read_bytes()
                 except OSError:
@@ -198,10 +179,7 @@ class GitHub:
 
     def _create_blob(self, token: str, content_bytes: bytes) -> str:
         url = f"https://api.github.com/repos/{self.owner}/{self.repo}/git/blobs"
-        body = {
-            "content": base64.b64encode(content_bytes).decode("ascii"),
-            "encoding": "base64",
-        }
+        body = {"content": base64.b64encode(content_bytes).decode("ascii"), "encoding": "base64"}
         j = self._api_request("POST", url, token, body=body)
         return j["sha"]
 
@@ -226,29 +204,17 @@ class GitHub:
 
     def _create_tree(self, token: str, base_tree_sha: str, path_to_blob_sha: dict[str, str]) -> str:
         url = f"https://api.github.com/repos/{self.owner}/{self.repo}/git/trees"
-        tree_entries = []
-        for path, blob_sha in path_to_blob_sha.items():
-            tree_entries.append({
-                "path": path,
-                "mode": "100644",
-                "type": "blob",
-                "sha": blob_sha,
-            })
-
-        body = {
-            "base_tree": base_tree_sha,
-            "tree": tree_entries,
-        }
+        tree_entries = [
+            {"path": path, "mode": "100644", "type": "blob", "sha": blob_sha}
+            for path, blob_sha in path_to_blob_sha.items()
+        ]
+        body = {"base_tree": base_tree_sha, "tree": tree_entries}
         j = self._api_request("POST", url, token, body=body)
         return j["sha"]
 
     def _create_commit(self, token: str, tree_sha: str, parent_commit_sha: str) -> str:
         url = f"https://api.github.com/repos/{self.owner}/{self.repo}/git/commits"
-        body = {
-            "message": self.commit_message,
-            "tree": tree_sha,
-            "parents": [parent_commit_sha],
-        }
+        body = {"message": self.commit_message, "tree": tree_sha, "parents": [parent_commit_sha]}
         j = self._api_request("POST", url, token, body=body)
         return j["sha"]
 
@@ -257,17 +223,7 @@ class GitHub:
         body = {"sha": new_commit_sha, "force": False}
         self._api_request("PATCH", url, token, body=body)
 
-    # -----------------------------
-    # Logging
-    # -----------------------------
     def _log(self, msg: str) -> None:
         with self._print_lock:
             print(msg)
 
-
-def main() -> None:
-    GitHub()
-
-
-if __name__ == "__main__":
-    main()

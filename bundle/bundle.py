@@ -1,228 +1,247 @@
 from __future__ import annotations
-
-import base64
-import datetime as _dt
-import html as _html
-import os
-import shutil
+import atexit
+import sys
+import threading
+import time
 from pathlib import Path
-from typing import Iterable, Set
-from .github import GitHub
-from .output import Output
+from typing import Iterable, Optional, Set, TextIO, Callable
 
+
+from .github import GitHub
+
+
+# ============================================================
+# Bundle builder with integrated output capture (no output.txt, no HTML)
+# ============================================================
 
 class Bundle:
-    __slots__ = (
-        "root",
-        "out_txt",
-        "out_html",
-        "include_exts",
-        "skip_dirs",
-        "skip_filenames",
-        "max_bytes",
-        "run_on_init",
-        "overwrite",
-        "output",
-        "publish",
-        "publish_dst_html",
-        "publish_dst_txt",
-        "write_txt_local",
-        "write_output_txt_local",
-        "publish_txt",
-    )
+    class _Tee(TextIO):
+        def __init__(self, original: TextIO, buffer: list[str], lock: threading.Lock) -> None:
+            self._original = original
+            self._buffer = buffer
+            self._lock = lock
+
+            
+
+        def write(self, s: str) -> int:
+            n = self._original.write(s)
+            with self._lock:
+                self._buffer.append(s)
+            return n
+
+        def flush(self) -> None:
+            self._original.flush()
+
+        def isatty(self) -> bool:
+            return getattr(self._original, "isatty", lambda: False)()
+
+        @property
+        def encoding(self):
+            return getattr(self._original, "encoding", "utf-8")
 
     def __init__(
         self,
         *,
         root: Path | None = None,
         out_txt: Path | None = None,
-        out_html: Path | None = None,
         include_exts: Set[str] | None = None,
         skip_dirs: Set[str] | None = None,
         skip_filenames: Set[str] | None = None,
         max_bytes: int = 2_000_000,
-        run_on_init: bool = True,
         overwrite: bool = True,
-        start_output_capture: bool = True,
-        # local artifacts
-        write_txt_local: bool = True,
-        write_output_txt_local: bool = True,
-        # publishing
-        publish: bool = True,
-        publish_txt: bool = True,
-        publish_dst_html: Path | None = None,
-        publish_dst_txt: Path | None = None,
+        include_stderr: bool = True,
+        marker_prefix: str = "### CAPTURE START ###",
+        auto_end_on_exit: bool = True,
+        auto_end_on_exception: bool = True,
     ) -> None:
         self.root = (root if root is not None else Path.cwd()).resolve()
-
-        self.out_txt = out_txt if out_txt is not None else (Path("bundle") / "bundle.txt")
-        if not self.out_txt.is_absolute():
-            self.out_txt = (self.root / self.out_txt).resolve()
-
-        self.out_html = out_html if out_html is not None else (Path("bundle") / "bundle.html")
-        if not self.out_html.is_absolute():
-            self.out_html = (self.root / self.out_html).resolve()
+        self.out_txt = (out_txt if out_txt is not None else (self.root / "bundle" / "bundle.txt")).resolve()
 
         self.include_exts = include_exts if include_exts is not None else {
             ".py", ".pyi", ".txt", ".md", ".json", ".toml", ".yaml", ".yml", ".ini", ".cfg", ".bat", ".ps1", ".sh",
         }
-
         self.skip_dirs = skip_dirs if skip_dirs is not None else {
             ".git", ".hg", ".svn", ".idea", ".vscode",
             "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".tox",
             ".venv", "venv", "env",
             "node_modules", "dist", "build",
-            "atlas", "bundle", "_old", "__OLD",
+            "atlas", "_old", "__OLD",
         }
-
-        self.skip_filenames = skip_filenames if skip_filenames is not None else {".DS_Store"}
-
+        self.skip_filenames = skip_filenames if skip_filenames is not None else {".DS_Store", "Thumbs.db"}
         self.max_bytes = int(max_bytes)
-        self.run_on_init = bool(run_on_init)
         self.overwrite = bool(overwrite)
 
-        self.write_txt_local = bool(write_txt_local)
-        self.write_output_txt_local = bool(write_output_txt_local)
+        self.include_stderr = bool(include_stderr)
+        self.marker_prefix = str(marker_prefix)
 
-        self.publish = bool(publish)
-        self.publish_txt = bool(publish_txt)
+        self._lock = threading.Lock()
+        self._buf_out: list[str] = []
+        self._buf_err: list[str] = []
 
-        self.publish_dst_html = publish_dst_html if publish_dst_html is not None else Path(
-            r"P:\Public Folder\bundle.html"
-        )
-        self.publish_dst_txt = publish_dst_txt if publish_dst_txt is not None else Path(
-            r"P:\Public Folder\bundle.txt"
-        )
+        self._orig_stdout: Optional[TextIO] = None
+        self._orig_stderr: Optional[TextIO] = None
+        self._orig_excepthook: Optional[Callable] = None
+        self._ended = False
 
-        self.output: Output | None = None
-        if start_output_capture:
-            # Output will write bundle/output.txt locally (optional), and we will read it back and
-            # embed it into the HTML (and optionally into bundle.txt) deterministically.
-            self.output = Output(
-                root=self.root,
-                out_file=(Path("bundle") / "output.txt"),
-                overwrite=True,
-                include_stderr=True,
-                add_marker_on_start=True,
-                marker_prefix="### CAPTURE START ###",
-                append_to_bundle=False,     # we embed ourselves
-                bundle_file=None,
-                auto_end_on_exit=True,
-                auto_end_on_exception=True,
-                write_file=self.write_output_txt_local,
-            )
+        self.start_capture()
 
-        if self.run_on_init:
-            self.run()
+        if auto_end_on_exit:
+            atexit.register(self.stop_capture_and_write_bundle)
 
-    # -----------------------------
-    # Public API
-    # -----------------------------
+        if auto_end_on_exception:
+            self._install_excepthook()
 
-    def run(self) -> Path:
-        """
-        Builds the bundle content and writes:
-          - bundle.html (always)
-          - bundle.txt (optional, local)
-        """
-        self.out_html.parent.mkdir(parents=True, exist_ok=True)
+        self.github = GitHub
+
+    def __enter__(self) -> "Bundle":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        self.stop_capture_and_write_bundle()
+        self.github()
+        return False
+
+    def _install_excepthook(self) -> None:
+        self._orig_excepthook = sys.excepthook
+
+        def hooked(exctype, value, tb) -> None:
+            if self._orig_excepthook is not None:
+                self._orig_excepthook(exctype, value, tb)
+            self.stop_capture_and_write_bundle()
+
+        sys.excepthook = hooked  # type: ignore[assignment]
+
+    def start_capture(self) -> None:
+        self._orig_stdout = sys.stdout
+        self._orig_stderr = sys.stderr
+
+        sys.stdout = self._Tee(self._orig_stdout, self._buf_out, self._lock)  # type: ignore[assignment]
+        if self.include_stderr:
+            sys.stderr = self._Tee(self._orig_stderr, self._buf_err, self._lock)  # type: ignore[assignment]
+
+        print(f"{self.marker_prefix} root={self.root.as_posix()}")
+
+    def stop_capture_and_write_bundle(self) -> Path:
+        captured = self._end_capture_get_text()
+        return self.write_bundle_txt(captured_output=captured)
+
+    def _end_capture_get_text(self) -> str:
+        if self._ended:
+            with self._lock:
+                out_text = "".join(self._buf_out)
+                err_text = "".join(self._buf_err)
+            return self._combine_streams(out_text, err_text)
+
+        self._ended = True
+
+        if self._orig_stdout is not None:
+            sys.stdout = self._orig_stdout  # type: ignore[assignment]
+        if self.include_stderr and self._orig_stderr is not None:
+            sys.stderr = self._orig_stderr  # type: ignore[assignment]
+
+        if self._orig_excepthook is not None:
+            sys.excepthook = self._orig_excepthook  # type: ignore[assignment]
+
+        with self._lock:
+            out_text = "".join(self._buf_out)
+            err_text = "".join(self._buf_err)
+
+        combined = self._combine_streams(out_text, err_text)
+
+        marker_line = f"{self.marker_prefix} root={self.root.as_posix()}"
+        combined = self._keep_after_marker(combined, marker_line)
+        return combined
+
+    def _combine_streams(self, out_text: str, err_text: str) -> str:
+        combined = out_text
+        if self.include_stderr and err_text:
+            if combined and not combined.endswith("\n"):
+                combined += "\n"
+            combined += err_text
+        return combined
+
+    @staticmethod
+    def _keep_after_marker(text: str, marker_line: str) -> str:
+        idx = text.rfind(marker_line)
+        if idx == -1:
+            return text
+        nl = text.find("\n", idx)
+        if nl == -1:
+            return ""
+        return text[nl + 1 :]
+
+    def write_bundle_txt(self, *, captured_output: str) -> Path:
         self.out_txt.parent.mkdir(parents=True, exist_ok=True)
+        if self.overwrite and self.out_txt.exists():
+            self.out_txt.unlink()
 
-        if self.overwrite:
-            if self.out_html.exists():
-                self.out_html.unlink()
-            if self.write_txt_local and self.out_txt.exists():
-                self.out_txt.unlink()
+        generated_at = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
+        files = sorted(self._iter_files(self.root), key=lambda p: str(p.relative_to(self.root)).lower())
 
-        t_generated = _dt.datetime.now().isoformat()
-        bundle_text = self._bundle_project_text(self.root, t_generated)
+        lines: list[str] = []
+        lines.append(f"#Time when generated: {generated_at}\n\n")
+        lines.append("### PROJECT BUNDLE ###\n")
+        lines.append(f"Root: {self.root}\n")
+        lines.append(f"Files included: {len(files)}\n\n")
 
-        # Always write HTML (self-contained)
-        html_doc = self._render_html_document(
-            title="PROJECT BUNDLE",
-            generated_at=t_generated,
-            plain_text=bundle_text,
-        )
-        self.out_html.write_text(html_doc, encoding="utf-8")
+        for i, p in enumerate(files, start=1):
+            rel = p.relative_to(self.root).as_posix()
 
-        # Optionally write plain text locally
-        if self.write_txt_local:
-            self.out_txt.write_text(bundle_text, encoding="utf-8")
+            lines.append("\n" + "#" * 80 + "\n")
+            lines.append(f"# FILE {i}/{len(files)}: {rel} (START)\n")
+            lines.append("#" * 80 + "\n\n")
 
-        return self.out_html
+            content = self._safe_read_text_lossy(p)
+            if content and not content.endswith("\n"):
+                content += "\n"
+            lines.append(content)
 
-    def stop(self) -> None:
-        captured_block = ""
-        if self.output is not None:
-            out_path = self.output.end()
-            captured_block = self._safe_read_text_lossy(out_path)
+            lines.append("\n" + "#" * 80 + "\n")
+            lines.append(f"# FILE {i}/{len(files)}: {rel} (END)\n")
+            lines.append("#" * 80 + "\n\n")
 
-        # Rebuild including captured output (so final HTML always includes runtime output)
-        self._rebuild_with_captured_output(captured_block=captured_block)
+        if captured_output.strip():
+            lines.append("\n" + "################################################################################\n")
+            lines.append("### CAPTURED OUTPUT (STDOUT/STDERR) ###\n")
+            lines.append("################################################################################\n\n")
+            lines.append(captured_output if captured_output.endswith("\n") else captured_output + "\n")
+            lines.append("\n################################################################################\n")
+            lines.append("### END OF CAPTURED OUTPUT ###\n")
+            lines.append("################################################################################\n")
 
-        if self.publish:
-            self._publish()
+        final_text = "".join(lines)
+        if not final_text.endswith("\n"):
+            final_text += "\n"
 
-    # -----------------------------
-    # Internals
-    # -----------------------------
+        total_lines = final_text.count("\n")
+        final_text += f"# Total lines in bundle: {total_lines}\n"
+        final_text += f"# Total files in bundle: {len(files)}\n"
+        final_text += f"# Generated at the time: {time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime())}\n"
+        final_text += "--- END OF FILE ---\n"
 
-    def _rebuild_with_captured_output(self, *, captured_block: str) -> None:
-        t_generated = _dt.datetime.now().isoformat()
-
-        bundle_text = self._bundle_project_text(self.root, t_generated)
-
-        if captured_block.strip():
-            bundle_text = (
-                bundle_text
-                + "\n"
-                + "################################################################################\n"
-                + "### CAPTURED OUTPUT ###\n"
-                + "################################################################################\n\n"
-                + captured_block
-                + ("" if captured_block.endswith("\n") else "\n")
-                + "################################################################################\n"
-                + "### END OF CAPTURED OUTPUT ###\n"
-                + "################################################################################\n"
-            )
-
-        html_doc = self._render_html_document(
-            title="PROJECT BUNDLE",
-            generated_at=t_generated,
-            plain_text=bundle_text,
-        )
-        self.out_html.write_text(html_doc, encoding="utf-8")
-
-        if self.write_txt_local:
-            self.out_txt.write_text(bundle_text, encoding="utf-8")
-
-    def _publish(self) -> None:
-        try:
-            # TXT (optional)
-            if self.publish_txt and self.write_txt_local and self.out_txt.exists():
-                self.publish_dst_txt.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src=self.out_txt, dst=self.publish_dst_txt)
-                print(f"[publish] OK: copied TXT bundle to pCloud: {self.publish_dst_txt}")
-        except Exception as e:
-            print(f"[publish] ERROR: could not publish bundle(s): {e!r}")
-        GitHub()
+        self.out_txt.write_text(final_text, encoding="utf-8")
+        return self.out_txt
 
     def _iter_files(self, root: Path) -> Iterable[Path]:
-        for dirpath, dirnames, filenames in os.walk(root):
-            dirnames[:] = [d for d in dirnames if d not in self.skip_dirs]
+        for p in root.rglob("*"):
+            if p.is_dir():
+                continue
 
-            for name in filenames:
-                if name in self.skip_filenames:
+            parts = set(p.parts)
+            if any(d in parts for d in self.skip_dirs):
+                continue
+            if p.name in self.skip_filenames:
+                continue
+            if p.suffix.lower() not in self.include_exts:
+                continue
+
+            try:
+                if p.stat().st_size > self.max_bytes:
                     continue
-                p = Path(dirpath) / name
-                if p.suffix.lower() not in self.include_exts:
-                    continue
-                try:
-                    if p.stat().st_size > self.max_bytes:
-                        continue
-                except OSError:
-                    continue
-                yield p
+            except OSError:
+                continue
+
+            yield p
 
     @staticmethod
     def _safe_read_text_lossy(path: Path) -> str:
@@ -233,83 +252,7 @@ class Bundle:
         except OSError as e:
             return f"<<ERROR READING FILE: {e}>>\n"
 
-    def _bundle_project_text(self, root: Path, generated_at: str) -> str:
-        files = sorted(self._iter_files(root), key=lambda p: str(p.relative_to(root)).lower())
-
-        lines: list[str] = []
-        lines.append(f"#Time when generated: {generated_at}\n\n")
-        lines.append("### PROJECT BUNDLE ###\n")
-        lines.append(f"Root: {root}\n")
-        lines.append(f"Files included: {len(files)}\n\n")
-
-        for i, p in enumerate(files, start=1):
-            rel = p.relative_to(root).as_posix()
-
-            lines.append("\n")
-            lines.append("#" * 80 + "\n")
-            lines.append(f"# FILE {i}/{len(files)}: {rel} (START)\n")
-            lines.append("#" * 80 + "\n\n")
-
-            content = self._safe_read_text_lossy(p)
-            if content and not content.endswith("\n"):
-                content += "\n"
-            lines.append(content)
-
-            lines.append("\n")
-            lines.append("#" * 80 + "\n")
-            lines.append(f"# FILE {i}/{len(files)}: {rel} (END)\n")
-            lines.append("#" * 80 + "\n\n")
-
-        final_text = "".join(lines)
-        if not final_text.endswith("\n"):
-            final_text += "\n"
-
-        total_lines = final_text.count("\n")
-        final_text += f"# Total lines in bundle: {total_lines}\n"
-        final_text += f"# Total files in bundle: {len(files)}\n"
-        final_text += f"# Generated at the time: {_dt.datetime.now().isoformat()}\n"
-        final_text += "--- END OF FILE ---\n"
-        return final_text
-
-    @staticmethod
-    def _render_html_document(*, title: str, generated_at: str, plain_text: str) -> str:
-        """
-        No interface: the page body is just the full bundle text rendered in <pre>.
-        We also embed the exact same text base64-encoded in a <script> tag for completeness/debug,
-        but the visible content is the escaped plain text (fast, immediate render).
-        """
-        # Visible payload: HTML-escaped inside <pre>
-        escaped = _html.escape(plain_text, quote=False)
-
-        # Optional embedded b64 (not used for rendering, but preserves exact bytes if needed)
-        b64 = base64.b64encode(plain_text.encode("utf-8", errors="strict")).decode("ascii")
-
-        return (
-            "<!doctype html>\n"
-            "<html lang=\"en\">\n"
-            "<head>\n"
-            "  <meta charset=\"utf-8\" />\n"
-            "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n"
-            f"  <title>{_html.escape(title)} — { _html.escape(generated_at) }</title>\n"
-            "  <style>\n"
-            "    html, body { margin: 0; padding: 0; }\n"
-            "    body { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace; }\n"
-            "    pre { margin: 0; padding: 12px; white-space: pre; overflow: auto; }\n"
-            "  </style>\n"
-            "</head>\n"
-            "<body>\n"
-            f"<pre>{escaped}</pre>\n"
-            "\n"
-            f"<script id=\"bundle_b64\" type=\"text/plain\">{b64}</script>\n"
-            "</body>\n"
-            "</html>\n"
-        )
 
 
-if __name__ == "__main__":
-    b = Bundle()
-    try:
-        # your program runs here...
-        pass
-    finally:
-        b.stop()
+
+
