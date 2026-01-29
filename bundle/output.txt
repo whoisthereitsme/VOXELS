@@ -1,0 +1,17 @@
+### PROGRAM OUTPUT (CAPTURED IN-PROCESS) ###
+Root: C:\VOXELS
+### OUTPUT START ###
+
+3D grid partition built: lap 3: 5.201482 seconds, total 5.236007 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 192.25 lookups/second
+Random CONTAINS checks completed in: lap 4: 0.427896 seconds, total 5.663903 seconds
+Now deleting all rows...
+All 10000 rows deleted in: lap 5: 0.342434 seconds, total 6.006337 seconds
+Rebuilding rows after deletion...
+second time 3D grid partition built: lap 6: 0.529475 seconds, total 6.535812 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1888.66 lookups/second
+Second random CONTAINS checks completed in: lap 7: 0.176513 seconds, total 6.712325 seconds
+ALL TESTS PASSED SUCCESSFULLY!
+main.py: executed in: lap 8: 0.000227 seconds, total 6.712552 seconds
+
+### OUTPUT END ###
