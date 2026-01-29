@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T09:37:53
+#Time when generated: 2026-01-29T09:39:22
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -101,10 +101,10 @@ class Bundle:
         self,
         *,
         root: Path | None = None,
-        out_txt: Path | None = None,
-        include_exts: Set[str] | None = None,
-        skip_dirs: Set[str] | None = None,
-        skip_filenames: Set[str] | None = None,
+        out: Path | None = None,
+        exts: Set[str] | None = None,
+        dirs: Set[str] | None = None,
+        skip: Set[str] | None = None,
         max_bytes: int = 2_000_000,
         overwrite: bool = True,
         include_stderr: bool = True,
@@ -113,19 +113,19 @@ class Bundle:
         auto_end_on_exception: bool = True,
     ) -> None:
         self.root = (root if root is not None else Path.cwd()).resolve()
-        self.out_txt = (out_txt if out_txt is not None else (self.root / "bundle" / "bundle.txt")).resolve()
+        self.out = (out if out is not None else (self.root / "bundle" / "bundle.txt")).resolve()
 
-        self.include_exts = include_exts if include_exts is not None else {
+        self.exts = exts if exts is not None else {
             ".py", ".pyi", ".txt", ".md", ".json", ".toml", ".yaml", ".yml", ".ini", ".cfg", ".bat", ".ps1", ".sh",
         }
-        self.skip_dirs = skip_dirs if skip_dirs is not None else {
+        self.dirs = dirs if dirs is not None else {
             ".git", ".hg", ".svn", ".idea", ".vscode",
             "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".tox",
             ".venv", "venv", "env",
             "node_modules", "dist", "build",
             "atlas", "_old", "__OLD",
         }
-        self.skip_filenames = skip_filenames if skip_filenames is not None else {".DS_Store", "Thumbs.db"}
+        self.skip = skip if skip is not None else {".DS_Store", "Thumbs.db"}
         self.max_bytes = int(max_bytes)
         self.overwrite = bool(overwrite)
 
@@ -229,9 +229,9 @@ class Bundle:
         return text[nl + 1 :]
 
     def write_bundle_txt(self, *, captured_output: str) -> Path:
-        self.out_txt.parent.mkdir(parents=True, exist_ok=True)
-        if self.overwrite and self.out_txt.exists():
-            self.out_txt.unlink()
+        self.out.parent.mkdir(parents=True, exist_ok=True)
+        if self.overwrite and self.out.exists():
+            self.out.unlink()
 
         generated_at = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
         files = sorted(self._iter_files(self.root), key=lambda p: str(p.relative_to(self.root)).lower())
@@ -277,8 +277,8 @@ class Bundle:
         final_text += f"# Generated at the time: {time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime())}\n"
         final_text += "--- END OF FILE ---\n"
 
-        self.out_txt.write_text(final_text, encoding="utf-8")
-        return self.out_txt
+        self.out.write_text(final_text, encoding="utf-8")
+        return self.out
 
     def _iter_files(self, root: Path) -> Iterable[Path]:
         for p in root.rglob("*"):
@@ -286,11 +286,11 @@ class Bundle:
                 continue
 
             parts = set(p.parts)
-            if any(d in parts for d in self.skip_dirs):
+            if any(d in parts for d in self.dirs):
                 continue
-            if p.name in self.skip_filenames:
+            if p.name in self.skip:
                 continue
-            if p.suffix.lower() not in self.include_exts:
+            if p.suffix.lower() not in self.exts:
                 continue
 
             try:
@@ -2318,22 +2318,22 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-3D grid partition built: lap 3: 4.985762 seconds, total 5.021859 seconds
-All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 200.57 lookups/second
-Random CONTAINS checks completed in: lap 4: 0.422371 seconds, total 5.444231 seconds
+3D grid partition built: lap 3: 5.351989 seconds, total 5.387529 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 186.85 lookups/second
+Random CONTAINS checks completed in: lap 4: 0.421484 seconds, total 5.809013 seconds
 Now deleting all rows...
-All 10000 rows deleted in: lap 5: 0.36098 seconds, total 5.80521 seconds
+All 10000 rows deleted in: lap 5: 0.354394 seconds, total 6.163407 seconds
 Rebuilding rows after deletion...
-second time 3D grid partition built: lap 6: 0.537179 seconds, total 6.342389 seconds
-All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1861.58 lookups/second
-Second random CONTAINS checks completed in: lap 7: 0.178216 seconds, total 6.520605 seconds
+second time 3D grid partition built: lap 6: 0.558222 seconds, total 6.721629 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1791.40 lookups/second
+Second random CONTAINS checks completed in: lap 7: 0.199952 seconds, total 6.921582 seconds
 ALL TESTS PASSED SUCCESSFULLY!
-main.py: executed in: lap 8: 0.000119 seconds, total 6.520725 seconds
+main.py: executed in: lap 8: 0.000124 seconds, total 6.921706 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
 # Total lines in bundle: 2335
 # Total files in bundle: 20
-# Generated at the time: 2026-01-29T09:37:53
+# Generated at the time: 2026-01-29T09:39:22
 --- END OF FILE ---

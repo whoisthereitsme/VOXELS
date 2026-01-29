@@ -43,10 +43,10 @@ class Bundle:
         self,
         *,
         root: Path | None = None,
-        out_txt: Path | None = None,
-        include_exts: Set[str] | None = None,
-        skip_dirs: Set[str] | None = None,
-        skip_filenames: Set[str] | None = None,
+        out: Path | None = None,
+        exts: Set[str] | None = None,
+        dirs: Set[str] | None = None,
+        skip: Set[str] | None = None,
         max_bytes: int = 2_000_000,
         overwrite: bool = True,
         include_stderr: bool = True,
@@ -55,19 +55,19 @@ class Bundle:
         auto_end_on_exception: bool = True,
     ) -> None:
         self.root = (root if root is not None else Path.cwd()).resolve()
-        self.out_txt = (out_txt if out_txt is not None else (self.root / "bundle" / "bundle.txt")).resolve()
+        self.out = (out if out is not None else (self.root / "bundle" / "bundle.txt")).resolve()
 
-        self.include_exts = include_exts if include_exts is not None else {
+        self.exts = exts if exts is not None else {
             ".py", ".pyi", ".txt", ".md", ".json", ".toml", ".yaml", ".yml", ".ini", ".cfg", ".bat", ".ps1", ".sh",
         }
-        self.skip_dirs = skip_dirs if skip_dirs is not None else {
+        self.dirs = dirs if dirs is not None else {
             ".git", ".hg", ".svn", ".idea", ".vscode",
             "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache", ".tox",
             ".venv", "venv", "env",
             "node_modules", "dist", "build",
             "atlas", "_old", "__OLD",
         }
-        self.skip_filenames = skip_filenames if skip_filenames is not None else {".DS_Store", "Thumbs.db"}
+        self.skip = skip if skip is not None else {".DS_Store", "Thumbs.db"}
         self.max_bytes = int(max_bytes)
         self.overwrite = bool(overwrite)
 
@@ -171,9 +171,9 @@ class Bundle:
         return text[nl + 1 :]
 
     def write_bundle_txt(self, *, captured_output: str) -> Path:
-        self.out_txt.parent.mkdir(parents=True, exist_ok=True)
-        if self.overwrite and self.out_txt.exists():
-            self.out_txt.unlink()
+        self.out.parent.mkdir(parents=True, exist_ok=True)
+        if self.overwrite and self.out.exists():
+            self.out.unlink()
 
         generated_at = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
         files = sorted(self._iter_files(self.root), key=lambda p: str(p.relative_to(self.root)).lower())
@@ -219,8 +219,8 @@ class Bundle:
         final_text += f"# Generated at the time: {time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime())}\n"
         final_text += "--- END OF FILE ---\n"
 
-        self.out_txt.write_text(final_text, encoding="utf-8")
-        return self.out_txt
+        self.out.write_text(final_text, encoding="utf-8")
+        return self.out
 
     def _iter_files(self, root: Path) -> Iterable[Path]:
         for p in root.rglob("*"):
@@ -228,11 +228,11 @@ class Bundle:
                 continue
 
             parts = set(p.parts)
-            if any(d in parts for d in self.skip_dirs):
+            if any(d in parts for d in self.dirs):
                 continue
-            if p.name in self.skip_filenames:
+            if p.name in self.skip:
                 continue
-            if p.suffix.lower() not in self.include_exts:
+            if p.suffix.lower() not in self.exts:
                 continue
 
             try:
