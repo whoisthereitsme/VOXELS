@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T16:24:57
+#Time when generated: 2026-01-29T16:26:33
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -682,13 +682,9 @@ def main() -> None:
     print(" - All random CONTAINS checks passed.", f"Successes: {succes}, Fails: {fails} is a succes percentage of {100-fails/(succes+fails)*100:.2f}% adn per lookup {(succes+fails)/timer.delta[-1]:.2f} lookups/second")
     timer.print(msg=" - Second random CONTAINS checks completed in")
 
-    if succes == 1000 and fails == 0:
-        print("FINALLY: TESTS PASSED SUCCESSFULLY!")
-
-    print("STEP 3 : Now testing SPLIT functionality...")
     rows = ROWS() # it has by default a large enough array to hold 10000 rows per material
     print("WORLD VOLUME BEFORE: ", rows.volume())
-    print(rows.size)
+
     # 1 row exists normally at tis point -> its created at init with STONE material
     for i in range(1000):
         x = random.randint(a=1000, b=999000)
@@ -702,13 +698,9 @@ def main() -> None:
         print(f"Material {Materials.idx2name[i]} has {n} rows after SPLIT tests.")
     
     print("WORLD VOLUME AFTER: ", rows.volume())
-
     timer.print(msg="STARTING STEP 4 : Now testing SWEEP functionality...")
     rows.sweep()
     timer.print(msg=" - SWEEP completed in")
-    rows.sweep()
-    timer.print(msg=" - Second SWEEP completed in")
-
     print("WORLD VOLUME AFTER SWEEP: ", rows.volume())
 
     for i in range(len(rows.array)):
@@ -2431,19 +2423,16 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 6.118853 seconds, total 6.159494 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 163.43 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.503656 seconds, total 6.66315 seconds
+STEP 1 :  3D grid partition built: lap 3: 6.123093 seconds, total 6.145714 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 163.32 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.525728 seconds, total 6.671442 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.433187 seconds, total 7.096337 seconds
+ - All 10000 rows deleted in: lap 5: 0.441587 seconds, total 7.113028 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.644056 seconds, total 7.740393 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1552.66 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.208814 seconds, total 7.949208 seconds
-FINALLY: TESTS PASSED SUCCESSFULLY!
-STEP 3 : Now testing SPLIT functionality...
+ - second time 3D grid partition built: lap 6: 0.66738 seconds, total 7.780408 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1498.40 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.212524 seconds, total 7.992932 seconds
 WORLD VOLUME BEFORE:  72056357089509375
-(1048576, 1048576, 65536)
  - SPLIT test 1/10 passed.
  - SPLIT test 2/10 passed.
  - SPLIT test 3/10 passed.
@@ -3448,27 +3437,26 @@ Material AIR has 1000 rows after SPLIT tests.
 Material WATER has 0 rows after SPLIT tests.
 Material LAVA has 0 rows after SPLIT tests.
 Material GLASS has 0 rows after SPLIT tests.
-Material STONE has 10001 rows after SPLIT tests.
+Material STONE has 9992 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
-WORLD VOLUME AFTER:  5286652225753475869
-STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 5.713468 seconds, total 13.662676 seconds
- - SWEEP completed in: lap 9: 0.759694 seconds, total 14.42237 seconds
- - Second SWEEP completed in: lap 10: 0.018995 seconds, total 14.441365 seconds
-WORLD VOLUME AFTER SWEEP:  5286652225753475869
+WORLD VOLUME AFTER:  5671122587307397728
+STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 5.570886 seconds, total 13.563818 seconds
+ - SWEEP completed in: lap 9: 0.744659 seconds, total 14.308476 seconds
+WORLD VOLUME AFTER SWEEP:  5671122587307397728
 Material AIR has 1000 rows after SWEEP tests.
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
-Material STONE has 6909 rows after SWEEP tests.
+Material STONE has 6917 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
-main.py: executed in: lap 11: 0.010218 seconds, total 14.451583 seconds
+main.py: executed in: lap 10: 0.009206 seconds, total 14.317683 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3470
+# Total lines in bundle: 3458
 # Total files in bundle: 22
-# Generated at the time: 2026-01-29T16:24:57
+# Generated at the time: 2026-01-29T16:26:33
 --- END OF FILE ---

@@ -97,13 +97,9 @@ def main() -> None:
     print(" - All random CONTAINS checks passed.", f"Successes: {succes}, Fails: {fails} is a succes percentage of {100-fails/(succes+fails)*100:.2f}% adn per lookup {(succes+fails)/timer.delta[-1]:.2f} lookups/second")
     timer.print(msg=" - Second random CONTAINS checks completed in")
 
-    if succes == 1000 and fails == 0:
-        print("FINALLY: TESTS PASSED SUCCESSFULLY!")
-
-    print("STEP 3 : Now testing SPLIT functionality...")
     rows = ROWS() # it has by default a large enough array to hold 10000 rows per material
     print("WORLD VOLUME BEFORE: ", rows.volume())
-    print(rows.size)
+
     # 1 row exists normally at tis point -> its created at init with STONE material
     for i in range(1000):
         x = random.randint(a=1000, b=999000)
@@ -117,13 +113,9 @@ def main() -> None:
         print(f"Material {Materials.idx2name[i]} has {n} rows after SPLIT tests.")
     
     print("WORLD VOLUME AFTER: ", rows.volume())
-
     timer.print(msg="STARTING STEP 4 : Now testing SWEEP functionality...")
     rows.sweep()
     timer.print(msg=" - SWEEP completed in")
-    rows.sweep()
-    timer.print(msg=" - Second SWEEP completed in")
-
     print("WORLD VOLUME AFTER SWEEP: ", rows.volume())
 
     for i in range(len(rows.array)):
