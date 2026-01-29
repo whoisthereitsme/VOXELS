@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T12:26:12
+#Time when generated: 2026-01-29T12:27:26
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2072,6 +2072,8 @@ class ROWS:
         print(f" - Splitting row id={rid} mat={mat0} at pos={pos} into 27 sub-rows...")
         print(f"   Original row p0={p0} p1={p1}")
         print(xs, ys, zs)
+        succes = 0
+        fails = 0
         for i, (X0, X1) in enumerate(xs):
             for j, (Y0, Y1) in enumerate(ys):
                 for k, (Z0, Z1) in enumerate(zs):
@@ -2079,10 +2081,16 @@ class ROWS:
                     if size > 0:
                         if i == 1 and j == 1 and k == 1:    # the center cube should get the new material (its the one containing pos)
                             self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use new the material given for the new row
+                            succes += 1
                         else:
                             self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
+                            succes += 1
                     else:
                         print(f" - WARNING: zero size cube skipped during split at {(X0, Y0, Z0)} -> {(X1, Y1, Z1)}")
+                        fails += 1
+
+
+        print(f"   Split completed with {succes} new rows created, {fails} zero-size cubes skipped.")
         
         
 
@@ -2112,58 +2120,68 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 4.982069 seconds, total 5.016164 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 200.72 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.436299 seconds, total 5.452464 seconds
+STEP 1 :  3D grid partition built: lap 3: 5.131036 seconds, total 5.164627 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 194.89 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.433203 seconds, total 5.597829 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.350762 seconds, total 5.803225 seconds
+ - All 10000 rows deleted in: lap 5: 0.348127 seconds, total 5.945957 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.553035 seconds, total 6.35626 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1808.20 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.186392 seconds, total 6.542652 seconds
+ - second time 3D grid partition built: lap 6: 0.533564 seconds, total 6.479521 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1874.19 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.172533 seconds, total 6.652054 seconds
 FINALLY: TESTS PASSED SUCCESSFULLY!
 STEP 3 : Now testing SPLIT functionality...
 WORLD VOLUME BEFORE:  72056357089509375
 (1048576, 1048576, 65536)
- - Splitting row id=0 mat=STONE at pos=(244538, 324096, 60796) into 27 sub-rows...
+ - Splitting row id=0 mat=STONE at pos=(43127, 24842, 14652) into 27 sub-rows...
    Original row p0=(0, 0, 0) p1=(1048575, 1048575, 65535)
-[[0, 244538], [244538, 244539], [244539, 1048575]] [[0, 324096], [324096, 324097], [324097, 1048575]] [[0, 60796], [60796, 60797], [60797, 65535]]
+[[0, 43127], [43127, 43128], [43128, 1048575]] [[0, 24842], [24842, 24843], [24843, 1048575]] [[0, 14652], [14652, 14653], [14653, 65535]]
+   Split completed with 27 new rows created, 0 zero-size cubes skipped.
  - SPLIT test 1/10 passed.
- - Splitting row id=23 mat=STONE at pos=(612543, 790861, 53112) into 27 sub-rows...
-   Original row p0=(244539, 324097, 0) p1=(1048575, 1048575, 60796)
-[[244539, 612543], [612543, 612544], [612544, 1048575]] [[324097, 790861], [790861, 790862], [790862, 1048575]] [[0, 53112], [53112, 53113], [53113, 60796]]
+ - Splitting row id=25 mat=STONE at pos=(550745, 704552, 45483) into 27 sub-rows...
+   Original row p0=(43128, 24843, 14653) p1=(1048575, 1048575, 65535)
+[[43128, 550745], [550745, 550746], [550746, 1048575]] [[24843, 704552], [704552, 704553], [704553, 1048575]] [[14653, 45483], [45483, 45484], [45484, 65535]]
+   Split completed with 27 new rows created, 0 zero-size cubes skipped.
  - SPLIT test 2/10 passed.
- - Splitting row id=42 mat=STONE at pos=(666899, 762947, 32130) into 27 sub-rows...
-   Original row p0=(612544, 324097, 0) p1=(1048575, 790861, 53112)
-[[612544, 666899], [666899, 666900], [666900, 1048575]] [[324097, 762947], [762947, 762948], [762948, 790861]] [[0, 32130], [32130, 32131], [32131, 53112]]
+ - Splitting row id=48 mat=STONE at pos=(832067, 939394, 23645) into 27 sub-rows...
+   Original row p0=(550746, 704553, 14653) p1=(1048575, 1048575, 45483)
+[[550746, 832067], [832067, 832068], [832068, 1048575]] [[704553, 939394], [939394, 939395], [939395, 1048575]] [[14653, 23645], [23645, 23646], [23646, 45483]]
+   Split completed with 27 new rows created, 0 zero-size cubes skipped.
  - SPLIT test 3/10 passed.
- - Splitting row id=69 mat=STONE at pos=(718622, 646742, 38491) into 27 sub-rows...
-   Original row p0=(666900, 324097, 32131) p1=(1048575, 762947, 53112)
-[[666900, 718622], [718622, 718623], [718623, 1048575]] [[324097, 646742], [646742, 646743], [646743, 762947]] [[32131, 38491], [38491, 38492], [38492, 53112]]
+ - Splitting row id=44 mat=STONE at pos=(842102, 87622, 57242) into 27 sub-rows...
+   Original row p0=(550746, 24843, 45484) p1=(1048575, 704552, 65535)
+[[550746, 842102], [842102, 842103], [842103, 1048575]] [[24843, 87622], [87622, 87623], [87623, 704552]] [[45484, 57242], [57242, 57243], [57243, 65535]]
+   Split completed with 27 new rows created, 0 zero-size cubes skipped.
  - SPLIT test 4/10 passed.
- - Splitting row id=25 mat=STONE at pos=(608945, 354359, 41005) into 27 sub-rows...
-   Original row p0=(244539, 324097, 0) p1=(612543, 790861, 53112)
-[[244539, 608945], [608945, 608946], [608946, 612543]] [[324097, 354359], [354359, 354360], [354360, 790861]] [[0, 41005], [41005, 41006], [41006, 53112]]
+ - Splitting row id=25 mat=STONE at pos=(483372, 234656, 33910) into 27 sub-rows...
+   Original row p0=(43128, 24843, 14653) p1=(550745, 704552, 45483)
+[[43128, 483372], [483372, 483373], [483373, 550745]] [[24843, 234656], [234656, 234657], [234657, 704552]] [[14653, 33910], [33910, 33911], [33911, 45483]]
+   Split completed with 27 new rows created, 0 zero-size cubes skipped.
  - SPLIT test 5/10 passed.
- - Splitting row id=0 mat=STONE at pos=(148345, 254013, 57052) into 27 sub-rows...
-   Original row p0=(0, 0, 0) p1=(244538, 324096, 60796)
-[[0, 148345], [148345, 148346], [148346, 244538]] [[0, 254013], [254013, 254014], [254014, 324096]] [[0, 57052], [57052, 57053], [57053, 60796]]
+ - Splitting row id=81 mat=STONE at pos=(759813, 389999, 50050) into 27 sub-rows...
+   Original row p0=(550746, 87623, 45484) p1=(842102, 704552, 57242)
+[[550746, 759813], [759813, 759814], [759814, 842102]] [[87623, 389999], [389999, 390000], [390000, 704552]] [[45484, 50050], [50050, 50051], [50051, 57242]]
+   Split completed with 27 new rows created, 0 zero-size cubes skipped.
  - SPLIT test 6/10 passed.
- - Splitting row id=6 mat=STONE at pos=(189786, 674729, 29090) into 27 sub-rows...
-   Original row p0=(0, 324097, 0) p1=(244538, 1048575, 60796)
-[[0, 189786], [189786, 189787], [189787, 244538]] [[324097, 674729], [674729, 674730], [674730, 1048575]] [[0, 29090], [29090, 29091], [29091, 60796]]
+ - Splitting row id=31 mat=STONE at pos=(218448, 742835, 21056) into 27 sub-rows...
+   Original row p0=(43128, 704553, 14653) p1=(550745, 1048575, 45483)
+[[43128, 218448], [218448, 218449], [218449, 550745]] [[704553, 742835], [742835, 742836], [742836, 1048575]] [[14653, 21056], [21056, 21057], [21057, 45483]]
+   Split completed with 27 new rows created, 0 zero-size cubes skipped.
  - SPLIT test 7/10 passed.
- - Splitting row id=175 mat=STONE at pos=(208176, 892081, 57201) into 27 sub-rows...
-   Original row p0=(189787, 674730, 29091) p1=(244538, 1048575, 60796)
-[[189787, 208176], [208176, 208177], [208177, 244538]] [[674730, 892081], [892081, 892082], [892082, 1048575]] [[29091, 57201], [57201, 57202], [57202, 60796]]
+ - Splitting row id=67 mat=STONE at pos=(936105, 892651, 15828) into 27 sub-rows...
+   Original row p0=(832068, 704553, 14653) p1=(1048575, 939394, 23645)
+[[832068, 936105], [936105, 936106], [936106, 1048575]] [[704553, 892651], [892651, 892652], [892652, 939394]] [[14653, 15828], [15828, 15829], [15829, 23645]]
+   Split completed with 27 new rows created, 0 zero-size cubes skipped.
  - SPLIT test 8/10 passed.
- - Splitting row id=125 mat=STONE at pos=(72871, 170349, 46298) into 27 sub-rows...
-   Original row p0=(0, 0, 0) p1=(148345, 254013, 57052)
-[[0, 72871], [72871, 72872], [72872, 148345]] [[0, 170349], [170349, 170350], [170350, 254013]] [[0, 46298], [46298, 46299], [46299, 57052]]
+ - Splitting row id=108 mat=STONE at pos=(177961, 404013, 40722) into 27 sub-rows...
+   Original row p0=(43128, 234657, 33911) p1=(483372, 704552, 45483)
+[[43128, 177961], [177961, 177962], [177962, 483372]] [[234657, 404013], [404013, 404014], [404014, 704552]] [[33911, 40722], [40722, 40723], [40723, 45483]]
+   Split completed with 27 new rows created, 0 zero-size cubes skipped.
  - SPLIT test 9/10 passed.
- - Splitting row id=106 mat=STONE at pos=(262088, 459676, 39023) into 27 sub-rows...
-   Original row p0=(244539, 354360, 0) p1=(608945, 790861, 41005)
-[[244539, 262088], [262088, 262089], [262089, 608945]] [[354360, 459676], [459676, 459677], [459677, 790861]] [[0, 39023], [39023, 39024], [39024, 41005]]
+ - Splitting row id=48 mat=STONE at pos=(959398, 825585, 52257) into 27 sub-rows...
+   Original row p0=(550746, 704553, 45484) p1=(1048575, 1048575, 65535)
+[[550746, 959398], [959398, 959399], [959399, 1048575]] [[704553, 825585], [825585, 825586], [825586, 1048575]] [[45484, 52257], [52257, 52258], [52258, 65535]]
+   Split completed with 27 new rows created, 0 zero-size cubes skipped.
  - SPLIT test 10/10 passed.
 Material AIR has 10 rows after SPLIT tests.
 Material WATER has 0 rows after SPLIT tests.
@@ -2173,12 +2191,12 @@ Material STONE has 251 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
 WORLD VOLUME AFTER:  72056357089509375
-main.py: executed in: lap 8: 0.024405 seconds, total 6.567057 seconds
+main.py: executed in: lap 8: 0.024446 seconds, total 6.6765 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2180
+# Total lines in bundle: 2198
 # Total files in bundle: 21
-# Generated at the time: 2026-01-29T12:26:12
+# Generated at the time: 2026-01-29T12:27:26
 --- END OF FILE ---
