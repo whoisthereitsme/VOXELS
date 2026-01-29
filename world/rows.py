@@ -36,7 +36,7 @@ class ROWS:
 
 
     def newn(self, mat:str=None) -> int:
-        mid: int = MATERIALS.IDX[mat]
+        mid: int = Materials.name2idx[mat]
         n: int = self.n[mid]
         self.n[mid] += 1
         self.m += 1
@@ -45,7 +45,7 @@ class ROWS:
     def deln(self, mat: str=None) -> int:
         if mat is None:
             raise ValueError("material must be specified")
-        mid = MATERIALS.IDX[mat]
+        mid = Materials.name2idx[mat]
         if self.n[mid] <= 0:
             raise ValueError("no rows to free")
         self.n[mid] -= 1
@@ -54,9 +54,9 @@ class ROWS:
             
 
     def append(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -> ROWS:
-        matid: int = MATERIALS.IDX[mat]
+        mid: int = Materials.name2idx[mat]
         rid: int = self.newn(mat=mat)
-        self.array[matid][rid] = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive) # added rid=n so that bvh can use it when i provide a row as argument
+        self.array[mid][rid] = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive) # added rid=n so that bvh can use it when i provide a row as argument
         self.bvh.insert(mat=mat, rid=rid)  # insert into bvh index
         return self
     
@@ -64,8 +64,8 @@ class ROWS:
         if row is not None and index is None and mat is None:
             mat = ROW.MAT(row=row)
             index = ROW.RID(row=row)
-        matid = MATERIALS.IDX[mat]
-        n = self.n[matid]
+        mid = Materials.name2idx[mat]
+        n = self.n[mid]
         if index < 0 or index >= n:
             raise IndexError("index out of range")
         last = n - 1
@@ -73,11 +73,11 @@ class ROWS:
 
         if index != last:
             self.bvh.remove(mat=mat, rid=last)
-            self.array[matid][index] = self.array[matid][last]
-            self.array[matid][index][*ROW.IDS_ID] = np.uint64(index)
+            self.array[mid][index] = self.array[mid][last]
+            self.array[mid][index][*ROW.IDS_ID] = np.uint64(index)
             self.bvh.insert(mat=mat, rid=index)
 
-        self.array[matid][last] = ROW.ARRAY
+        self.array[mid][last] = ROW.ARRAY
         self.deln(mat=mat)
         return self
     
@@ -87,10 +87,10 @@ class ROWS:
         return (mat, rid, row)
     
     def get(self, mat:str=None, rid:int=None) -> NDArray[ROW.DTYPE]:
-        return self.array[MATERIALS.IDX[mat]][rid]
+        return self.array[Materials.name2idx[mat]][rid]
 
     def nrows(self, mat:str=None) -> int:
-        return self.n[MATERIALS.IDX[mat]]
+        return self.n[Materials.name2idx[mat]]
     
     def split(self, pos:POS=None, mat:str=None) -> tuple[int, int]:
         mat0, rid, row = self.find(pos=pos)
@@ -108,10 +108,12 @@ class ROWS:
         for i, (X0, X1) in enumerate(xs):
             for j, (Y0, Y1) in enumerate(ys):
                 for k, (Z0, Z1) in enumerate(zs):
-                    if i == 1 and j == 1 and k == 1:
-                        self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use new the material given for the new row
-                    else:
-                        self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
+                    size = (X1 - X0) * (Y1 - Y0) * (Z1 - Z0)
+                    if size > 0:
+                        if i == 1 and j == 1 and k == 1:    # the center cube should get the new material (its the one containing pos)
+                            self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use new the material given for the new row
+                        else:
+                            self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
         
         self.delete(index=ROW.RID(row=row), mat=mat)
 
