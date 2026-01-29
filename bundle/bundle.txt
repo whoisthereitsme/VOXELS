@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T12:06:09
+#Time when generated: 2026-01-29T12:07:20
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2097,15 +2097,15 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.33834 seconds, total 5.356902 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 187.32 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.449217 seconds, total 5.806119 seconds
+STEP 1 :  3D grid partition built: lap 3: 5.082882 seconds, total 5.102171 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 196.74 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.458969 seconds, total 5.561139 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.36756 seconds, total 6.173679 seconds
+ - All 10000 rows deleted in: lap 5: 0.378353 seconds, total 5.939492 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.549315 seconds, total 6.722994 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1820.45 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.187947 seconds, total 6.91094 seconds
+ - second time 3D grid partition built: lap 6: 0.557731 seconds, total 6.497223 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1792.98 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.18383 seconds, total 6.681052 seconds
 FINALLY: TESTS PASSED SUCCESSFULLY!
 STEP 3 : Now testing SPLIT functionality...
  - SPLIT test 1/10 passed.
@@ -2125,12 +2125,12 @@ Material GLASS has 0 rows after SPLIT tests.
 Material STONE has 251 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
-main.py: executed in: lap 8: 0.029568 seconds, total 6.940508 seconds
+main.py: executed in: lap 8: 0.020805 seconds, total 6.701858 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
 # Total lines in bundle: 2132
 # Total files in bundle: 21
-# Generated at the time: 2026-01-29T12:06:09
+# Generated at the time: 2026-01-29T12:07:20
 --- END OF FILE ---
