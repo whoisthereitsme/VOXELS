@@ -93,7 +93,7 @@ class ROWS:
         return self.n[MATERIALS.IDX[mat]]
     
     def split(self, pos:POS=None, mat:str=None) -> tuple[int, int]:
-        row:NDArray[ROW.DTYPE] = self.bvh.find(pos=pos, mat=mat)
+        mat0, rid, row = self.find(pos=pos)
         p0 = ROW.P0(row=row)
         p1 = ROW.P1(row=row)
         x0, y0, z0 = p0
@@ -109,9 +109,9 @@ class ROWS:
             for j, (Y0, Y1) in enumerate(ys):
                 for k, (Z0, Z1) in enumerate(zs):
                     if i == 1 and j == 1 and k == 1:
-                        self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use the material given for the new row
+                        self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use new the material given for the new row
                     else:
-                        self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=ROW.MAT(row=row)) # use the material of the original row for the other rows
+                        self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
         
         self.delete(index=ROW.RID(row=row), mat=mat)
 
