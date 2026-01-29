@@ -60,10 +60,10 @@ class ROWS:
         self.bvh.insert(mat=mat, rid=rid)  # insert into bvh index
         return self
     
-    def delete(self, index:int, mat:str, row:NDArray[ROW.DTYPE]=None) -> ROWS:
-        if row is not None:
+    def delete(self, index:int=None, mat:str=None, row:NDArray[ROW.DTYPE]=None) -> ROWS:
+        if row is not None and index is None and mat is None:
             mat = ROW.MAT(row=row)
-            idx = row[ROW.RID(row=row)]
+            index = ROW.RID(row=row)
         matid = MATERIALS.IDX[mat]
         n = self.n[matid]
         if index < 0 or index >= n:
@@ -74,7 +74,7 @@ class ROWS:
         if index != last:
             self.bvh.remove(mat=mat, rid=last)
             self.array[matid][index] = self.array[matid][last]
-            self.array[matid][index][*ROW.ID] = np.uint64(index)
+            self.array[matid][index][*ROW.IDS_ID] = np.uint64(index)
             self.bvh.insert(mat=mat, rid=index)
 
         self.array[matid][last] = ROW.ARRAY

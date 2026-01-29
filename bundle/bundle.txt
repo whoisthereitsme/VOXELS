@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T11:35:51
+#Time when generated: 2026-01-29T11:37:19
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2342,10 +2342,10 @@ class ROWS:
         self.bvh.insert(mat=mat, rid=rid)  # insert into bvh index
         return self
     
-    def delete(self, index:int, mat:str, row:NDArray[ROW.DTYPE]=None) -> ROWS:
-        if row is not None:
+    def delete(self, index:int=None, mat:str=None, row:NDArray[ROW.DTYPE]=None) -> ROWS:
+        if row is not None and index is None and mat is None:
             mat = ROW.MAT(row=row)
-            idx = row[ROW.RID(row=row)]
+            index = ROW.RID(row=row)
         matid = MATERIALS.IDX[mat]
         n = self.n[matid]
         if index < 0 or index >= n:
@@ -2356,7 +2356,7 @@ class ROWS:
         if index != last:
             self.bvh.remove(mat=mat, rid=last)
             self.array[matid][index] = self.array[matid][last]
-            self.array[matid][index][*ROW.ID] = np.uint64(index)
+            self.array[matid][index][*ROW.IDS_ID] = np.uint64(index)
             self.bvh.insert(mat=mat, rid=index)
 
         self.array[matid][last] = ROW.ARRAY
@@ -2423,19 +2423,22 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-Traceback (most recent call last):
-  File "c:\VOXELS\main.py", line 120, in <module>
-    main()
-    ~~~~^^
-  File "c:\VOXELS\main.py", line 13, in main
-    rows.delete(row=row)
-    ~~~~~~~~~~~^^^^^^^^^
-TypeError: ROWS.delete() missing 2 required positional arguments: 'index' and 'mat'
+3D grid partition built: lap 3: 5.09211 seconds, total 5.131666 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 196.38 lookups/second
+Random CONTAINS checks completed in: lap 4: 0.37752 seconds, total 5.509186 seconds
+Now deleting all rows...
+All 10000 rows deleted in: lap 5: 0.343781 seconds, total 5.852967 seconds
+Rebuilding rows after deletion...
+second time 3D grid partition built: lap 6: 0.532895 seconds, total 6.385863 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1876.54 lookups/second
+Second random CONTAINS checks completed in: lap 7: 0.173044 seconds, total 6.558907 seconds
+ALL TESTS PASSED SUCCESSFULLY!
+main.py: executed in: lap 8: 0.000256 seconds, total 6.559163 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2437
+# Total lines in bundle: 2440
 # Total files in bundle: 21
-# Generated at the time: 2026-01-29T11:35:51
+# Generated at the time: 2026-01-29T11:37:19
 --- END OF FILE ---
