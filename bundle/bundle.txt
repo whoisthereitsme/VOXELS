@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T12:09:45
+#Time when generated: 2026-01-29T12:11:48
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -691,6 +691,8 @@ def main() -> None:
 
     print("STEP 3 : Now testing SPLIT functionality...")
     rows = ROWS() # it has by default a large enough array to hold 10000 rows per material
+    print("WORLD VOLUME BEFORE: ", rows.volume())
+
     # 1 row exists normally at tis point -> its created at init with STONE material
     for i in range(10):
         x = random.randint(1000, b=9000)
@@ -703,6 +705,7 @@ def main() -> None:
         n = rows.nrows(mat=Materials.idx2name[i])
         print(f"Material {Materials.idx2name[i]} has {n} rows after SPLIT tests.")
     
+    print("WORLD VOLUME AFTER: ", rows.volume())
 
 
 
@@ -2035,6 +2038,14 @@ class ROWS:
         self.deln(mat=mat)
         return self
     
+    def volume(self) -> int:
+        total = 0
+        for mid in range(MATERIALS.NUM):
+            n = self.n[mid]
+            for rid in range(n):
+                row = self.array[mid][rid]
+                total += ROW.VOLUME(row=row)
+        return total
 
     def find(self, pos:POS=None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
         mat, rid, row = self.bvh.find(pos=pos)
@@ -2098,17 +2109,18 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.497816 seconds, total 5.535093 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 181.89 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.473908 seconds, total 6.009001 seconds
+STEP 1 :  3D grid partition built: lap 3: 5.081476 seconds, total 5.115381 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 196.79 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.381269 seconds, total 5.49665 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.420205 seconds, total 6.429206 seconds
+ - All 10000 rows deleted in: lap 5: 0.343736 seconds, total 5.840386 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.579406 seconds, total 7.008612 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1725.91 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.204439 seconds, total 7.213051 seconds
+ - second time 3D grid partition built: lap 6: 0.525995 seconds, total 6.366381 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1901.16 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.1685 seconds, total 6.53488 seconds
 FINALLY: TESTS PASSED SUCCESSFULLY!
 STEP 3 : Now testing SPLIT functionality...
+WORLD VOLUME BEFORE:  72056357089509375
  - SPLIT test 1/10 passed.
  - SPLIT test 2/10 passed.
  - SPLIT test 3/10 passed.
@@ -2126,12 +2138,13 @@ Material GLASS has 0 rows after SPLIT tests.
 Material STONE has 251 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
-main.py: executed in: lap 8: 0.023865 seconds, total 7.236916 seconds
+WORLD VOLUME AFTER:  72056357089509375
+main.py: executed in: lap 8: 0.022485 seconds, total 6.557365 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2133
+# Total lines in bundle: 2146
 # Total files in bundle: 21
-# Generated at the time: 2026-01-29T12:09:45
+# Generated at the time: 2026-01-29T12:11:48
 --- END OF FILE ---

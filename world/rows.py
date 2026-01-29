@@ -81,6 +81,14 @@ class ROWS:
         self.deln(mat=mat)
         return self
     
+    def volume(self) -> int:
+        total = 0
+        for mid in range(MATERIALS.NUM):
+            n = self.n[mid]
+            for rid in range(n):
+                row = self.array[mid][rid]
+                total += ROW.VOLUME(row=row)
+        return total
 
     def find(self, pos:POS=None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
         mat, rid, row = self.bvh.find(pos=pos)
