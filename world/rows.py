@@ -25,6 +25,7 @@ class ROWS:
         self.n:dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}  # number of valid rows per material
         self.m = 0  # for the total number of rows used
 
+        
         self.array: NDArray[ROW.DTYPE] = np.full((MATERIALS.NUM, ROWS.SIZE, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
         self.shape = self.array.shape
         self.nbytes = self.array.nbytes
@@ -54,16 +55,16 @@ class ROWS:
         self.m -= 1
         return self.n[mid]
             
-    def insert(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -> ROWS:
+    def insert(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -> NDArray[ROW.DTYPE]:
         mid: int = Materials.name2idx[mat]
         rid: int = self.newn(mat=mat)
         row = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
         self.array[mid][rid] = row  # added rid=n so that bvh can use it when i provide a row as argument
         self.bvh.insert(row=row)  # insert into bvh index
         self.mdx.insert(row=row)
-        return self
+        return row
     
-    def remove(self, index:int=None, mat:str=None, row:NDArray[ROW.DTYPE]=None) -> ROWS:
+    def remove(self, index:int=None, mat:str=None, row:NDArray[ROW.DTYPE]=None) -> NDArray[ROW.DTYPE]:
         if row is not None and index is None and mat is None:
             mat = ROW.MAT(row=row)
             index = ROW.RID(row=row)
@@ -106,7 +107,7 @@ class ROWS:
     def nrows(self, mat:str=None) -> int:
         return self.n[Materials.name2idx[mat]]
     
-    def split(self, pos:POS=None, mat:str=None) -> tuple[int, int]:
+    def split(self, pos:POS=None, mat:str=None) -> tuple[NDArray[ROW.DTYPE], dict[int, int]]:
         mat0, rid, row = self.find(pos=pos)
         p0 = ROW.P0(row=row)
         p1 = ROW.P1(row=row)
@@ -120,21 +121,34 @@ class ROWS:
         ys = [[y0, y1], [y1, y2], [y2, y3]]
         zs = [[z0, z1], [z1, z2], [z2, z3]]
 
+        # dict
+        arids = {i: 0 for i in range(len(MATERIALS.DATA.keys()))} 
+        array: NDArray[ROW.DTYPE] = np.full((MATERIALS.NUM, 50, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
         for i, (X0, X1) in enumerate(xs):
             for j, (Y0, Y1) in enumerate(ys):
                 for k, (Z0, Z1) in enumerate(zs):
                     size = (X1 - X0) * (Y1 - Y0) * (Z1 - Z0)
                     if size > 0:
                         if i == 1 and j == 1 and k == 1:    # the center cube should get the new material (its the one containing pos)
-                            self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use new the material given for the new row
+                            row = self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use new the material given for the new row
+                            rid0 = ROW.RID(row=row)
+                            mid0 = ROW.MID(row=row)
+                            array[mid0][arids[rid0]] = row
+                            arids[mid0] += 1
                         else:
-                            self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
+                            row = self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
+                            rid0 = ROW.RID(row=row)
+                            mid0 = ROW.MID(row=row)
+                            array[mid0][arids[rid0]] = row
+                            arids[mid0] += 1
 
         self.remove(row=row)  # remove the original row
         if self.__merge % self._merge == 0:
             self.sweep()
             self.__merge = 0
         self.__merge += 1
+
+        self.merges(rows=array)
 
 
 
@@ -199,6 +213,68 @@ class ROWS:
     def sweep(self) -> int:
         for mat in self.mats.name2idx.keys():
             self.merge(mat=mat)
+
+    def merges(self, rows:NDArray[ROW.DTYPE]=None) -> int:
+        if rows is None:
+            return 0
+
+        merges = 0
+        seen: set[tuple[int, int]] = set()
+
+        # local “new work” created by merges (chaining)
+        extra: list[tuple[int, int]] = []
+
+        # iterate the provided rows array and treat it like the initial stack
+        # (reverse order makes it “pop-like” without modifying rows)
+        for mid in range(rows.shape[0]):
+            for i in range(rows.shape[1] - 1, -1, -1):
+                row = rows[mid][i]
+                if row[*ROW.IDS_ID] == ROW.SENTINEL:
+                    continue
+
+                rid = int(row[*ROW.IDS_ID])
+                if rid < 0 or rid >= self.n[mid]:
+                    continue
+
+                extra.append((mid, rid))
+
+        while extra:
+            mid, rid = extra.pop()
+
+            if rid < 0 or rid >= self.n[mid]:
+                continue
+
+            key = (mid, rid)
+            if key in seen:
+                continue
+            seen.add(key)
+
+            mat = self.mats.idx2name[mid]
+
+            for axis in (self.mdx.AX_X, self.mdx.AX_Y, self.mdx.AX_Z):
+                partner = self.mdx.find_partner(mid=mid, rid=rid, axis=axis)
+                if partner is None:
+                    continue
+
+                pmid, prid = partner
+                if pmid != mid or prid < 0 or prid >= self.n[mid]:
+                    continue
+
+                if self.merge_pair(mat=mat, rid_a=rid, rid_b=prid):
+                    merges += 1
+
+                    # merged row is appended at end
+                    new_rid = self.n[mid] - 1
+                    extra.append((mid, new_rid))
+
+                    # optional: push neighbors too (if you implement it)
+                    if hasattr(self.mdx, "neighbors_of"):
+                        extra.extend(self.mdx.neighbors_of(mid=mid, rid=new_rid))
+
+                    break  # rid invalid now
+
+        return merges
+
 
 
     def __repr__(self) -> str:

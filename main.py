@@ -86,11 +86,7 @@ def main() -> None:
     fails = 0
     for _ in range(1000):
         try:
-            pos = (
-                random.randint(0, max_x),
-                random.randint(0, max_y),
-                random.randint(0, max_z),
-            )
+            pos = (random.randint(0, max_x), random.randint(0, max_y), random.randint(0, max_z))
             mat, rid, row = rows.find(pos=pos)
             assert ROW.CONTAINS(row=row, pos=pos), f"pos={pos} not contained by found row (mat={mat}, rid={rid})"
             succes += 1
