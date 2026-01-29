@@ -34,6 +34,9 @@ class ROWS:
         self.insert(p0=(ROW.XMIN, ROW.YMIN, ROW.ZMIN), p1=(ROW.XMAX, ROW.YMAX, ROW.ZMAX), mat=mat)  # alive and dirty by default are true so no need to specify : easier to use now!!!
         self.size = ROW.XMAX - ROW.XMIN, ROW.YMAX - ROW.YMIN, ROW.ZMAX - ROW.ZMIN
 
+        self._merge = 5
+        self.__merge = 0
+
     def newn(self, mat:str=None) -> int:
         mid: int = Materials.name2idx[mat]
         n: int = self.n[mid]
@@ -128,7 +131,9 @@ class ROWS:
                             self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
 
         self.remove(row=row)  # remove the original row
-        self.merge(mat=mat0)  # try to merge the old material rows
+        if self.__merge % self._merge == 0:
+            self.sweep()
+        self.__merge += 1
 
 
 
