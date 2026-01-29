@@ -1,21 +1,18 @@
 import base64
 import json
-import os
 import threading
 import time
-import urllib.error
-import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional, Set
 
 from credentials import *
+from utils import Request
 
 
-# ============================================================
-# GitHub publisher (single commit, whole project)
-# ============================================================
+
+
 @dataclass(frozen=True)
 class FileJob:
     local_path: Path
@@ -146,20 +143,14 @@ class GitHub:
         if body is not None:
             data = json.dumps(body).encode("utf-8")
 
-        req = urllib.request.Request(url=url, data=data, method=method)
-        req.add_header("Authorization", f"Bearer {token}")
-        req.add_header("Accept", "application/vnd.github+json")
-        req.add_header("X-GitHub-Api-Version", "2022-11-28")
+        req = Request(url=url, data=data, method=method, timeout=600, retries=3)
+        req.header("Authorization", f"Bearer {token}")
+        req.header("Accept", "application/vnd.github+json")
+        req.header("X-GitHub-Api-Version", "2022-11-28")
         if data is not None:
-            req.add_header("Content-Type", "application/json; charset=utf-8")
+            req.header("Content-Type", "application/json; charset=utf-8")
 
-        try:
-            with urllib.request.urlopen(req) as resp:
-                raw = resp.read().decode("utf-8")
-                return json.loads(raw) if raw else {}
-        except urllib.error.HTTPError as e:
-            raw = e.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"GitHub API error {e.code} for {url}\n{raw}") from e
+        return req.open()
 
     def _get_branch_head_commit_sha(self, token: str) -> str:
         url = f"https://api.github.com/repos/{self.owner}/{self.repo}/git/ref/heads/{self.branch}"

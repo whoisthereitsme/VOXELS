@@ -1,12 +1,12 @@
-#Time when generated: 2026-01-29T09:39:22
+#Time when generated: 2026-01-29T09:58:24
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
-Files included: 20
+Files included: 21
 
 
 ################################################################################
-# FILE 1/20: __init__.py (START)
+# FILE 1/21: __init__.py (START)
 ################################################################################
 
 import utils
@@ -17,12 +17,12 @@ __all__ = world.__all__ + utils.__all__ + bundle.__all__
 
 
 ################################################################################
-# FILE 1/20: __init__.py (END)
+# FILE 1/21: __init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 2/20: __main__.py (START)
+# FILE 2/21: __main__.py (START)
 ################################################################################
 
 from main import main
@@ -31,12 +31,12 @@ if __name__ == "__main__":
     main()
 
 ################################################################################
-# FILE 2/20: __main__.py (END)
+# FILE 2/21: __main__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 3/20: bundle/__init__.py (START)
+# FILE 3/21: bundle/__init__.py (START)
 ################################################################################
 
 from .bundle import *
@@ -48,12 +48,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 3/20: bundle/__init__.py (END)
+# FILE 3/21: bundle/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 4/20: bundle/bundle.py (START)
+# FILE 4/21: bundle/bundle.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -316,32 +316,29 @@ class Bundle:
 
 
 ################################################################################
-# FILE 4/20: bundle/bundle.py (END)
+# FILE 4/21: bundle/bundle.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 5/20: bundle/github.py (START)
+# FILE 5/21: bundle/github.py (START)
 ################################################################################
 
 import base64
 import json
-import os
 import threading
 import time
-import urllib.error
-import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional, Set
 
 from credentials import *
+from utils import Request
 
 
-# ============================================================
-# GitHub publisher (single commit, whole project)
-# ============================================================
+
+
 @dataclass(frozen=True)
 class FileJob:
     local_path: Path
@@ -472,20 +469,14 @@ class GitHub:
         if body is not None:
             data = json.dumps(body).encode("utf-8")
 
-        req = urllib.request.Request(url=url, data=data, method=method)
-        req.add_header("Authorization", f"Bearer {token}")
-        req.add_header("Accept", "application/vnd.github+json")
-        req.add_header("X-GitHub-Api-Version", "2022-11-28")
+        req = Request(url=url, data=data, method=method, timeout=600, retries=3)
+        req.header("Authorization", f"Bearer {token}")
+        req.header("Accept", "application/vnd.github+json")
+        req.header("X-GitHub-Api-Version", "2022-11-28")
         if data is not None:
-            req.add_header("Content-Type", "application/json; charset=utf-8")
+            req.header("Content-Type", "application/json; charset=utf-8")
 
-        try:
-            with urllib.request.urlopen(req) as resp:
-                raw = resp.read().decode("utf-8")
-                return json.loads(raw) if raw else {}
-        except urllib.error.HTTPError as e:
-            raw = e.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"GitHub API error {e.code} for {url}\n{raw}") from e
+        return req.open()
 
     def _get_branch_head_commit_sha(self, token: str) -> str:
         url = f"https://api.github.com/repos/{self.owner}/{self.repo}/git/ref/heads/{self.branch}"
@@ -549,12 +540,12 @@ class GitHub:
 
 
 ################################################################################
-# FILE 5/20: bundle/github.py (END)
+# FILE 5/21: bundle/github.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 6/20: credentials/__init__.py (START)
+# FILE 6/21: credentials/__init__.py (START)
 ################################################################################
 
 from .environ import Environ
@@ -564,12 +555,12 @@ __all__ = [
 ]   
 
 ################################################################################
-# FILE 6/20: credentials/__init__.py (END)
+# FILE 6/21: credentials/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 7/20: credentials/environ.py (START)
+# FILE 7/21: credentials/environ.py (START)
 ################################################################################
 
 
@@ -588,12 +579,12 @@ class Environ:
 
 
 ################################################################################
-# FILE 7/20: credentials/environ.py (END)
+# FILE 7/21: credentials/environ.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 8/20: main.py (START)
+# FILE 8/21: main.py (START)
 ################################################################################
 
 
@@ -724,12 +715,12 @@ if __name__ == "__main__":
 
 
 ################################################################################
-# FILE 8/20: main.py (END)
+# FILE 8/21: main.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 9/20: TODO.md (START)
+# FILE 9/21: TODO.md (START)
 ################################################################################
 
 
@@ -747,28 +738,28 @@ if __name__ == "__main__":
 # TODO: CLEANUP!!!
 
 ################################################################################
-# FILE 9/20: TODO.md (END)
+# FILE 9/21: TODO.md (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 10/20: utils/__init__.py (START)
+# FILE 10/21: utils/__init__.py (START)
 ################################################################################
 
+from .request import Request
 from .includes import *
 from .includes import __all__ as inc
-
-
 __all__ = [
+    "Request",
 ] + inc
 
 ################################################################################
-# FILE 10/20: utils/__init__.py (END)
+# FILE 10/21: utils/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 11/20: utils/bvh.py (START)
+# FILE 11/21: utils/bvh.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1424,12 +1415,12 @@ class BVH_:
         )
 
 ################################################################################
-# FILE 11/20: utils/bvh.py (END)
+# FILE 11/21: utils/bvh.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 12/20: utils/event.py (START)
+# FILE 12/21: utils/event.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1462,12 +1453,12 @@ class Handler:
 
 
 ################################################################################
-# FILE 12/20: utils/event.py (END)
+# FILE 12/21: utils/event.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 13/20: utils/includes.py (START)
+# FILE 13/21: utils/includes.py (START)
 ################################################################################
 
 from __future__ import annotations  # MUST BE FIRST
@@ -1557,12 +1548,71 @@ timer.print(msg=f"utils/includes.py: {len(__all__)} modules loaded in")
 timer.reset()
 
 ################################################################################
-# FILE 13/20: utils/includes.py (END)
+# FILE 13/21: utils/includes.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 14/20: utils/schedule.py (START)
+# FILE 14/21: utils/request.py (START)
+################################################################################
+
+import time
+import urllib.request
+import urllib.error
+import json
+
+
+class Request:
+    def __init__(self, url: str = None, timeout: int = 600, retries: int = 3, data=None, method: str = None) -> None:
+        self.timeout = timeout
+        self.retries = retries
+        self.url = url
+        self.data = data
+        self.method = method
+
+        self.init()
+
+    def init(self) -> None:
+        self.request = urllib.request.Request(url=self.url, data=self.data, method=self.method)
+
+    def header(self, key: str = None, value: str = None) -> None:
+        self.request.add_header(key, value)
+
+    def open(self) -> dict:
+        try:
+            with urllib.request.urlopen(self.request, timeout=self.timeout) as response:
+                raw = response.read().decode("utf-8", errors="replace")
+                return json.loads(raw) if raw else {}
+
+        except urllib.error.HTTPError as e:
+            # Retry on 429 + 5xx, fail fast on other 4xx
+            raw = e.read().decode("utf-8", errors="replace")
+            retryable = (e.code == 429) or (500 <= e.code <= 599)
+
+            if retryable and self.retries > 0:
+                self.retries -= 1
+                time.sleep(0.5)  # tiny backoff; keep simple
+                return self.open()
+
+            raise RuntimeError(f"[ERROR] {e.code} for {self.url}\n{raw}") from e
+
+        except (urllib.error.URLError, TimeoutError) as e:
+            if self.retries > 0:
+                self.retries -= 1
+                time.sleep(0.5)
+                return self.open()
+            raise RuntimeError(f"[ERROR] request failed for {self.url}\n{e!r}") from e
+        
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"[ERROR] invalid JSON response for {self.url}\n{e!r}") from e
+
+################################################################################
+# FILE 14/21: utils/request.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 15/21: utils/schedule.py (START)
 ################################################################################
 
 import threading
@@ -1726,12 +1776,12 @@ if __name__ == "__main__":
     sched.stop()
 
 ################################################################################
-# FILE 14/20: utils/schedule.py (END)
+# FILE 15/21: utils/schedule.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 15/20: utils/timer.py (START)
+# FILE 16/21: utils/timer.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1822,12 +1872,12 @@ class Timer:
 now = Timer.now # now: now() returns the current time in nanoseconds
 
 ################################################################################
-# FILE 15/20: utils/timer.py (END)
+# FILE 16/21: utils/timer.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 16/20: utils/types.py (START)
+# FILE 17/21: utils/types.py (START)
 ################################################################################
 
 from typing import TypeAlias
@@ -1840,12 +1890,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 16/20: utils/types.py (END)
+# FILE 17/21: utils/types.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 17/20: world/__init__.py (START)
+# FILE 18/21: world/__init__.py (START)
 ################################################################################
 
 from .rows import ROWS, rows
@@ -1866,12 +1916,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 17/20: world/__init__.py (END)
+# FILE 18/21: world/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 18/20: world/materials.py (START)
+# FILE 19/21: world/materials.py (START)
 ################################################################################
 
 
@@ -1969,12 +2019,12 @@ class Materials:
 
 
 ################################################################################
-# FILE 18/20: world/materials.py (END)
+# FILE 19/21: world/materials.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 19/20: world/row.py (START)
+# FILE 20/21: world/row.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -2195,12 +2245,12 @@ class ROW:
 
 
 ################################################################################
-# FILE 19/20: world/row.py (END)
+# FILE 20/21: world/row.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 20/20: world/rows.py (START)
+# FILE 21/21: world/rows.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -2310,7 +2360,7 @@ class ROWS:
 rows = ROWS()
 
 ################################################################################
-# FILE 20/20: world/rows.py (END)
+# FILE 21/21: world/rows.py (END)
 ################################################################################
 
 
@@ -2318,22 +2368,22 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-3D grid partition built: lap 3: 5.351989 seconds, total 5.387529 seconds
-All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 186.85 lookups/second
-Random CONTAINS checks completed in: lap 4: 0.421484 seconds, total 5.809013 seconds
+3D grid partition built: lap 3: 5.120888 seconds, total 5.144874 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 195.28 lookups/second
+Random CONTAINS checks completed in: lap 4: 0.444642 seconds, total 5.589517 seconds
 Now deleting all rows...
-All 10000 rows deleted in: lap 5: 0.354394 seconds, total 6.163407 seconds
+All 10000 rows deleted in: lap 5: 0.338901 seconds, total 5.928418 seconds
 Rebuilding rows after deletion...
-second time 3D grid partition built: lap 6: 0.558222 seconds, total 6.721629 seconds
-All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1791.40 lookups/second
-Second random CONTAINS checks completed in: lap 7: 0.199952 seconds, total 6.921582 seconds
+second time 3D grid partition built: lap 6: 0.51968 seconds, total 6.448097 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1924.26 lookups/second
+Second random CONTAINS checks completed in: lap 7: 0.159503 seconds, total 6.6076 seconds
 ALL TESTS PASSED SUCCESSFULLY!
-main.py: executed in: lap 8: 0.000124 seconds, total 6.921706 seconds
+main.py: executed in: lap 8: 0.000179 seconds, total 6.607779 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2335
-# Total files in bundle: 20
-# Generated at the time: 2026-01-29T09:39:22
+# Total lines in bundle: 2385
+# Total files in bundle: 21
+# Generated at the time: 2026-01-29T09:58:24
 --- END OF FILE ---
