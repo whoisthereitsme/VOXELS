@@ -113,6 +113,9 @@ class ROWS:
         ys = [[y0, y1], [y1, y2], [y2, y3]]
         zs = [[z0, z1], [z1, z2], [z2, z3]]
 
+        print(f" - Splitting row id={rid} mat={mat0} at pos={pos} into 27 sub-rows...")
+        print(f"   Original row p0={p0} p1={p1}")
+        print(xs, ys, zs)
         for i, (X0, X1) in enumerate(xs):
             for j, (Y0, Y1) in enumerate(ys):
                 for k, (Z0, Z1) in enumerate(zs):
@@ -122,6 +125,8 @@ class ROWS:
                             self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use new the material given for the new row
                         else:
                             self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
+                    else:
+                        print(f" - WARNING: zero size cube skipped during split at {(X0, Y0, Z0)} -> {(X1, Y1, Z1)}")
         
         
 
