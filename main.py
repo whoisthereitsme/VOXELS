@@ -122,6 +122,14 @@ def main() -> None:
     
     print("WORLD VOLUME AFTER: ", rows.volume())
 
+    rows.sweep()
+
+    print("WORLD VOLUME AFTER SWEEP: ", rows.volume())
+
+    for i in range(len(rows.array)):
+        n = rows.nrows(mat=Materials.idx2name[i])
+        print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
+
 
 
 

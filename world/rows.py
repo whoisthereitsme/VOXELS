@@ -74,9 +74,11 @@ class ROWS:
 
         if index != last:
             self.bvh.remove(mat=mat, rid=last)
+            self.mdx.remove(mat=mat, rid=last)
             self.array[mid][index] = self.array[mid][last]
             self.array[mid][index][*ROW.IDS_ID] = np.uint64(index)
-            self.bvh.insert(mat=mat, rid=index)
+            self.bvh.insert(row=self.array[mid][index])
+            self.mdx.insert(row=self.array[mid][index])
 
         self.array[mid][last] = ROW.ARRAY
         self.deln(mat=mat)
@@ -127,25 +129,69 @@ class ROWS:
 
         self.remove(row=row)  # remove the original row
 
-    """
-    -> TODO : yet has to be redone
-    """
-    def merge(self, mat:str=None, axis:int=None) -> None:
+
+
+    def merge_pair(self, mat: str, rid_a: int, rid_b: int) -> bool:
         mid = Materials.name2idx[mat]
         n = self.n[mid]
-        if n > 1: # only if 2 or more!
-            merged = True
-            while merged:
-                for row1 in self.array[mid]:
-                    for row2 in self.array[mid]:
-                        if ROW.MERGE(row1=row1, row2=row2, axis=axis):
-                            p0 = ROW.SORT(p0=ROW.P0(row=row1), p1=ROW.P0(row=row2))[0]      # minium of both rows
-                            p1 = ROW.SORT(p0=ROW.P1(row=row1), p1=ROW.P1(row=row2))[1]      # maximum of both rows
-                            self.insert(p0=p0, p1=p1, mat=mat)
-                            self.remove(row=row1)
-                            self.remove(row=row2)
-                        else:
-                            merged = False
+        if rid_a < 0 or rid_a >= n or rid_b < 0 or rid_b >= n or rid_a == rid_b:
+            return False
+
+        row_a = self.array[mid][rid_a]
+        row_b = self.array[mid][rid_b]
+
+        touch = ROW.MERGE(row0=row_a, row1=row_b)
+        if touch == (False, False, False):
+            return False
+
+        # merged bounds
+        p0 = ROW.SORT(p0=ROW.P0(row=row_a), p1=ROW.P0(row=row_b))[0]
+        p1 = ROW.SORT(p0=ROW.P1(row=row_a), p1=ROW.P1(row=row_b))[1]
+
+        # remove higher rid first (because remove() swap-deletes)
+        hi = rid_a if rid_a > rid_b else rid_b
+        lo = rid_b if hi == rid_a else rid_a
+        self.remove(mat=mat, index=hi)
+        self.remove(mat=mat, index=lo)
+
+        self.insert(p0=p0, p1=p1, mat=mat)
+        return True
+
+    def merge_pass(self, mat: str, axis: int) -> int:
+        mid = Materials.name2idx[mat]
+        merges = 0
+
+        rid = 0
+        while rid < self.n[mid]:
+            partner = self.mdx.find_partner(mid=mid, rid=rid, axis=axis)
+            if partner is None:
+                rid += 1
+                continue
+
+            _, rid2 = partner
+            if self.merge_pair(mat=mat, rid_a=rid, rid_b=rid2):
+                merges += 1
+                # don't increment rid: slot now contains swapped-in row
+            else:
+                rid += 1
+
+        return merges
+    
+    def merge(self, mat:str=None) -> int:
+        total = 0
+        while True:
+            m = (
+                self.merge_pass(mat, axis=self.mdx.AX_X) +
+                self.merge_pass(mat, axis=self.mdx.AX_Y) +
+                self.merge_pass(mat, axis=self.mdx.AX_Z)
+            )
+            total += m
+            if m == 0:
+                return total
+            
+    def sweep(self) -> int:
+        for mat in self.mats.name2idx.keys():
+            return self.merge(mat=mat)
 
 
     def __repr__(self) -> str:
