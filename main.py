@@ -67,7 +67,7 @@ def main() -> None:
     nx = 20            # half number of cells in X  -> world X size = nx*cell
     ny = 20            # half number of cells in Y
     nz = 20            # half number of cells in Z
-    n = nx * ny * nz  # total number of cells (1/8th number of previous)
+    n = nx * ny * nz   # total number of cells (1/8th number of previous)
 
     for ix in range(nx):
         x0 = ix * cell
@@ -104,7 +104,11 @@ def main() -> None:
     if succes == 1000 and fails == 0:
         print("FINALLY: TESTS PASSED SUCCESSFULLY!")
 
-
+    print("STEP 3 : Now testing SPLIT functionality...")
+    rows = ROWS() # it has by default a large enough array to hold 10000 rows per material
+    for i in range(10):
+        rows.split(pos=(10,10,10), mat="AIR")  # should raise error since no rows exist yet
+    
 
 
 

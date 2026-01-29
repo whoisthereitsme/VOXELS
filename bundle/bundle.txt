@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T11:38:54
+#Time when generated: 2026-01-29T11:41:10
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -652,7 +652,7 @@ def main() -> None:
     nx = 20            # half number of cells in X  -> world X size = nx*cell
     ny = 20            # half number of cells in Y
     nz = 20            # half number of cells in Z
-    n = nx * ny * nz  # total number of cells (1/8th number of previous)
+    n = nx * ny * nz   # total number of cells (1/8th number of previous)
 
     for ix in range(nx):
         x0 = ix * cell
@@ -689,7 +689,11 @@ def main() -> None:
     if succes == 1000 and fails == 0:
         print("FINALLY: TESTS PASSED SUCCESSFULLY!")
 
-
+    print("STEP 3 : Now testing SPLIT functionality...")
+    rows = ROWS() # it has by default a large enough array to hold 10000 rows per material
+    for i in range(10):
+        rows.split(pos=(10,10,10), mat="AIR")  # should raise error since no rows exist yet
+    
 
 
 
@@ -2422,22 +2426,33 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.014066 seconds, total 5.034097 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 199.44 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.435553 seconds, total 5.469651 seconds
+STEP 1 :  3D grid partition built: lap 3: 4.979644 seconds, total 4.999918 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 200.82 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.380719 seconds, total 5.380637 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.362953 seconds, total 5.832604 seconds
+ - All 10000 rows deleted in: lap 5: 0.35174 seconds, total 5.732377 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.533194 seconds, total 6.365798 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1875.49 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.162225 seconds, total 6.528023 seconds
+ - second time 3D grid partition built: lap 6: 0.514589 seconds, total 6.246966 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1943.30 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.162567 seconds, total 6.409532 seconds
 FINALLY: TESTS PASSED SUCCESSFULLY!
-main.py: executed in: lap 8: 0.000494 seconds, total 6.528516 seconds
+STEP 3 : Now testing SPLIT functionality...
+Traceback (most recent call last):
+  File "c:\VOXELS\main.py", line 123, in <module>
+    main()
+    ~~~~^^
+  File "c:\VOXELS\main.py", line 110, in main
+    rows.split(pos=(10,10,10), mat="AIR")  # should raise error since no rows exist yet
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 96, in split
+    row:NDArray[ROW.DTYPE] = self.bvh.find(pos=pos, mat=mat)
+                             ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+TypeError: BVH.find() got an unexpected keyword argument 'mat'
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2439
+# Total lines in bundle: 2454
 # Total files in bundle: 21
-# Generated at the time: 2026-01-29T11:38:54
+# Generated at the time: 2026-01-29T11:41:10
 --- END OF FILE ---
