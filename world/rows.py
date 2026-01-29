@@ -191,7 +191,7 @@ class ROWS:
             
     def sweep(self) -> int:
         for mat in self.mats.name2idx.keys():
-            return self.merge(mat=mat)
+            self.merge(mat=mat)
 
 
     def __repr__(self) -> str:
