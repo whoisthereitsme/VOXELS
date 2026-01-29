@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T16:23:03
+#Time when generated: 2026-01-29T16:24:57
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2261,10 +2261,8 @@ class ROWS:
         ys = [[y0, y1], [y1, y2], [y2, y3]]
         zs = [[z0, z1], [z1, z2], [z2, z3]]
 
-        # dict: write cursor per material INDEX (0..MATERIALS.NUM-1)
         arids = {mid: 0 for mid in range(MATERIALS.NUM)}
         array: NDArray[ROW.DTYPE] = np.full((MATERIALS.NUM, 27, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
-
         for i, (X0, X1) in enumerate(xs):
             for j, (Y0, Y1) in enumerate(ys):
                 for k, (Z0, Z1) in enumerate(zs):
@@ -2281,12 +2279,7 @@ class ROWS:
                             array[mid0][arids[mid0]] = row
                             arids[mid0] += 1
 
-        self.remove(row=row)  # remove the original row
-        if self.__merge % self._merge == 0:
-            self.sweep()
-            self.__merge = 0
-        self.__merge += 1
-
+        self.remove(row=row) 
         self.merges(rows=array)
 
 
@@ -2438,15 +2431,15 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.723756 seconds, total 5.761601 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 174.71 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.394393 seconds, total 6.155994 seconds
+STEP 1 :  3D grid partition built: lap 3: 6.118853 seconds, total 6.159494 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 163.43 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.503656 seconds, total 6.66315 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.396297 seconds, total 6.552291 seconds
+ - All 10000 rows deleted in: lap 5: 0.433187 seconds, total 7.096337 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.619734 seconds, total 7.172026 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1613.60 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.173383 seconds, total 7.345409 seconds
+ - second time 3D grid partition built: lap 6: 0.644056 seconds, total 7.740393 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1552.66 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.208814 seconds, total 7.949208 seconds
 FINALLY: TESTS PASSED SUCCESSFULLY!
 STEP 3 : Now testing SPLIT functionality...
 WORLD VOLUME BEFORE:  72056357089509375
@@ -3455,27 +3448,27 @@ Material AIR has 1000 rows after SPLIT tests.
 Material WATER has 0 rows after SPLIT tests.
 Material LAVA has 0 rows after SPLIT tests.
 Material GLASS has 0 rows after SPLIT tests.
-Material STONE has 7204 rows after SPLIT tests.
+Material STONE has 10001 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
-WORLD VOLUME AFTER:  7538421055140572048
-STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 6.768399 seconds, total 14.113808 seconds
- - SWEEP completed in: lap 9: 0.034803 seconds, total 14.148611 seconds
- - Second SWEEP completed in: lap 10: 0.014945 seconds, total 14.163557 seconds
-WORLD VOLUME AFTER SWEEP:  7538421055140572048
+WORLD VOLUME AFTER:  5286652225753475869
+STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 5.713468 seconds, total 13.662676 seconds
+ - SWEEP completed in: lap 9: 0.759694 seconds, total 14.42237 seconds
+ - Second SWEEP completed in: lap 10: 0.018995 seconds, total 14.441365 seconds
+WORLD VOLUME AFTER SWEEP:  5286652225753475869
 Material AIR has 1000 rows after SWEEP tests.
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
-Material STONE has 7183 rows after SWEEP tests.
+Material STONE has 6909 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
-main.py: executed in: lap 11: 0.009001 seconds, total 14.172557 seconds
+main.py: executed in: lap 11: 0.010218 seconds, total 14.451583 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3477
+# Total lines in bundle: 3470
 # Total files in bundle: 22
-# Generated at the time: 2026-01-29T16:23:03
+# Generated at the time: 2026-01-29T16:24:57
 --- END OF FILE ---

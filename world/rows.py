@@ -121,10 +121,8 @@ class ROWS:
         ys = [[y0, y1], [y1, y2], [y2, y3]]
         zs = [[z0, z1], [z1, z2], [z2, z3]]
 
-        # dict: write cursor per material INDEX (0..MATERIALS.NUM-1)
         arids = {mid: 0 for mid in range(MATERIALS.NUM)}
         array: NDArray[ROW.DTYPE] = np.full((MATERIALS.NUM, 27, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
-
         for i, (X0, X1) in enumerate(xs):
             for j, (Y0, Y1) in enumerate(ys):
                 for k, (Z0, Z1) in enumerate(zs):
@@ -141,12 +139,7 @@ class ROWS:
                             array[mid0][arids[mid0]] = row
                             arids[mid0] += 1
 
-        self.remove(row=row)  # remove the original row
-        if self.__merge % self._merge == 0:
-            self.sweep()
-            self.__merge = 0
-        self.__merge += 1
-
+        self.remove(row=row) 
         self.merges(rows=array)
 
 
