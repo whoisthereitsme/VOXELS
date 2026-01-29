@@ -125,6 +125,8 @@ def main() -> None:
     timer.print(msg="STARTING STEP 4 : Now testing SWEEP functionality...")
     rows.sweep()
     timer.print(msg=" - SWEEP completed in")
+    rows.sweep()
+    timer.print(msg=" - Second SWEEP completed in")
 
     print("WORLD VOLUME AFTER SWEEP: ", rows.volume())
 
