@@ -121,9 +121,10 @@ class ROWS:
         ys = [[y0, y1], [y1, y2], [y2, y3]]
         zs = [[z0, z1], [z1, z2], [z2, z3]]
 
-        # dict
-        arids = {i: 0 for i in range(len(MATERIALS.DATA.keys()))} 
-        array: NDArray[ROW.DTYPE] = np.full((MATERIALS.NUM, 50, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
+        # dict: write cursor per material INDEX (0..MATERIALS.NUM-1)
+        arids = {mid: 0 for mid in range(MATERIALS.NUM)}
+        array: NDArray[ROW.DTYPE] = np.full((MATERIALS.NUM, 27, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
+
         for i, (X0, X1) in enumerate(xs):
             for j, (Y0, Y1) in enumerate(ys):
                 for k, (Z0, Z1) in enumerate(zs):
@@ -131,15 +132,13 @@ class ROWS:
                     if size > 0:
                         if i == 1 and j == 1 and k == 1:    # the center cube should get the new material (its the one containing pos)
                             row = self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use new the material given for the new row
-                            rid0 = ROW.RID(row=row)
-                            mid0 = ROW.MID(row=row)
-                            array[mid0][arids[rid0]] = row
+                            mid0 = self.mats.id2idx[ROW.MID(row=row)]
+                            array[mid0][arids[mid0]] = row
                             arids[mid0] += 1
                         else:
                             row = self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
-                            rid0 = ROW.RID(row=row)
-                            mid0 = ROW.MID(row=row)
-                            array[mid0][arids[rid0]] = row
+                            mid0 = self.mats.id2idx[ROW.MID(row=row)]
+                            array[mid0][arids[mid0]] = row
                             arids[mid0] += 1
 
         self.remove(row=row)  # remove the original row
