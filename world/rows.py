@@ -96,6 +96,7 @@ class ROWS:
         mat0, rid, row = self.find(pos=pos)
         p0 = ROW.P0(row=row)
         p1 = ROW.P1(row=row)
+        self.delete(row=row)  # delete the original row
         x0, y0, z0 = p0
         x1, y1, z1 = pos
         x2, y2, z2 =x1+1, y1+1, z1+1
@@ -115,7 +116,7 @@ class ROWS:
                         else:
                             self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
         
-        self.delete(row=row)  # delete the original row
+        
 
 
 
