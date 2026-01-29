@@ -18,7 +18,6 @@ from utils.types import POS, SIZE
 
 class ROWS:
     SIZE = 65536
-
     def __init__(self) -> None:
         self.size = ROWS.SIZE
         self.mats = Materials()
@@ -61,7 +60,9 @@ class ROWS:
         self.bvh.insert(mat=mat, rid=rid)  # insert into bvh index
         return self
     
-    def delete(self, index: int, mat: str) -> ROWS:
+    def delete(self, index: int, mat: str, row:NDArray[ROW.DTYPE]=None) -> ROWS:
+        mat = row[ROW.MAT(row=row)]
+        idx = row[ROW.RID(row=row)]
         matid = MATERIALS.IDX[mat]
         n = self.n[matid]
         if index < 0 or index >= n:
@@ -89,6 +90,32 @@ class ROWS:
 
     def nrows(self, mat:str=None) -> int:
         return self.n[MATERIALS.IDX[mat]]
+    
+    def split(self, pos:POS=None, mat:str=None) -> tuple[int, int]:
+        row:NDArray[ROW.DTYPE] = self.bvh.find(pos=pos, mat=mat)
+        p0 = ROW.P0(row=row)
+        p1 = ROW.P1(row=row)
+        x0, y0, z0 = p0
+        x1, y1, z1 = pos
+        x2, y2, z2 =x1+1, y1+1, z1+1
+        x3, y3, z3 = p1
+
+        xs = [[x0, x1], [x1, x2], [x2, x3]]
+        ys = [[y0, y1], [y1, y2], [y2, y3]]
+        zs = [[z0, z1], [z1, z2], [z2, z3]]
+
+        for i, (X0, X1) in enumerate(xs):
+            for j, (Y0, Y1) in enumerate(ys):
+                for k, (Z0, Z1) in enumerate(zs):
+                    if i == 1 and j == 1 and k == 1:
+                        self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use the material given for the new row
+                    else:
+                        self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=ROW.MAT(row=row)) # use the material of the original row for the other rows
+        
+        self.delete(index=ROW.RID(row=row), mat=mat)
+
+
+
     
 
     def __repr__(self) -> str:

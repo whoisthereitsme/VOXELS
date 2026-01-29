@@ -1,4 +1,5 @@
 from __future__ import annotations
+import stat
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     pass
@@ -10,7 +11,7 @@ from numpy.typing import NDArray
 
 
 from utils.types import SIZE, POS
-from world.materials import Material
+from world.materials import Material, Materials
 
 
 
@@ -37,30 +38,30 @@ class ROW:
 
 
     # POSITIONS (MIN) — stored in row 0
-    X0 = (0, 0)
-    Y0 = (0, 1)
-    Z0 = (0, 2)
+    IDS_X0 = (0, 0)
+    IDS_Y0 = (0, 1)
+    IDS_Z0 = (0, 2)
 
     # POSITIONS (MAX) — stored in row 1
-    X1 = (1, 0)
-    Y1 = (1, 1)
-    Z1 = (1, 2)
+    IDS_X1 = (1, 0)
+    IDS_Y1 = (1, 1)
+    IDS_Z1 = (1, 2)
 
     # DIMENSIONS — stored in row 2
-    DX = (2, 0)
-    DY = (2, 1)
-    DZ = (2, 2)
+    IDS_DX = (2, 0)
+    IDS_DY = (2, 1)
+    IDS_DZ = (2, 2)
 
     # METADATA — stored in row 3
-    ID    = (3, 0)
-    MAT   = (3, 1)
-    FLAGS = (3, 2)
+    IDS_ID    = (3, 0)
+    IDS_MAT   = (3, 1)
+    IDS_FLAGS = (3, 2)
 
-    DIRTY        = DTYPE(1 << 0)
-    ALIVE        = DTYPE(1 << 1)
-    SOLID        = DTYPE(1 << 2)
-    DESTRUCTABLE = DTYPE(1 << 3)
-    VISIBLE      = DTYPE(1 << 4)
+    ENCODE_DIRTY        = DTYPE(1 << 0)
+    ENCODE_ALIVE        = DTYPE(1 << 1)
+    ENCODE_SOLID        = DTYPE(1 << 2)
+    ENCODE_DESTRUCTABLE = DTYPE(1 << 3)
+    ENCODE_VISIBLE      = DTYPE(1 << 4)
 
     SENTINEL = np.iinfo(DTYPE).max
     ARRAY: NDArray[DTYPE] = np.zeros(SHAPE, dtype=DTYPE)
@@ -69,24 +70,42 @@ class ROW:
             ARRAY[i, j] = SENTINEL  # initialize all to -1 -> invalid
     _ID = 0
     
-    @staticmethod
+    @staticmethod # get min position (x0, y0, z0)   
     def P0(row:NDArray[DTYPE]=None) -> POS:
-        return (int(row[*ROW.X0]), int(row[*ROW.Y0]), int(row[*ROW.Z0]))
+        return (int(row[*ROW.IDS_X0]), int(row[*ROW.IDS_Y0]), int(row[*ROW.IDS_Z0]))
     
-    @staticmethod
+    @staticmethod # get max position (x1, y1, z1)
     def P1(row:NDArray[DTYPE]=None) -> POS:
-        return (int(row[*ROW.X1]), int(row[*ROW.Y1]), int(row[*ROW.Z1]))
+        return (int(row[*ROW.IDS_X1]), int(row[*ROW.IDS_Y1]), int(row[*ROW.IDS_Z1]))
     
-    @staticmethod
+    @staticmethod # get size (dx, dy, dz)
     def SIZE(row:NDArray[DTYPE]=None) -> SIZE:
-        return (int(row[*ROW.DX]), int(row[*ROW.DY]), int(row[*ROW.DZ]))
+        return (int(row[*ROW.IDS_DX]), int(row[*ROW.IDS_DY]), int(row[*ROW.IDS_DZ]))
     
-    @staticmethod
+    @staticmethod # get material id
+    def MID(row:NDArray[DTYPE]=None) -> int:
+        return int(row[*ROW.IDS_MAT])
+    
+    @staticmethod # get meterial string name
+    def MAT(row:NDArray[DTYPE]=None) -> str:
+        return Materials.id2name[ROW.MID(row=row)]
+    
+    @staticmethod # get row id
+    def RID(row:NDArray[DTYPE]=None) -> int:
+        return int(row[*ROW.IDS_ID])
+    
+    @staticmethod # get flags
+    def FLAGS(row:NDArray[DTYPE]=None) -> tuple[bool, bool, bool, bool, bool]:
+        flags: int = int(row[*ROW.IDS_FLAGS])
+        dirty, alive, solid, destr, visib = ROW.DECODE(flags=flags)
+        return (dirty, alive, solid, destr, visib)
+    
+    @staticmethod # get volume (dx * dy * dz)
     def VOLUME(row:NDArray[DTYPE]=None) -> int:
         dx, dy, dz = ROW.SIZE(row=row)
         return dx * dy * dz
 
-    @staticmethod
+    @staticmethod # make a copy of the template array
     def COPY() -> NDArray[DTYPE]:
         return np.copy(ROW.ARRAY)
     
@@ -113,21 +132,27 @@ class ROW:
     @staticmethod
     def CONTAINS(row: NDArray[DTYPE], pos: POS) -> bool:
         x, y, z = pos
+        x0, y0, z0 = ROW.P0(row=row)
+        x1, y1, z1 = ROW.P1(row=row)
         return (
-            int(row[*ROW.X0]) <= x < int(row[*ROW.X1]) and
-            int(row[*ROW.Y0]) <= y < int(row[*ROW.Y1]) and
-            int(row[*ROW.Z0]) <= z < int(row[*ROW.Z1])
+            (x0 <= x < x1) and
+            (y0 <= y < y1) and
+            (z0 <= z < z1)
         )
     
     @staticmethod
     def MERGE(row0: NDArray[DTYPE]=None, row1: NDArray[DTYPE]=None) -> tuple[bool, bool, bool]:
-        if row0[*ROW.MAT] != row1[*ROW.MAT]:
+        if row0[*ROW.IDS_MAT] != row1[*ROW.IDS_MAT]:
             return (False, False, False)
 
-        p00 = (row0[*ROW.X0], row0[*ROW.Y0], row0[*ROW.Z0])
-        p01 = (row0[*ROW.X1], row0[*ROW.Y1], row0[*ROW.Z1])
-        p10 = (row1[*ROW.X0], row1[*ROW.Y0], row1[*ROW.Z0])
-        p11 = (row1[*ROW.X1], row1[*ROW.Y1], row1[*ROW.Z1])
+        x0a, y0a, z0a = ROW.P0(row=row0)
+        x1a, y1a, z1a = ROW.P1(row=row0)
+        x0b, y0b, z0b = ROW.P0(row=row1)
+        x1b, y1b, z1b = ROW.P1(row=row1)
+        p00 = (x0a, y0a, z0a)
+        p01 = (x1a, y1a, z1a)
+        p10 = (x0b, y0b, z0b)
+        p11 = (x1b, y1b, z1b)
 
         def overlap(a0:int=None, a1:int=None, b0:int=None, b1:int=None) -> bool: return a0 < b1 and b0 < a1
         def touches(a0:int=None, a1:int=None, b0:int=None, b1:int=None) -> bool: return a1 == b0 or b1 == a0
@@ -142,70 +167,37 @@ class ROW:
                 touching[i] = True
             else:
                 return (False, False, False)  # separated on this axis
-
-        # mergeable ⇔ exactly one touching axis and two overlapping axes
+            
         if sum(touching) == 1 and sum(overlaps) == 2:
             return tuple(touching)  # (x_touch, y_touch, z_touch)
 
         return (False, False, False)
-                
-
-    @staticmethod
-    def new(p0:POS=None, p1:POS=None, mat:str=None, rid:int=None, dirty:bool=True, alive:bool=True) -> NDArray[DTYPE]:
-        p0, p1 = ROW.SORT(p0=ROW.CLIP(pos=p0), p1=ROW.CLIP(pos=p1))
-        mat: Material = Material(name=mat)
-        flags: int = ROW.encode(dirty=dirty, alive=alive, solid=mat.issolid(), destructable=not mat.isindestructible(), visible=not mat.isinvisible())
-        
-        copy: NDArray[ROW.DTYPE] = ROW.COPY()
-
-        # POS0
-        copy[*ROW.X0]    = np.uint64(p0[0])
-        copy[*ROW.Y0]    = np.uint64(p0[1])
-        copy[*ROW.Z0]    = np.uint64(p0[2])
-        # POS1
-        copy[*ROW.X1]    = np.uint64(p1[0])
-        copy[*ROW.Y1]    = np.uint64(p1[1])
-        copy[*ROW.Z1]    = np.uint64(p1[2])
-        # SIZE
-        copy[*ROW.DX]    = np.uint64(p1[0] - p0[0])
-        copy[*ROW.DY]    = np.uint64(p1[1] - p0[1])
-        copy[*ROW.DZ]    = np.uint64(p1[2] - p0[2])
-        # METADATA
-        copy[*ROW.ID]    = np.uint64(rid)       # stores now the row index within material array instead of global unique id
-        copy[*ROW.MAT]   = np.uint64(mat.id)
-        copy[*ROW.FLAGS] = np.uint64(flags)
-
-        if any(v < 0 for v in (copy[*ROW.DX], copy[*ROW.DY], copy[*ROW.DZ])):
-            raise ValueError("p1 must be greater than or equal to p0 on all axes")
-        if any(v < 0 for v in (copy[*ROW.X0], copy[*ROW.Y0], copy[*ROW.Z0])):
-            raise ValueError("positions must be non-negative")
-        return copy
     
+
     @staticmethod
-    def encode(dirty:bool=None, alive:bool=None, solid:bool=None, destructable:bool=None, visible:bool=None) -> int:
+    def ENCODE(dirty:bool=None, alive:bool=None, solid:bool=None, destructable:bool=None, visible:bool=None) -> int:
         f: int = 0
         if dirty:
-            f |= int(ROW.DIRTY)
+            f |= int(ROW.ENCODE_DIRTY)
         if alive:
-            f |= int(ROW.ALIVE)
+            f |= int(ROW.ENCODE_ALIVE)
         if solid:
-            f |= int(ROW.SOLID)
+            f |= int(ROW.ENCODE_SOLID)
         if destructable:
-            f |= int(ROW.DESTRUCTABLE)
+            f |= int(ROW.ENCODE_DESTRUCTABLE)
         if visible:
-            f |= int(ROW.VISIBLE)
+            f |= int(ROW.ENCODE_VISIBLE)
         return f
     
     @staticmethod
-    def decode(flags) -> tuple[bool, bool, bool, bool, bool]:
+    def DECODE(flags) -> tuple[bool, bool, bool, bool, bool]:
         f: int = int(flags)
 
-        dirty = (f & int(ROW.DIRTY)) != 0
-        alive = (f & int(ROW.ALIVE)) != 0
-        solid = (f & int(ROW.SOLID)) != 0
-        destr = (f & int(ROW.DESTRUCTABLE)) != 0
-        visib = (f & int(ROW.VISIBLE)) != 0
-
+        dirty = (f & int(ROW.ENCODE_DIRTY)) != 0
+        alive = (f & int(ROW.ENCODE_ALIVE)) != 0
+        solid = (f & int(ROW.ENCODE_SOLID)) != 0
+        destr = (f & int(ROW.ENCODE_DESTRUCTABLE)) != 0
+        visib = (f & int(ROW.ENCODE_VISIBLE)) != 0
         return dirty, alive, solid, destr, visib
 
 
@@ -214,3 +206,38 @@ class ROW:
 
 
 
+
+                
+
+    @staticmethod
+    def new(p0:POS=None, p1:POS=None, mat:str=None, rid:int=None, dirty:bool=True, alive:bool=True) -> NDArray[DTYPE]:
+        p0, p1 = ROW.SORT(p0=ROW.CLIP(pos=p0), p1=ROW.CLIP(pos=p1))
+        mat: Material = Material(name=mat)
+        flags: int = ROW.ENCODE(dirty=dirty, alive=alive, solid=mat.issolid(), destructable=not mat.isindestructible(), visible=not mat.isinvisible())
+        
+        copy: NDArray[ROW.DTYPE] = ROW.COPY()
+
+        # POS0
+        copy[*ROW.IDS_X0]    = np.uint64(p0[0])
+        copy[*ROW.IDS_Y0]    = np.uint64(p0[1])
+        copy[*ROW.IDS_Z0]    = np.uint64(p0[2])
+        # POS1
+        copy[*ROW.IDS_X1]    = np.uint64(p1[0])
+        copy[*ROW.IDS_Y1]    = np.uint64(p1[1])
+        copy[*ROW.IDS_Z1]    = np.uint64(p1[2])
+        # SIZE
+        copy[*ROW.IDS_DX]    = np.uint64(p1[0] - p0[0])
+        copy[*ROW.IDS_DY]    = np.uint64(p1[1] - p0[1])
+        copy[*ROW.IDS_DZ]    = np.uint64(p1[2] - p0[2])
+        # METADATA
+        copy[*ROW.IDS_ID]    = np.uint64(rid)       # stores now the row index within material array instead of global unique id
+        copy[*ROW.IDS_MAT]   = np.uint64(mat.id)
+        copy[*ROW.IDS_FLAGS] = np.uint64(flags)
+
+        if any(v < 0 for v in (copy[*ROW.IDS_DX], copy[*ROW.IDS_DY], copy[*ROW.IDS_DZ])):
+            raise ValueError("p1 must be greater than or equal to p0 on all axes")
+        if any(v < 0 for v in (copy[*ROW.IDS_X0], copy[*ROW.IDS_Y0], copy[*ROW.IDS_Z0])):
+            raise ValueError("positions must be non-negative")
+        return copy
+    
+    

@@ -63,10 +63,7 @@ class GitHub:
     def publish(self) -> None:
         t0 = time.perf_counter()
         if not self.token:
-            raise SystemExit(
-                f"Missing environment variable GITHUB_TOKEN.\n"
-                f"Create a fine-grained PAT (Contents: read+write) for repo {self.owner}/{self.repo}."
-            )
+            raise SystemExit(f"Missing environment variable GITHUB_TOKEN.\n", f"Create a fine-grained PAT (Contents: read+write) for repo {self.owner}/{self.repo}.")
 
         if not self.root.exists() or not self.root.is_dir():
             raise SystemExit(f"root does not exist or is not a directory: {self.root}")
@@ -85,9 +82,6 @@ class GitHub:
         dt = time.perf_counter() - t0
         self._log(f"[GITHUB] done: 1 commit, {len(jobs)} files, elapsed {dt:.2f}s. files/sec: {len(jobs)/dt:.1f}")
 
-    # -----------------------------
-    # File enumeration / filters
-    # -----------------------------
     def _build_jobs(self) -> list[FileJob]:
         files = sorted(self._iter_project_files(self.root), key=lambda p: str(p).lower())
         return [FileJob(p, p.relative_to(self.root).as_posix()) for p in files]
