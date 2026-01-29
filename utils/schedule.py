@@ -44,10 +44,6 @@ class Schedule:
             self._running = False
             self._worker = None
 
-    # --------------------
-    # Scheduling API
-    # --------------------
-
     def schedule(self, ns: int=None, fn: Callable[..., Any]=None, *args: Any, **kwargs: Any) -> Handler:
         with self._lock:
             self._seq += 1
@@ -93,14 +89,13 @@ class Schedule:
                 due = ev.due_ns
 
             # 2) Wait until deadline (no lock held)
-            self._timer.wait_until_ns(due)
+            self._timer.waitns(due)
 
             # 3) Pop-and-execute if still valid
             with self._lock:
                 if self._stop:
                     return
 
-                # Head may have changed; re-check
                 if not self._pq:
                     continue
                 if self._pq[0] is not ev:
@@ -110,7 +105,6 @@ class Schedule:
                 if ev.cancelled:
                     continue
 
-            # Execute callback outside lock
             try:
                 ev.callback(*ev.args, **ev.kwargs)
             except Exception as e:

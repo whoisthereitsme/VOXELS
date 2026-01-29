@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T06:03:55.037009
+#Time when generated: 2026-01-29T07:48:23.459795
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -1033,10 +1033,6 @@ class Schedule:
             self._running = False
             self._worker = None
 
-    # --------------------
-    # Scheduling API
-    # --------------------
-
     def schedule(self, ns: int=None, fn: Callable[..., Any]=None, *args: Any, **kwargs: Any) -> Handler:
         with self._lock:
             self._seq += 1
@@ -1082,14 +1078,13 @@ class Schedule:
                 due = ev.due_ns
 
             # 2) Wait until deadline (no lock held)
-            self._timer.wait_until_ns(due)
+            self._timer.waitns(due)
 
             # 3) Pop-and-execute if still valid
             with self._lock:
                 if self._stop:
                     return
 
-                # Head may have changed; re-check
                 if not self._pq:
                     continue
                 if self._pq[0] is not ev:
@@ -1099,7 +1094,6 @@ class Schedule:
                 if ev.cancelled:
                     continue
 
-            # Execute callback outside lock
             try:
                 ev.callback(*ev.args, **ev.kwargs)
             except Exception as e:
@@ -1741,9 +1735,9 @@ rows = ROWS()
 # FILE 14/14: world/rows.py (END)
 ################################################################################
 
-# Total lines in bundle: 1743
+# Total lines in bundle: 1737
 # Total files in bundle: 14
-# Generated at the time: 2026-01-29T06:03:55.040063
+# Generated at the time: 2026-01-29T07:48:23.462460
 --- END OF FILE ---
 
 ################################################################################
@@ -1754,17 +1748,17 @@ rows = ROWS()
 Root: C:\VOXELS
 ### OUTPUT START ###
 
-3D grid partition built: lap 3: 5.061032 seconds, total 5.087808 seconds
-All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 197.59 lookups/second
-Random CONTAINS checks completed in: lap 4: 0.414595 seconds, total 5.502403 seconds
+3D grid partition built: lap 3: 5.162658 seconds, total 5.20218 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 193.70 lookups/second
+Random CONTAINS checks completed in: lap 4: 0.374444 seconds, total 5.576624 seconds
 Now deleting all rows...
-All 10000 rows deleted in: lap 5: 0.331506 seconds, total 5.833908 seconds
+All 10000 rows deleted in: lap 5: 0.378254 seconds, total 5.954879 seconds
 Rebuilding rows after deletion...
-second time 3D grid partition built: lap 6: 0.521054 seconds, total 6.354963 seconds
-All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1919.19 lookups/second
-Second random CONTAINS checks completed in: lap 7: 0.183385 seconds, total 6.538348 seconds
+second time 3D grid partition built: lap 6: 0.530185 seconds, total 6.485063 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1886.13 lookups/second
+Second random CONTAINS checks completed in: lap 7: 0.171139 seconds, total 6.656203 seconds
 ALL TESTS PASSED SUCCESSFULLY!
-main.py: executed in: lap 8: 0.000164 seconds, total 6.538512 seconds
+main.py: executed in: lap 8: 0.000169 seconds, total 6.656372 seconds
 
 ### OUTPUT END ###
 ################################################################################
