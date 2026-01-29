@@ -1,0 +1,1790 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PROJECT BUNDLE — 2026-01-29T04:53:51.531122</title>
+  <style>
+    html, body { margin: 0; padding: 0; }
+    body { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    pre { margin: 0; padding: 12px; white-space: pre; overflow: auto; }
+  </style>
+</head>
+<body>
+<pre>#Time when generated: 2026-01-29T04:53:51.531122
+
+### PROJECT BUNDLE ###
+Root: C:\VOXELS
+Files included: 14
+
+
+################################################################################
+# FILE 1/14: __init__.py (START)
+################################################################################
+
+import utils
+import world
+import bundle
+
+__all__ = world.__all__ + utils.__all__ + bundle.__all__
+
+
+################################################################################
+# FILE 1/14: __init__.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 2/14: __main__.py (START)
+################################################################################
+
+from main import main
+
+if __name__ == "__main__":
+    main()
+
+################################################################################
+# FILE 2/14: __main__.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 3/14: main.py (START)
+################################################################################
+
+
+from utils import *
+from world import *
+from bundle import *
+
+
+
+
+
+def main() -&gt; None:
+    rows = ROWS()
+
+    rows.delete(index=0, mat="STONE")
+
+    cell = 20          # cube edge length
+    nx = 40            # number of cells in X  -&gt; world X size = nx*cell
+    ny = 40            # number of cells in Y
+    nz = 40            # number of cells in Z
+    n = nx * ny * nz  # total number of cells
+
+    timer.lap()
+    for ix in range(nx):
+        x0 = ix * cell
+        x1 = x0 + cell
+        for iy in range(ny):
+            y0 = iy * cell
+            y1 = y0 + cell
+            for iz in range(nz):
+                z0 = iz * cell
+                z1 = z0 + cell
+                rows.append(p0=(x0, y0, z0), p1=(x1, y1, z1), mat="STONE")
+                
+
+    timer.print(msg="3D grid partition built")
+
+    max_x = nx * cell - 1
+    max_y = ny * cell - 1
+    max_z = nz * cell - 1
+
+    succes = 0
+    fails = 0
+    for _ in range(1000):
+        try:
+            pos = (
+                random.randint(0, max_x),
+                random.randint(0, max_y),
+                random.randint(0, max_z),
+            )
+            mat, rid, row = rows.find(pos=pos)
+            assert ROW.CONTAINS(row=row, pos=pos), f"pos={pos} not contained by found row (mat={mat}, rid={rid})"
+            succes += 1
+        except:
+            fails += 1
+            pass
+
+    print("All random CONTAINS checks passed.", f"Successes: {succes}, Fails: {fails} is a succes percentage of {100-fails/(succes+fails)*100:.2f}% adn per lookup {(succes+fails)/timer.delta[-1]:.2f} lookups/second")
+    timer.print(msg="Random CONTAINS checks completed in")
+
+    print("Now deleting all rows...")
+    for i in range(10000):
+        rows.delete(index=n-1-i, mat="STONE")
+    timer.print(msg="All 10000 rows deleted in")
+
+    # and now test wiht a new set adn see if it still works
+    print("Rebuilding rows after deletion...")
+    cell = 40          # double size
+    nx = 20            # half number of cells in X  -&gt; world X size = nx*cell
+    ny = 20            # half number of cells in Y
+    nz = 20            # half number of cells in Z
+    n = nx * ny * nz  # total number of cells (1/8th number of previous)
+
+    for ix in range(nx):
+        x0 = ix * cell
+        x1 = x0 + cell
+        for iy in range(ny):
+            y0 = iy * cell
+            y1 = y0 + cell
+            for iz in range(nz):
+                z0 = iz * cell
+                z1 = z0 + cell
+                rows.append(p0=(x0, y0, z0), p1=(x1, y1, z1), mat="STONE")
+                
+
+    timer.print(msg="second time 3D grid partition built")
+    succes = 0
+    fails = 0
+    for _ in range(1000):
+        try:
+            pos = (
+                random.randint(0, max_x),
+                random.randint(0, max_y),
+                random.randint(0, max_z),
+            )
+            mat, rid, row = rows.find(pos=pos)
+            assert ROW.CONTAINS(row=row, pos=pos), f"pos={pos} not contained by found row (mat={mat}, rid={rid})"
+            succes += 1
+        except:
+            fails += 1
+            pass
+
+    print("All random CONTAINS checks passed.", f"Successes: {succes}, Fails: {fails} is a succes percentage of {100-fails/(succes+fails)*100:.2f}% adn per lookup {(succes+fails)/timer.delta[-1]:.2f} lookups/second")
+    timer.print(msg="Second random CONTAINS checks completed in")
+
+    if succes == 1000 and fails == 0:
+        print("ALL TESTS PASSED SUCCESSFULLY!")
+
+
+
+
+
+
+
+
+
+if __name__ == "__main__":
+    timer.lap()
+    b = Bundle()
+    try:
+        main()
+        timer.print(msg="main.py: executed in")
+    except Exception:
+        traceback.print_exc()
+    finally:
+        b.stop()   
+
+
+
+
+
+
+################################################################################
+# FILE 3/14: main.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 4/14: utils/__init__.py (START)
+################################################################################
+
+from .includes import *
+from .includes import __all__ as inc
+
+
+__all__ = [
+] + inc
+
+################################################################################
+# FILE 4/14: utils/__init__.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 5/14: utils/bvh.py (START)
+################################################################################
+
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+    from world.rows import ROWS
+    from utils.types import POS
+
+from world.row import ROW
+
+
+
+
+
+class BVH:
+    __slots__ = (
+        "rows",
+        "root",
+        "left",
+        "right",
+        "parent",
+        # AABB as 6 parallel lists (SoA)
+        "xmin",
+        "ymin",
+        "zmin",
+        "xmax",
+        "ymax",
+        "zmax",
+        # leaf as 2 parallel lists
+        "leaf_mid",
+        "leaf_rid",
+        # fast delete index
+        "leaf_index",
+    )
+
+    def __init__(self, rows: ROWS) -&gt; None:
+        self.rows = rows
+        self.root: int = -1
+
+        self.left: list[int] = []
+        self.right: list[int] = []
+        self.parent: list[int] = []
+
+        self.xmin: list[int] = []
+        self.ymin: list[int] = []
+        self.zmin: list[int] = []
+        self.xmax: list[int] = []
+        self.ymax: list[int] = []
+        self.zmax: list[int] = []
+
+        self.leaf_mid: list[int] = []
+        self.leaf_rid: list[int] = []
+
+        # (mid, rid) -&gt; node index
+        self.leaf_index: dict[tuple[int, int], int] = {}
+
+    # ------------------------------------------------------------------
+    # node alloc
+    # ------------------------------------------------------------------
+
+    def _new_node(
+        self,
+        xmin: int,
+        ymin: int,
+        zmin: int,
+        xmax: int,
+        ymax: int,
+        zmax: int,
+        leaf_mid: int = -1,
+        leaf_rid: int = -1,
+        left: int = -1,
+        right: int = -1,
+        parent: int = -1,
+    ) -&gt; int:
+        i = len(self.left)
+
+        self.left.append(left)
+        self.right.append(right)
+        self.parent.append(parent)
+
+        self.xmin.append(xmin)
+        self.ymin.append(ymin)
+        self.zmin.append(zmin)
+        self.xmax.append(xmax)
+        self.ymax.append(ymax)
+        self.zmax.append(zmax)
+
+        self.leaf_mid.append(leaf_mid)
+        self.leaf_rid.append(leaf_rid)
+        return i
+
+    # ------------------------------------------------------------------
+    # helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _volume(xmin: int, ymin: int, zmin: int, xmax: int, ymax: int, zmax: int) -&gt; int:
+        return (xmax - xmin) * (ymax - ymin) * (zmax - zmin)
+
+    def _merged_volume_with_node(
+        self,
+        node: int,
+        bxmin: int,
+        bymin: int,
+        bzmin: int,
+        bxmax: int,
+        bymax: int,
+        bzmax: int,
+    ) -&gt; int:
+        axmin = self.xmin[node]
+        aymin = self.ymin[node]
+        azmin = self.zmin[node]
+        axmax = self.xmax[node]
+        aymax = self.ymax[node]
+        azmax = self.zmax[node]
+
+        mxmin = axmin if axmin &lt; bxmin else bxmin
+        mymin = aymin if aymin &lt; bymin else bymin
+        mzmin = azmin if azmin &lt; bzmin else bzmin
+        mxmax = axmax if axmax &gt; bxmax else bxmax
+        mymax = aymax if aymax &gt; bymax else bymax
+        mzmax = azmax if azmax &gt; bzmax else bzmax
+
+        return self._volume(mxmin, mymin, mzmin, mxmax, mymax, mzmax)
+
+    def _fix_upwards(self, node: int) -&gt; None:
+        while node != -1:
+            l = self.left[node]
+            r = self.right[node]
+
+            self.xmin[node] = self.xmin[l] if self.xmin[l] &lt; self.xmin[r] else self.xmin[r]
+            self.ymin[node] = self.ymin[l] if self.ymin[l] &lt; self.ymin[r] else self.ymin[r]
+            self.zmin[node] = self.zmin[l] if self.zmin[l] &lt; self.zmin[r] else self.zmin[r]
+            self.xmax[node] = self.xmax[l] if self.xmax[l] &gt; self.xmax[r] else self.xmax[r]
+            self.ymax[node] = self.ymax[l] if self.ymax[l] &gt; self.ymax[r] else self.ymax[r]
+            self.zmax[node] = self.zmax[l] if self.zmax[l] &gt; self.zmax[r] else self.zmax[r]
+
+            node = self.parent[node]
+
+    # ------------------------------------------------------------------
+    # insertion
+    # ------------------------------------------------------------------
+
+    def insert(
+        self,
+        mat: str | None = None,
+        rid: int | None = None,
+        row: "NDArray[ROW.DTYPE] | None" = None,
+    ) -&gt; None:
+        if row is None:
+            mid = self.rows.mats.name2idx[mat]
+            row = self.rows.array[mid][rid]
+        else:
+            mat_id = int(row[*ROW.MAT])
+            mid = self.rows.mats.id2idx[mat_id]
+            rid = int(row[*ROW.ID])
+
+        xmin, ymin, zmin = ROW.P0(row)
+        xmax, ymax, zmax = ROW.P1(row)
+
+        leaf_node = self._new_node(
+            xmin, ymin, zmin,
+            xmax, ymax, zmax,
+            leaf_mid=mid,
+            leaf_rid=rid,
+        )
+
+        self.leaf_index[(mid, rid)] = leaf_node
+
+        if self.root == -1:
+            self.root = leaf_node
+            return
+
+        self.root = self._insert_node(self.root, leaf_node)
+
+    def _insert_node(self, root: int, leaf_node: int) -&gt; int:
+        bxmin = self.xmin[leaf_node]; bymin = self.ymin[leaf_node]; bzmin = self.zmin[leaf_node]
+        bxmax = self.xmax[leaf_node]; bymax = self.ymax[leaf_node]; bzmax = self.zmax[leaf_node]
+
+        node = root
+        while self.leaf_mid[node] == -1:
+            l = self.left[node]
+            r = self.right[node]
+            node = (
+                l if self._merged_volume_with_node(l, bxmin, bymin, bzmin, bxmax, bymax, bzmax)
+                &lt; self._merged_volume_with_node(r, bxmin, bymin, bzmin, bxmax, bymax, bzmax)
+                else r
+            )
+
+        old_leaf = node
+        parent = self.parent[old_leaf]
+
+        axmin = self.xmin[old_leaf]; aymin = self.ymin[old_leaf]; azmin = self.zmin[old_leaf]
+        axmax = self.xmax[old_leaf]; aymax = self.ymax[old_leaf]; azmax = self.zmax[old_leaf]
+
+        new_parent = self._new_node(
+            axmin if axmin &lt; bxmin else bxmin,
+            aymin if aymin &lt; bymin else bymin,
+            azmin if azmin &lt; bzmin else bzmin,
+            axmax if axmax &gt; bxmax else bxmax,
+            aymax if aymax &gt; bymax else bymax,
+            azmax if azmax &gt; bzmax else bzmax,
+        )
+
+        self.left[new_parent] = old_leaf
+        self.right[new_parent] = leaf_node
+        self.parent[old_leaf] = new_parent
+        self.parent[leaf_node] = new_parent
+
+        if parent == -1:
+            return new_parent
+
+        if self.left[parent] == old_leaf:
+            self.left[parent] = new_parent
+        else:
+            self.right[parent] = new_parent
+
+        self.parent[new_parent] = parent
+        self._fix_upwards(parent)
+        return root
+
+    # ------------------------------------------------------------------
+    # removal (FAST)
+    # ------------------------------------------------------------------
+
+    def remove(
+        self,
+        mat: str | None = None,
+        rid: int | None = None,
+        row: "NDArray[ROW.DTYPE] | None" = None,
+    ) -&gt; None:
+        if row is not None:
+            mat_id = int(row[*ROW.MAT])
+            mid = self.rows.mats.id2idx[mat_id]
+            rid = int(row[*ROW.ID])
+        else:
+            mid = self.rows.mats.name2idx[mat]
+
+        try:
+            found = self.leaf_index.pop((mid, rid))
+        except KeyError:
+            raise KeyError("row not found in BVH")
+
+        parent = self.parent[found]
+        if parent == -1:
+            self.root = -1
+            return
+
+        sibling = self.right[parent] if self.left[parent] == found else self.left[parent]
+        grand = self.parent[parent]
+
+        if grand == -1:
+            self.root = sibling
+            self.parent[sibling] = -1
+        else:
+            if self.left[grand] == parent:
+                self.left[grand] = sibling
+            else:
+                self.right[grand] = sibling
+            self.parent[sibling] = grand
+            self._fix_upwards(grand)
+
+    # ------------------------------------------------------------------
+    # find
+    # ------------------------------------------------------------------
+
+    def find(self, pos: "POS") -&gt; tuple[str, int, "NDArray[ROW.DTYPE]"]:
+        if self.root == -1:
+            raise LookupError("empty BVH")
+
+        x, y, z = pos
+        stack = [self.root]
+
+        xminL = self.xmin; yminL = self.ymin; zminL = self.zmin
+        xmaxL = self.xmax; ymaxL = self.ymax; zmaxL = self.zmax
+        leftL = self.left; rightL = self.right
+        leaf_midL = self.leaf_mid; leaf_ridL = self.leaf_rid
+        rows_arr = self.rows.array
+        idx2name = self.rows.mats.idx2name
+        contains = ROW.CONTAINS
+
+        while stack:
+            n = stack.pop()
+            if n == -1:
+                continue
+
+            if not (xminL[n] &lt;= x &lt; xmaxL[n] and yminL[n] &lt;= y &lt; ymaxL[n] and zminL[n] &lt;= z &lt; zmaxL[n]):
+                continue
+
+            mid = leaf_midL[n]
+            if mid != -1:
+                rid = leaf_ridL[n]
+                row = rows_arr[mid][rid]
+                if contains(row=row, pos=pos):
+                    return idx2name[mid], rid, row
+                continue
+
+            l = leftL[n]
+            r = rightL[n]
+
+            if l != -1 and (xminL[l] &lt;= x &lt; xmaxL[l] and yminL[l] &lt;= y &lt; ymaxL[l] and zminL[l] &lt;= z &lt; zmaxL[l]):
+                stack.append(l)
+            if r != -1 and (xminL[r] &lt;= x &lt; xmaxL[r] and yminL[r] &lt;= y &lt; ymaxL[r] and zminL[r] &lt;= z &lt; zmaxL[r]):
+                stack.append(r)
+
+        raise LookupError(
+            "BVH.find failed: point not found (partition invariant violated or BVH not updated)"
+        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class BVH_:
+    __slots__ = (
+        "rows",
+        "root",
+        "left",
+        "right",
+        "parent",
+        # AABB as 6 parallel lists (SoA)
+        "xmin",
+        "ymin",
+        "zmin",
+        "xmax",
+        "ymax",
+        "zmax",
+        # leaf as 2 parallel lists
+        "leaf_mid",
+        "leaf_rid",
+    )
+
+    def __init__(self, rows: ROWS) -&gt; None:
+        self.rows = rows
+        self.root: int = -1
+
+        self.left: list[int] = []
+        self.right: list[int] = []
+        self.parent: list[int] = []
+
+        self.xmin: list[int] = []
+        self.ymin: list[int] = []
+        self.zmin: list[int] = []
+        self.xmax: list[int] = []
+        self.ymax: list[int] = []
+        self.zmax: list[int] = []
+
+        self.leaf_mid: list[int] = []
+        self.leaf_rid: list[int] = []
+
+    # ------------------------------------------------------------------
+    # node alloc
+    # ------------------------------------------------------------------
+
+    def _new_node(
+        self,
+        xmin: int,
+        ymin: int,
+        zmin: int,
+        xmax: int,
+        ymax: int,
+        zmax: int,
+        leaf_mid: int = -1,
+        leaf_rid: int = -1,
+        left: int = -1,
+        right: int = -1,
+        parent: int = -1,
+    ) -&gt; int:
+        i = len(self.left)
+
+        self.left.append(left)
+        self.right.append(right)
+        self.parent.append(parent)
+
+        self.xmin.append(xmin)
+        self.ymin.append(ymin)
+        self.zmin.append(zmin)
+        self.xmax.append(xmax)
+        self.ymax.append(ymax)
+        self.zmax.append(zmax)
+
+        self.leaf_mid.append(leaf_mid)
+        self.leaf_rid.append(leaf_rid)
+        return i
+
+    # ------------------------------------------------------------------
+    # small geometry helpers (inlined patterns in hot code)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _volume(xmin: int, ymin: int, zmin: int, xmax: int, ymax: int, zmax: int) -&gt; int:
+        return (xmax - xmin) * (ymax - ymin) * (zmax - zmin)
+
+    def _merged_volume_with_node(
+        self,
+        node: int,
+        bxmin: int,
+        bymin: int,
+        bzmin: int,
+        bxmax: int,
+        bymax: int,
+        bzmax: int,
+    ) -&gt; int:
+        axmin = self.xmin[node]
+        aymin = self.ymin[node]
+        azmin = self.zmin[node]
+        axmax = self.xmax[node]
+        aymax = self.ymax[node]
+        azmax = self.zmax[node]
+
+        mxmin = axmin if axmin &lt; bxmin else bxmin
+        mymin = aymin if aymin &lt; bymin else bymin
+        mzmin = azmin if azmin &lt; bzmin else bzmin
+        mxmax = axmax if axmax &gt; bxmax else bxmax
+        mymax = aymax if aymax &gt; bymax else bymax
+        mzmax = azmax if azmax &gt; bzmax else bzmax
+
+        return self._volume(mxmin, mymin, mzmin, mxmax, mymax, mzmax)
+
+    def _fix_upwards(self, node: int) -&gt; None:
+        # Recompute AABBs up to root
+        while node != -1:
+            l = self.left[node]
+            r = self.right[node]
+
+            lxmin = self.xmin[l]; lymin = self.ymin[l]; lzmin = self.zmin[l]
+            lxmax = self.xmax[l]; lymax = self.ymax[l]; lzmax = self.zmax[l]
+            rxmin = self.xmin[r]; rymin = self.ymin[r]; rzmin = self.zmin[r]
+            rxmax = self.xmax[r]; rymax = self.ymax[r]; rzmax = self.zmax[r]
+
+            self.xmin[node] = lxmin if lxmin &lt; rxmin else rxmin
+            self.ymin[node] = lymin if lymin &lt; rymin else rymin
+            self.zmin[node] = lzmin if lzmin &lt; rzmin else rzmin
+            self.xmax[node] = lxmax if lxmax &gt; rxmax else rxmax
+            self.ymax[node] = lymax if lymax &gt; rymax else rymax
+            self.zmax[node] = lzmax if lzmax &gt; rzmax else rzmax
+
+            node = self.parent[node]
+
+    # ------------------------------------------------------------------
+    # insertion
+    # ------------------------------------------------------------------
+
+    def insert(
+        self,
+        mat: str | None = None,
+        rid: int | None = None,
+        row: "NDArray[ROW.DTYPE] | None" = None,
+    ) -&gt; None:
+        if row is None:
+            mid = self.rows.mats.name2idx[mat]
+            row = self.rows.array[mid][rid]
+        else:
+            mat_id = int(row[*ROW.MAT])
+            mid = self.rows.mats.id2idx[mat_id]
+            rid = int(row[*ROW.ID])
+
+        xmin, ymin, zmin = ROW.P0(row)
+        xmax, ymax, zmax = ROW.P1(row)
+
+        leaf_node = self._new_node(
+            xmin=xmin, ymin=ymin, zmin=zmin,
+            xmax=xmax, ymax=ymax, zmax=zmax,
+            leaf_mid=mid, leaf_rid=rid,
+        )
+
+        if self.root == -1:
+            self.root = leaf_node
+            return
+
+        self.root = self._insert_node(self.root, leaf_node)
+
+    def _insert_node(self, root: int, leaf_node: int) -&gt; int:
+        # Cache leaf AABB locally (hot)
+        bxmin = self.xmin[leaf_node]; bymin = self.ymin[leaf_node]; bzmin = self.zmin[leaf_node]
+        bxmax = self.xmax[leaf_node]; bymax = self.ymax[leaf_node]; bzmax = self.zmax[leaf_node]
+
+        node = root
+
+        # descend until leaf
+        while self.leaf_mid[node] == -1:
+            l = self.left[node]
+            r = self.right[node]
+
+            cost_left = self._merged_volume_with_node(l, bxmin, bymin, bzmin, bxmax, bymax, bzmax)
+            cost_right = self._merged_volume_with_node(r, bxmin, bymin, bzmin, bxmax, bymax, bzmax)
+
+            node = l if cost_left &lt; cost_right else r
+
+        # node is leaf → split
+        old_leaf = node
+        parent = self.parent[old_leaf]
+
+        # merged AABB of old_leaf and new leaf_node
+        axmin = self.xmin[old_leaf]; aymin = self.ymin[old_leaf]; azmin = self.zmin[old_leaf]
+        axmax = self.xmax[old_leaf]; aymax = self.ymax[old_leaf]; azmax = self.zmax[old_leaf]
+
+        mxmin = axmin if axmin &lt; bxmin else bxmin
+        mymin = aymin if aymin &lt; bymin else bymin
+        mzmin = azmin if azmin &lt; bzmin else bzmin
+        mxmax = axmax if axmax &gt; bxmax else bxmax
+        mymax = aymax if aymax &gt; bymax else bymax
+        mzmax = azmax if azmax &gt; bzmax else bzmax
+
+        new_parent = self._new_node(
+            xmin=mxmin, ymin=mymin, zmin=mzmin,
+            xmax=mxmax, ymax=mymax, zmax=mzmax,
+            leaf_mid=-1, leaf_rid=-1,
+        )
+
+        self.left[new_parent] = old_leaf
+        self.right[new_parent] = leaf_node
+        self.parent[old_leaf] = new_parent
+        self.parent[leaf_node] = new_parent
+
+        if parent == -1:
+            return new_parent
+
+        if self.left[parent] == old_leaf:
+            self.left[parent] = new_parent
+        else:
+            self.right[parent] = new_parent
+
+        self.parent[new_parent] = parent
+        self._fix_upwards(parent)
+        return root
+
+    # ------------------------------------------------------------------
+    # removal
+    # ------------------------------------------------------------------
+
+    def remove(
+        self,
+        mat: str | None = None,
+        rid: int | None = None,
+        row: "NDArray[ROW.DTYPE] | None" = None,
+    ) -&gt; None:
+        if row is not None:
+            mat_id = int(row[*ROW.MAT])
+            mid = self.rows.mats.id2idx[mat_id]
+            rid = int(row[*ROW.ID])
+        else:
+            mid = self.rows.mats.name2idx[mat]
+
+        if self.root == -1:
+            raise KeyError("row not found in BVH")
+
+        target_mid = mid
+        target_rid = rid
+
+        # find leaf
+        stack = [self.root]
+        found = -1
+        while stack:
+            n = stack.pop()
+            if n == -1:
+                continue
+
+            lm = self.leaf_mid[n]
+            if lm == target_mid and self.leaf_rid[n] == target_rid:
+                found = n
+                break
+
+            if lm == -1:  # internal
+                stack.append(self.left[n])
+                stack.append(self.right[n])
+
+        if found == -1:
+            raise KeyError("row not found in BVH")
+
+        parent = self.parent[found]
+        if parent == -1:
+            self.root = -1
+            return
+
+        sibling = self.right[parent] if self.left[parent] == found else self.left[parent]
+        grand = self.parent[parent]
+
+        if grand == -1:
+            self.root = sibling
+            self.parent[sibling] = -1
+        else:
+            if self.left[grand] == parent:
+                self.left[grand] = sibling
+            else:
+                self.right[grand] = sibling
+            self.parent[sibling] = grand
+            self._fix_upwards(grand)
+
+    # ------------------------------------------------------------------
+    # find
+    # ------------------------------------------------------------------
+
+    def find(self, pos: "POS") -&gt; tuple[str, int, "NDArray[ROW.DTYPE]"]:
+        if self.root == -1:
+            raise LookupError("empty BVH")
+
+        x, y, z = pos
+        stack = [self.root]
+
+        # local bindings (reduce attribute lookups in loop)
+        xminL = self.xmin; yminL = self.ymin; zminL = self.zmin
+        xmaxL = self.xmax; ymaxL = self.ymax; zmaxL = self.zmax
+        leftL = self.left; rightL = self.right
+        leaf_midL = self.leaf_mid; leaf_ridL = self.leaf_rid
+        rows_arr = self.rows.array
+        idx2name = self.rows.mats.idx2name
+
+        while stack:
+            n = stack.pop()
+            if n == -1:
+                continue
+
+            # inline AABB contains check (xmin &lt;= x &lt; xmax etc.)
+            if not (xminL[n] &lt;= x &lt; xmaxL[n] and yminL[n] &lt;= y &lt; ymaxL[n] and zminL[n] &lt;= z &lt; zmaxL[n]):
+                continue
+
+            mid = leaf_midL[n]
+
+            if mid != -1:
+                rid = leaf_ridL[n]
+                row = rows_arr[mid][rid]
+                if ROW.CONTAINS(row=row, pos=pos):
+                    return idx2name[mid], rid, row
+                continue
+
+            l = leftL[n]
+            r = rightL[n]
+
+            # push both children that might contain pos (overlap-safe)
+            if l != -1 and (xminL[l] &lt;= x &lt; xmaxL[l] and yminL[l] &lt;= y &lt; ymaxL[l] and zminL[l] &lt;= z &lt; zmaxL[l]):
+                stack.append(l)
+            if r != -1 and (xminL[r] &lt;= x &lt; xmaxL[r] and yminL[r] &lt;= y &lt; ymaxL[r] and zminL[r] &lt;= z &lt; zmaxL[r]):
+                stack.append(r)
+
+        raise LookupError(
+            "BVH.find failed: point not found (partition invariant violated or BVH not updated)"
+        )
+
+################################################################################
+# FILE 5/14: utils/bvh.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 6/14: utils/event.py (START)
+################################################################################
+
+from __future__ import annotations
+from typing import Any, Callable
+from dataclasses import dataclass, field
+from .event import Event
+from .schedule import Schedule
+
+
+
+@dataclass(order=True)
+class Event:
+    due_ns: int
+    seq: int
+    callback: Callable[..., Any] = field(compare=False)
+    args: tuple[Any, ...] = field(default_factory=tuple, compare=False)
+    kwargs: dict[str, Any] = field(default_factory=dict, compare=False)
+    cancelled: bool = field(default=False, compare=False)
+
+
+class Handler:
+    __slots__ = ("_scheduler", "_event")
+
+    def __init__(self, scheduler: "Schedule", event: Event) -&gt; None:
+        self._scheduler = scheduler
+        self._event = event
+
+    def cancel(self) -&gt; bool:
+        return self._scheduler.cancel(self)
+
+
+################################################################################
+# FILE 6/14: utils/event.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 7/14: utils/includes.py (START)
+################################################################################
+
+from __future__ import annotations  # MUST BE FIRST
+
+# EXCEPTION IMPORTS
+from .timer import Timer, time      # NON SORTED -&gt; HERE BECAUSE Timer IS USED IMMEDIATELY
+timer = Timer()
+
+# IMPORTS FROM STANDARD LIBRARY AND THIRD-PARTY LIBRARIES
+from typing import TYPE_CHECKING, Any, Iterator, TypeVar, Generic, Union, Tuple, List, Dict, Callable, Optional
+from pathlib import Path
+from numpy.typing import NDArray
+from PIL import Image, ImageDraw, ImageFont
+
+
+# SIMPLE IMPORTS
+import math
+import numpy as np
+import torch 
+import heapq
+import threading
+import json
+import time
+import pathlib
+import sys
+import os
+import random
+import shutil
+import datetime
+import bisect
+import pygame
+import moderngl
+import traceback
+
+
+
+
+# my own modules (utils)
+from .types import POS, SIZE
+
+
+# Exports
+__all__ = [
+    "math",
+    "time",
+    "np",
+    "NDArray",
+    "torch",
+    "TYPE_CHECKING",
+    "annotations",
+    "Any",
+    "Iterator",
+    "TypeVar",
+    "Generic",
+    "Union",
+    "Tuple",
+    "List",
+    "Dict",
+    "Callable",
+    "Optional",
+    "Image",
+    "ImageDraw",
+    "ImageFont",
+    "Timer",
+    "heapq",
+    "threading",
+    "json",
+    "Path",
+    "POS",
+    "SIZE",
+    "pathlib",
+    "sys",
+    "os",
+    "random",
+    "shutil",
+    "datetime",
+    "bisect",
+    "pygame",
+    "moderngl",
+    "timer", # include the instance timer -&gt; can be used as utils.timer
+    "traceback",
+]
+
+
+timer.print(msg=f"utils/includes.py: {len(__all__)} modules loaded in")
+timer.reset()
+
+################################################################################
+# FILE 7/14: utils/includes.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 8/14: utils/schedule.py (START)
+################################################################################
+
+import threading
+from typing import Any, Callable, Optional
+import heapq
+from .timer import Timer, now
+from .event import Event, Handler
+
+
+
+class Schedule:
+    def __init__(self) -&gt; None:
+        self._timer = Timer()
+
+        self._lock = threading.Lock()
+        self._cv = threading.Condition(self._lock)
+        self._pq: list[Event] = []
+        self._seq = 0
+
+        self._worker: Optional[threading.Thread] = None
+        self._stop = False
+        self._running = False
+
+        self.start()
+
+    def start(self) -&gt; None:
+        with self._lock:
+            if self._running:
+                return
+            self._stop = False
+            self._worker = threading.Thread(target=self._run, name="SchedulerWorker", daemon=True)
+            self._running = True
+            self._worker.start()
+
+    def stop(self) -&gt; None:
+        with self._lock:
+            if not self._running:
+                return
+            self._stop = True
+            self._cv.notify_all()
+
+        if self._worker:
+            self._worker.join(timeout=2.0)
+
+        with self._lock:
+            self._running = False
+            self._worker = None
+
+    # --------------------
+    # Scheduling API
+    # --------------------
+
+    def schedule(self, ns: int=None, fn: Callable[..., Any]=None, *args: Any, **kwargs: Any) -&gt; Handler:
+        with self._lock:
+            self._seq += 1
+            ev = Event(due_ns=ns, seq=self._seq, callback=fn, args=args, kwargs=kwargs)
+            heapq.heappush(self._pq, ev)
+            self._cv.notify_all()
+            return Handler(self, ev)
+
+    def new(self, seconds:float=None, fn:Callable[..., Any]=None, delay=False, *args: Any, **kwargs: Any) -&gt; Handler:
+        if delay==True:
+            ns = now() + int(seconds * 1e9)
+        if delay==False:
+            ns = int(seconds * 1e9)
+        return self.schedule(ns=ns, fn=fn, *args, **kwargs)
+    
+
+    def cancel(self, handle: Handler) -&gt; bool:
+        with self._lock:
+            if handle._event.cancelled:
+                return False
+            handle._event.cancelled = True
+            self._cv.notify_all()
+            return True
+
+    def _run(self) -&gt; None:
+        while True:
+            with self._lock:
+                # Wait until there is work or stop requested
+                while not self._pq and not self._stop:
+                    self._cv.wait()
+
+                if self._stop:
+                    return
+
+                # Drop cancelled events at head
+                while self._pq and self._pq[0].cancelled:
+                    heapq.heappop(self._pq)
+
+                if not self._pq:
+                    continue
+
+                ev = self._pq[0]
+                due = ev.due_ns
+
+            # 2) Wait until deadline (no lock held)
+            self._timer.wait_until_ns(due)
+
+            # 3) Pop-and-execute if still valid
+            with self._lock:
+                if self._stop:
+                    return
+
+                # Head may have changed; re-check
+                if not self._pq:
+                    continue
+                if self._pq[0] is not ev:
+                    continue
+
+                heapq.heappop(self._pq)
+                if ev.cancelled:
+                    continue
+
+            # Execute callback outside lock
+            try:
+                ev.callback(*ev.args, **ev.kwargs)
+            except Exception as e:
+                # Keep scheduler alive; replace with logging if desired
+                print(f"[Schedule] callback error: {e!r}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ============================================================
+# Example usage
+# ============================================================
+
+if __name__ == "__main__":
+    import time
+
+    sched = Schedule()
+    def hello(who:str=None, n:int=1) -&gt; None:
+        print(f"{time.perf_counter():.3f} hello {who} x{n}")
+    def test(who:str=None,  n:int=1) -&gt; None:
+        print(who, n*n)
+
+    h1 = sched.new(seconds=0.050, fn=test, who="A", n=2, delay=True)
+    h2 = sched.new(seconds=0.120, fn=hello, who="B", n=3, delay=True)
+    h3 = sched.new(seconds=0.080, fn=test, who="C", n=1, delay=True)
+    h2.cancel()
+    futuretime = time.perf_counter() + 0.100
+    h4 = sched.new(seconds=futuretime, fn=hello, who="D", n=4, delay=False)
+    h5 = sched.new(seconds=futuretime, fn=test, who="E", n=5, delay=False)
+    h6 = sched.new(seconds=futuretime, fn=hello, who="F", n=6, delay=False)
+
+
+    time.sleep(0.2)
+    sched.stop()
+
+################################################################################
+# FILE 8/14: utils/schedule.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 9/14: utils/timer.py (START)
+################################################################################
+
+from __future__ import annotations
+import stat
+import time
+from turtle import st
+
+
+
+class Timer:
+    def __init__(self) -&gt; None:
+        self.coarse_ns = 2_000_000
+        self.spin_ns = 1_000_000
+
+        self.start()
+
+    def nowns(self) -&gt; int:  # can be used as Timer().nowns()
+        return time.perf_counter_ns()
+    
+    @staticmethod   # can be used as Timer.now()
+    def now() -&gt; float:
+        return time.perf_counter_ns()
+
+    def start(self) -&gt; int:
+        self.started = self.nowns()
+        self.t0 = self.started
+        self.delta = []
+        self.times = []
+        return self.t0
+    
+    def lap(self) -&gt; int:
+        t1 = self.nowns()
+        t0 = self.t0
+        self.t0 = t1
+        dt = round((t1 - t0) / 1e9, 6) # seconds
+        self.delta.append(dt)
+        self.times.append(t1)
+        return dt       # time since last lap in seconds
+    
+    def stop(self) -&gt; int:
+        self.lap()
+        first = self.started
+        last = self.times[-1]
+        t = round((last - first) / 1e9, 6) # seconds with 6 decimal places (microseconds) 
+        return t        # total since started
+    
+    def print(self, msg:str=None) -&gt; None:
+        self.lap()
+        txt = f"lap {len(self.delta)}: {self.delta[-1]} seconds, total {round((self.times[-1] - self.started) / 1e9, 6)} seconds"
+        if msg is not None:
+            txt = f"{msg}: {txt}"
+        print(txt)
+
+    def waitns(self, deadline_ns: int) -&gt; None:
+        coarse_ns = self.coarse_ns
+        spin_ns = self.spin_ns
+
+        while True:
+            n = self.nowns()
+            remaining = deadline_ns - n
+            if remaining &lt;= 0:
+                return
+
+            # FAR: sleep until within coarse_ns
+            if remaining &gt; coarse_ns:
+                time.sleep((remaining - coarse_ns) / 1e9)
+                continue
+
+            # NEAR: yield until within spin_ns
+            if remaining &gt; spin_ns:
+                time.sleep(0)
+                continue
+
+            # FINAL: busy-spin
+            while self.nowns() &lt; deadline_ns:
+                pass
+            return
+
+    def wait(self, seconds: float) -&gt; None:
+        if seconds &lt;= 0:
+            return
+        self.waitns(self.nowns() + int(seconds * 1e9))
+
+    def reset(self) -&gt; int:
+        t = self.stop()
+        self.start()
+        return t  # total since started before reset
+
+
+now = Timer.now # now: now() returns the current time in nanoseconds
+
+################################################################################
+# FILE 9/14: utils/timer.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 10/14: utils/types.py (START)
+################################################################################
+
+from typing import TypeAlias
+POS: TypeAlias = tuple[int, int, int]
+SIZE: TypeAlias = tuple[int, int, int]
+
+__all__ = [
+    "POS",
+    "SIZE",
+]
+
+################################################################################
+# FILE 10/14: utils/types.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 11/14: world/__init__.py (START)
+################################################################################
+
+from .rows import ROWS, rows
+from .row import ROW
+from .materials import MATERIALS, Materials, Material
+
+from utils import *
+from world import *
+from bundle import *
+
+__all__ = [
+    "MATERIALS",
+    "Materials",
+    "Material",
+    "ROW",
+    "ROWS",
+    "rows",
+]
+
+################################################################################
+# FILE 11/14: world/__init__.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 12/14: world/materials.py (START)
+################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MATERIALS:
+    TYPES = {
+        "INVIS": 0,     # start at 16384                # invisible
+        "TRANS": 1,     # start at 32768                # transparent
+        "SOLID": 2,     # start at 65536                # solid
+        "ROCKS": 3,     # start at 4294967296           # indestructible
+    }
+
+    DATA  = {
+        "AIR":      (16384+0,     TYPES["INVIS"]),
+
+        "WATER":    (32768+0,     TYPES["TRANS"]), 
+        "LAVA":     (32768+1,     TYPES["TRANS"]),
+        "GLASS":    (32768+2,     TYPES["TRANS"]),
+
+        "STONE":    (65536+0,     TYPES["SOLID"]),
+        "OBSIDIAN": (65536+1,     TYPES["SOLID"]),
+
+        "BEDROCK":  (4294967296+0,TYPES["ROCKS"]),
+    }
+
+    IDX = {name: i for i, name in enumerate(DATA.keys())}
+
+    NUM = len(DATA)
+
+class Material:
+    def __init__(self, name:str=None) -&gt; None:
+        self.id, self.type = MATERIALS.DATA.get(name, (None, None)) 
+        self.idx = MATERIALS.IDX.get(name, None) 
+        if self.id is None or self.type is None or self.idx is None:
+            raise ValueError(f"Invalid material name: {name}")
+
+    def isrocks(self) -&gt; bool:
+        return self.type == MATERIALS.TYPES["ROCKS"]
+
+    def issolid(self) -&gt; bool:
+        return self.type == MATERIALS.TYPES["SOLID"]
+    
+    def istrans(self) -&gt; bool:
+        return self.type == MATERIALS.TYPES["TRANS"]
+    
+    def isinvisible(self) -&gt; bool:
+        return self.type == MATERIALS.TYPES["INVIS"]
+    
+    def isindestructible(self) -&gt; bool:
+        return self.type == MATERIALS.TYPES["ROCKS"]
+
+class Materials:
+    idx2name = {idx: name for name, idx in MATERIALS.IDX.items()}
+    name2idx = MATERIALS.IDX
+
+    name2id  = {name: pair[0] for name, pair in MATERIALS.DATA.items()}
+    id2name  = {pair[0]: name for name, pair in MATERIALS.DATA.items()}
+
+    # the one you actually need:
+    id2idx   = {pair[0]: MATERIALS.IDX[name] for name, pair in MATERIALS.DATA.items()}
+    idx2id   = {MATERIALS.IDX[name]: pair[0] for name, pair in MATERIALS.DATA.items()}
+
+
+    def __init__(self) -&gt; None:
+        for name in MATERIALS.DATA.keys():
+            setattr(self, name.lower(), Material(name=name))
+
+    def idx(self, name: str = None, id: int = None) -&gt; int:
+        if (name is None) == (id is None):
+            raise ValueError("Provide exactly one of name or id")
+        return self.name2idx[name] if name is not None else self.id2idx[id]
+
+    def id(self, name: str = None, idx: int = None) -&gt; int:
+        if (name is None) == (idx is None):
+            raise ValueError("Provide exactly one of name or idx")
+        return self.name2id[name] if name is not None else self.idx2id[idx]
+
+    def name(self, id: int = None, idx: int = None) -&gt; str:
+        if (id is None) == (idx is None):
+            raise ValueError("Provide exactly one of id or idx")
+        return self.id2name[id] if id is not None else self.idx2name[idx]
+
+
+################################################################################
+# FILE 12/14: world/materials.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 13/14: world/row.py (START)
+################################################################################
+
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    pass
+
+
+
+import numpy as np
+from numpy.typing import NDArray
+
+
+from utils.types import SIZE, POS
+from world.materials import Material
+
+
+
+
+
+class ROW:
+    DTYPE = np.uint64
+    SHAPE = (4, 4)
+    NBITS = DTYPE(0).nbytes * 8                      # -&gt; 64 bits
+
+    XBITS = 20
+    YBITS = 20
+    ZBITS = 16
+    if XBITS + YBITS + ZBITS + 1 &gt; NBITS:
+        raise ValueError("bit allocation error")
+
+    XMIN = 0
+    YMIN = 0
+    ZMIN = 0
+    XMAX = 2**XBITS
+    YMAX = 2**YBITS
+    ZMAX = 2**ZBITS
+    NMAX = XMAX * YMAX * ZMAX
+
+
+    # POSITIONS (MIN) — stored in row 0
+    X0 = (0, 0)
+    Y0 = (0, 1)
+    Z0 = (0, 2)
+
+    # POSITIONS (MAX) — stored in row 1
+    X1 = (1, 0)
+    Y1 = (1, 1)
+    Z1 = (1, 2)
+
+    # DIMENSIONS — stored in row 2
+    DX = (2, 0)
+    DY = (2, 1)
+    DZ = (2, 2)
+
+    # METADATA — stored in row 3
+    ID    = (3, 0)
+    MAT   = (3, 1)
+    FLAGS = (3, 2)
+
+    DIRTY        = DTYPE(1 &lt;&lt; 0)
+    ALIVE        = DTYPE(1 &lt;&lt; 1)
+    SOLID        = DTYPE(1 &lt;&lt; 2)
+    DESTRUCTABLE = DTYPE(1 &lt;&lt; 3)
+    VISIBLE      = DTYPE(1 &lt;&lt; 4)
+
+    SENTINEL = np.iinfo(DTYPE).max
+    ARRAY: NDArray[DTYPE] = np.zeros(SHAPE, dtype=DTYPE)
+    for i in range(4):
+        for j in range(4):
+            ARRAY[i, j] = SENTINEL  # initialize all to -1 -&gt; invalid
+    _ID = 0
+    
+    @staticmethod
+    def P0(row:NDArray[DTYPE]=None) -&gt; POS:
+        return (int(row[*ROW.X0]), int(row[*ROW.Y0]), int(row[*ROW.Z0]))
+    
+    @staticmethod
+    def P1(row:NDArray[DTYPE]=None) -&gt; POS:
+        return (int(row[*ROW.X1]), int(row[*ROW.Y1]), int(row[*ROW.Z1]))
+    
+    @staticmethod
+    def SIZE(row:NDArray[DTYPE]=None) -&gt; SIZE:
+        return (int(row[*ROW.DX]), int(row[*ROW.DY]), int(row[*ROW.DZ]))
+    
+    @staticmethod
+    def VOLUME(row:NDArray[DTYPE]=None) -&gt; int:
+        dx, dy, dz = ROW.SIZE(row=row)
+        return dx * dy * dz
+
+    @staticmethod
+    def COPY() -&gt; NDArray[DTYPE]:
+        return np.copy(ROW.ARRAY)
+    
+    @staticmethod
+    def CLIP(pos:POS=None) -&gt; POS:
+        x, y, z = pos
+        cx = min(max(x, ROW.XMIN), ROW.XMAX - 1)
+        cy = min(max(y, ROW.YMIN), ROW.YMAX - 1)
+        cz = min(max(z, ROW.ZMIN), ROW.ZMAX - 1)
+        pos: POS = (cx, cy, cz)
+        return pos
+    
+    @staticmethod
+    def SORT(p0:POS=None, p1:POS=None) -&gt; tuple[POS, POS]:
+        x0, y0, z0 = p0
+        x1, y1, z1 = p1
+        sx0, sx1 = (min(x0, x1), max(x0, x1))
+        sy0, sy1 = (min(y0, y1), max(y0, y1))
+        sz0, sz1 = (min(z0, z1), max(z0, z1))
+        p0: POS = (sx0, sy0, sz0)
+        p1: POS = (sx1, sy1, sz1)
+        return (p0, p1)
+    
+    @staticmethod
+    def CONTAINS(row: NDArray[DTYPE], pos: POS) -&gt; bool:
+        x, y, z = pos
+        return (
+            int(row[*ROW.X0]) &lt;= x &lt; int(row[*ROW.X1]) and
+            int(row[*ROW.Y0]) &lt;= y &lt; int(row[*ROW.Y1]) and
+            int(row[*ROW.Z0]) &lt;= z &lt; int(row[*ROW.Z1])
+        )
+    
+    @staticmethod
+    def MERGE(row0: NDArray[DTYPE]=None, row1: NDArray[DTYPE]=None) -&gt; tuple[bool, bool, bool]:
+        if row0[*ROW.MAT] != row1[*ROW.MAT]:
+            return (False, False, False)
+
+        p00 = (row0[*ROW.X0], row0[*ROW.Y0], row0[*ROW.Z0])
+        p01 = (row0[*ROW.X1], row0[*ROW.Y1], row0[*ROW.Z1])
+        p10 = (row1[*ROW.X0], row1[*ROW.Y0], row1[*ROW.Z0])
+        p11 = (row1[*ROW.X1], row1[*ROW.Y1], row1[*ROW.Z1])
+
+        def overlap(a0:int=None, a1:int=None, b0:int=None, b1:int=None) -&gt; bool: return a0 &lt; b1 and b0 &lt; a1
+        def touches(a0:int=None, a1:int=None, b0:int=None, b1:int=None) -&gt; bool: return a1 == b0 or b1 == a0
+
+        touching = [False, False, False]
+        overlaps = [False, False, False]
+
+        for i in range(3):
+            if overlap(a0=p00[i], a1=p01[i], b0=p10[i], b1=p11[i]):
+                overlaps[i] = True
+            elif touches(a0=p00[i], a1=p01[i], b0=p10[i], b1=p11[i]):
+                touching[i] = True
+            else:
+                return (False, False, False)  # separated on this axis
+
+        # mergeable ⇔ exactly one touching axis and two overlapping axes
+        if sum(touching) == 1 and sum(overlaps) == 2:
+            return tuple(touching)  # (x_touch, y_touch, z_touch)
+
+        return (False, False, False)
+                
+
+    @staticmethod
+    def new(p0:POS=None, p1:POS=None, mat:str=None, rid:int=None, dirty:bool=True, alive:bool=True) -&gt; NDArray[DTYPE]:
+        p0, p1 = ROW.SORT(p0=ROW.CLIP(pos=p0), p1=ROW.CLIP(pos=p1))
+        mat: Material = Material(name=mat)
+        flags: int = ROW.encode(dirty=dirty, alive=alive, solid=mat.issolid(), destructable=not mat.isindestructible(), visible=not mat.isinvisible())
+        
+        copy: NDArray[ROW.DTYPE] = ROW.COPY()
+
+        # POS0
+        copy[*ROW.X0]    = np.uint64(p0[0])
+        copy[*ROW.Y0]    = np.uint64(p0[1])
+        copy[*ROW.Z0]    = np.uint64(p0[2])
+        # POS1
+        copy[*ROW.X1]    = np.uint64(p1[0])
+        copy[*ROW.Y1]    = np.uint64(p1[1])
+        copy[*ROW.Z1]    = np.uint64(p1[2])
+        # SIZE
+        copy[*ROW.DX]    = np.uint64(p1[0] - p0[0])
+        copy[*ROW.DY]    = np.uint64(p1[1] - p0[1])
+        copy[*ROW.DZ]    = np.uint64(p1[2] - p0[2])
+        # METADATA
+        copy[*ROW.ID]    = np.uint64(rid)       # stores now the row index within material array instead of global unique id
+        copy[*ROW.MAT]   = np.uint64(mat.id)
+        copy[*ROW.FLAGS] = np.uint64(flags)
+
+        if any(v &lt; 0 for v in (copy[*ROW.DX], copy[*ROW.DY], copy[*ROW.DZ])):
+            raise ValueError("p1 must be greater than or equal to p0 on all axes")
+        if any(v &lt; 0 for v in (copy[*ROW.X0], copy[*ROW.Y0], copy[*ROW.Z0])):
+            raise ValueError("positions must be non-negative")
+        return copy
+    
+    @staticmethod
+    def encode(dirty:bool=None, alive:bool=None, solid:bool=None, destructable:bool=None, visible:bool=None) -&gt; int:
+        f: int = 0
+        if dirty:
+            f |= int(ROW.DIRTY)
+        if alive:
+            f |= int(ROW.ALIVE)
+        if solid:
+            f |= int(ROW.SOLID)
+        if destructable:
+            f |= int(ROW.DESTRUCTABLE)
+        if visible:
+            f |= int(ROW.VISIBLE)
+        return f
+    
+    @staticmethod
+    def decode(flags) -&gt; tuple[bool, bool, bool, bool, bool]:
+        f: int = int(flags)
+
+        dirty = (f &amp; int(ROW.DIRTY)) != 0
+        alive = (f &amp; int(ROW.ALIVE)) != 0
+        solid = (f &amp; int(ROW.SOLID)) != 0
+        destr = (f &amp; int(ROW.DESTRUCTABLE)) != 0
+        visib = (f &amp; int(ROW.VISIBLE)) != 0
+
+        return dirty, alive, solid, destr, visib
+
+
+
+
+
+
+
+
+################################################################################
+# FILE 13/14: world/row.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 14/14: world/rows.py (START)
+################################################################################
+
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    pass
+
+
+import numpy as np
+from numpy.typing import NDArray
+
+from world.row import ROW
+from utils.bvh import BVH
+from world.materials import Materials, MATERIALS
+from utils.types import POS, SIZE
+
+
+
+
+
+class ROWS:
+    SIZE = 65536  # 64K rows # for each material
+    def __init__(self) -&gt; None:
+        self.size = ROWS.SIZE
+        self.mats = Materials()
+        self.bvh = BVH(rows=self)
+        # n is a dict of n
+        self.n:dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}  # number of valid rows per material
+        self.m = 0  # for the total number of rows used
+
+        self.array: NDArray[ROW.DTYPE] = np.full((MATERIALS.NUM, self.size, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
+        self.shape = self.array.shape
+        self.nbytes = self.array.nbytes
+        self.gbytes = self.nbytes / (1024**3)
+
+        mat = "STONE"
+        self.append(p0=(ROW.XMIN, ROW.YMIN, ROW.ZMIN), p1=(ROW.XMAX, ROW.YMAX, ROW.ZMAX), mat=mat)  # alive and dirty by default are true so no need to specify : easier to use now!!!
+
+
+    def newn(self, mat:str=None) -&gt; int:
+        mid: int = MATERIALS.IDX[mat]
+        n: int = self.n[mid]
+        self.n[mid] += 1
+        self.m += 1
+        return n
+    
+    def deln(self, mat: str=None) -&gt; int:
+        if mat is None:
+            raise ValueError("material must be specified")
+        mid = MATERIALS.IDX[mat]
+        if self.n[mid] &lt;= 0:
+            raise ValueError("no rows to free")
+        self.n[mid] -= 1
+        self.m -= 1
+        return self.n[mid]
+            
+
+    def append(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -&gt; ROWS:
+        matid: int = MATERIALS.IDX[mat]
+        rid: int = self.newn(mat=mat)
+        self.array[matid][rid] = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive) # added rid=n so that bvh can use it when i provide a row as argument
+        self.bvh.insert(mat=mat, rid=rid)  # insert into bvh index
+        return self
+    
+    def delete(self, index: int, mat: str) -&gt; ROWS:
+        matid = MATERIALS.IDX[mat]
+        n = self.n[matid]
+        if index &lt; 0 or index &gt;= n:
+            raise IndexError("index out of range")
+        last = n - 1
+        self.bvh.remove(mat=mat, rid=index)
+
+        if index != last:
+            self.bvh.remove(mat=mat, rid=last)
+            self.array[matid][index] = self.array[matid][last]
+            self.array[matid][index][*ROW.ID] = np.uint64(index)
+            self.bvh.insert(mat=mat, rid=index)
+
+        self.array[matid][last] = ROW.ARRAY
+        self.deln(mat=mat)
+        return self
+    
+
+    def find(self, pos:POS=None) -&gt; tuple[str, int, NDArray[ROW.DTYPE]]:
+        mat, rid, row = self.bvh.find(pos=pos)
+        return (mat, rid, row)
+
+    def len(self) -&gt; int:
+        return len(self.array)
+    
+    def nrows(self, mat:str=None) -&gt; int:
+        return self.n[MATERIALS.IDX[mat]]
+
+    def __repr__(self) -&gt; str:
+        return self.__str__()
+
+    def __str__(self) -&gt; str:
+        n = self.nrows(mat="STONE")
+        return f"ROWS(shape={self.shape}, nbytes={self.nbytes}, gbytes={self.gbytes:.3f} with {n} valid rows)"
+
+
+
+
+
+rows = ROWS()
+
+################################################################################
+# FILE 14/14: world/rows.py (END)
+################################################################################
+
+# Total lines in bundle: 1743
+# Total files in bundle: 14
+# Generated at the time: 2026-01-29T04:53:51.534266
+--- END OF FILE ---
+
+################################################################################
+### CAPTURED OUTPUT ###
+################################################################################
+
+### PROGRAM OUTPUT (CAPTURED IN-PROCESS) ###
+Root: C:\VOXELS
+### OUTPUT START ###
+
+3D grid partition built: lap 3: 5.075659 seconds, total 5.101127 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 197.02 lookups/second
+Random CONTAINS checks completed in: lap 4: 0.377326 seconds, total 5.478453 seconds
+Now deleting all rows...
+All 10000 rows deleted in: lap 5: 0.363304 seconds, total 5.841757 seconds
+Rebuilding rows after deletion...
+second time 3D grid partition built: lap 6: 0.555028 seconds, total 6.396785 seconds
+All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1801.71 lookups/second
+Second random CONTAINS checks completed in: lap 7: 0.209648 seconds, total 6.606433 seconds
+ALL TESTS PASSED SUCCESSFULLY!
+main.py: executed in: lap 8: 0.000245 seconds, total 6.606677 seconds
+
+### OUTPUT END ###
+################################################################################
+### END OF CAPTURED OUTPUT ###
+################################################################################
+</pre>
+
+<script id="bundle_b64" type="text/plain">I1RpbWUgd2hlbiBnZW5lcmF0ZWQ6IDIwMjYtMDEtMjlUMDQ6NTM6NTEuNTMxMTIyCgojIyMgUFJPSkVDVCBCVU5ETEUgIyMjClJvb3Q6IEM6XFZPWEVMUwpGaWxlcyBpbmNsdWRlZDogMTQKCgojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwojIEZJTEUgMS8xNDogX19pbml0X18ucHkgKFNUQVJUKQojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwoKaW1wb3J0IHV0aWxzCmltcG9ydCB3b3JsZAppbXBvcnQgYnVuZGxlCgpfX2FsbF9fID0gd29ybGQuX19hbGxfXyArIHV0aWxzLl9fYWxsX18gKyBidW5kbGUuX19hbGxfXwoKCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCiMgRklMRSAxLzE0OiBfX2luaXRfXy5weSAoRU5EKQojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwoKCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCiMgRklMRSAyLzE0OiBfX21haW5fXy5weSAoU1RBUlQpCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCgpmcm9tIG1haW4gaW1wb3J0IG1haW4KCmlmIF9fbmFtZV9fID09ICJfX21haW5fXyI6CiAgICBtYWluKCkKCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCiMgRklMRSAyLzE0OiBfX21haW5fXy5weSAoRU5EKQojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwoKCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCiMgRklMRSAzLzE0OiBtYWluLnB5IChTVEFSVCkKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKCgpmcm9tIHV0aWxzIGltcG9ydCAqCmZyb20gd29ybGQgaW1wb3J0ICoKZnJvbSBidW5kbGUgaW1wb3J0ICoKCgoKCgpkZWYgbWFpbigpIC0+IE5vbmU6CiAgICByb3dzID0gUk9XUygpCgogICAgcm93cy5kZWxldGUoaW5kZXg9MCwgbWF0PSJTVE9ORSIpCgogICAgY2VsbCA9IDIwICAgICAgICAgICMgY3ViZSBlZGdlIGxlbmd0aAogICAgbnggPSA0MCAgICAgICAgICAgICMgbnVtYmVyIG9mIGNlbGxzIGluIFggIC0+IHdvcmxkIFggc2l6ZSA9IG54KmNlbGwKICAgIG55ID0gNDAgICAgICAgICAgICAjIG51bWJlciBvZiBjZWxscyBpbiBZCiAgICBueiA9IDQwICAgICAgICAgICAgIyBudW1iZXIgb2YgY2VsbHMgaW4gWgogICAgbiA9IG54ICogbnkgKiBueiAgIyB0b3RhbCBudW1iZXIgb2YgY2VsbHMKCiAgICB0aW1lci5sYXAoKQogICAgZm9yIGl4IGluIHJhbmdlKG54KToKICAgICAgICB4MCA9IGl4ICogY2VsbAogICAgICAgIHgxID0geDAgKyBjZWxsCiAgICAgICAgZm9yIGl5IGluIHJhbmdlKG55KToKICAgICAgICAgICAgeTAgPSBpeSAqIGNlbGwKICAgICAgICAgICAgeTEgPSB5MCArIGNlbGwKICAgICAgICAgICAgZm9yIGl6IGluIHJhbmdlKG56KToKICAgICAgICAgICAgICAgIHowID0gaXogKiBjZWxsCiAgICAgICAgICAgICAgICB6MSA9IHowICsgY2VsbAogICAgICAgICAgICAgICAgcm93cy5hcHBlbmQocDA9KHgwLCB5MCwgejApLCBwMT0oeDEsIHkxLCB6MSksIG1hdD0iU1RPTkUiKQogICAgICAgICAgICAgICAgCgogICAgdGltZXIucHJpbnQobXNnPSIzRCBncmlkIHBhcnRpdGlvbiBidWlsdCIpCgogICAgbWF4X3ggPSBueCAqIGNlbGwgLSAxCiAgICBtYXhfeSA9IG55ICogY2VsbCAtIDEKICAgIG1heF96ID0gbnogKiBjZWxsIC0gMQoKICAgIHN1Y2NlcyA9IDAKICAgIGZhaWxzID0gMAogICAgZm9yIF8gaW4gcmFuZ2UoMTAwMCk6CiAgICAgICAgdHJ5OgogICAgICAgICAgICBwb3MgPSAoCiAgICAgICAgICAgICAgICByYW5kb20ucmFuZGludCgwLCBtYXhfeCksCiAgICAgICAgICAgICAgICByYW5kb20ucmFuZGludCgwLCBtYXhfeSksCiAgICAgICAgICAgICAgICByYW5kb20ucmFuZGludCgwLCBtYXhfeiksCiAgICAgICAgICAgICkKICAgICAgICAgICAgbWF0LCByaWQsIHJvdyA9IHJvd3MuZmluZChwb3M9cG9zKQogICAgICAgICAgICBhc3NlcnQgUk9XLkNPTlRBSU5TKHJvdz1yb3csIHBvcz1wb3MpLCBmInBvcz17cG9zfSBub3QgY29udGFpbmVkIGJ5IGZvdW5kIHJvdyAobWF0PXttYXR9LCByaWQ9e3JpZH0pIgogICAgICAgICAgICBzdWNjZXMgKz0gMQogICAgICAgIGV4Y2VwdDoKICAgICAgICAgICAgZmFpbHMgKz0gMQogICAgICAgICAgICBwYXNzCgogICAgcHJpbnQoIkFsbCByYW5kb20gQ09OVEFJTlMgY2hlY2tzIHBhc3NlZC4iLCBmIlN1Y2Nlc3Nlczoge3N1Y2Nlc30sIEZhaWxzOiB7ZmFpbHN9IGlzIGEgc3VjY2VzIHBlcmNlbnRhZ2Ugb2YgezEwMC1mYWlscy8oc3VjY2VzK2ZhaWxzKSoxMDA6LjJmfSUgYWRuIHBlciBsb29rdXAgeyhzdWNjZXMrZmFpbHMpL3RpbWVyLmRlbHRhWy0xXTouMmZ9IGxvb2t1cHMvc2Vjb25kIikKICAgIHRpbWVyLnByaW50KG1zZz0iUmFuZG9tIENPTlRBSU5TIGNoZWNrcyBjb21wbGV0ZWQgaW4iKQoKICAgIHByaW50KCJOb3cgZGVsZXRpbmcgYWxsIHJvd3MuLi4iKQogICAgZm9yIGkgaW4gcmFuZ2UoMTAwMDApOgogICAgICAgIHJvd3MuZGVsZXRlKGluZGV4PW4tMS1pLCBtYXQ9IlNUT05FIikKICAgIHRpbWVyLnByaW50KG1zZz0iQWxsIDEwMDAwIHJvd3MgZGVsZXRlZCBpbiIpCgogICAgIyBhbmQgbm93IHRlc3Qgd2lodCBhIG5ldyBzZXQgYWRuIHNlZSBpZiBpdCBzdGlsbCB3b3JrcwogICAgcHJpbnQoIlJlYnVpbGRpbmcgcm93cyBhZnRlciBkZWxldGlvbi4uLiIpCiAgICBjZWxsID0gNDAgICAgICAgICAgIyBkb3VibGUgc2l6ZQogICAgbnggPSAyMCAgICAgICAgICAgICMgaGFsZiBudW1iZXIgb2YgY2VsbHMgaW4gWCAgLT4gd29ybGQgWCBzaXplID0gbngqY2VsbAogICAgbnkgPSAyMCAgICAgICAgICAgICMgaGFsZiBudW1iZXIgb2YgY2VsbHMgaW4gWQogICAgbnogPSAyMCAgICAgICAgICAgICMgaGFsZiBudW1iZXIgb2YgY2VsbHMgaW4gWgogICAgbiA9IG54ICogbnkgKiBueiAgIyB0b3RhbCBudW1iZXIgb2YgY2VsbHMgKDEvOHRoIG51bWJlciBvZiBwcmV2aW91cykKCiAgICBmb3IgaXggaW4gcmFuZ2UobngpOgogICAgICAgIHgwID0gaXggKiBjZWxsCiAgICAgICAgeDEgPSB4MCArIGNlbGwKICAgICAgICBmb3IgaXkgaW4gcmFuZ2UobnkpOgogICAgICAgICAgICB5MCA9IGl5ICogY2VsbAogICAgICAgICAgICB5MSA9IHkwICsgY2VsbAogICAgICAgICAgICBmb3IgaXogaW4gcmFuZ2UobnopOgogICAgICAgICAgICAgICAgejAgPSBpeiAqIGNlbGwKICAgICAgICAgICAgICAgIHoxID0gejAgKyBjZWxsCiAgICAgICAgICAgICAgICByb3dzLmFwcGVuZChwMD0oeDAsIHkwLCB6MCksIHAxPSh4MSwgeTEsIHoxKSwgbWF0PSJTVE9ORSIpCiAgICAgICAgICAgICAgICAKCiAgICB0aW1lci5wcmludChtc2c9InNlY29uZCB0aW1lIDNEIGdyaWQgcGFydGl0aW9uIGJ1aWx0IikKICAgIHN1Y2NlcyA9IDAKICAgIGZhaWxzID0gMAogICAgZm9yIF8gaW4gcmFuZ2UoMTAwMCk6CiAgICAgICAgdHJ5OgogICAgICAgICAgICBwb3MgPSAoCiAgICAgICAgICAgICAgICByYW5kb20ucmFuZGludCgwLCBtYXhfeCksCiAgICAgICAgICAgICAgICByYW5kb20ucmFuZGludCgwLCBtYXhfeSksCiAgICAgICAgICAgICAgICByYW5kb20ucmFuZGludCgwLCBtYXhfeiksCiAgICAgICAgICAgICkKICAgICAgICAgICAgbWF0LCByaWQsIHJvdyA9IHJvd3MuZmluZChwb3M9cG9zKQogICAgICAgICAgICBhc3NlcnQgUk9XLkNPTlRBSU5TKHJvdz1yb3csIHBvcz1wb3MpLCBmInBvcz17cG9zfSBub3QgY29udGFpbmVkIGJ5IGZvdW5kIHJvdyAobWF0PXttYXR9LCByaWQ9e3JpZH0pIgogICAgICAgICAgICBzdWNjZXMgKz0gMQogICAgICAgIGV4Y2VwdDoKICAgICAgICAgICAgZmFpbHMgKz0gMQogICAgICAgICAgICBwYXNzCgogICAgcHJpbnQoIkFsbCByYW5kb20gQ09OVEFJTlMgY2hlY2tzIHBhc3NlZC4iLCBmIlN1Y2Nlc3Nlczoge3N1Y2Nlc30sIEZhaWxzOiB7ZmFpbHN9IGlzIGEgc3VjY2VzIHBlcmNlbnRhZ2Ugb2YgezEwMC1mYWlscy8oc3VjY2VzK2ZhaWxzKSoxMDA6LjJmfSUgYWRuIHBlciBsb29rdXAgeyhzdWNjZXMrZmFpbHMpL3RpbWVyLmRlbHRhWy0xXTouMmZ9IGxvb2t1cHMvc2Vjb25kIikKICAgIHRpbWVyLnByaW50KG1zZz0iU2Vjb25kIHJhbmRvbSBDT05UQUlOUyBjaGVja3MgY29tcGxldGVkIGluIikKCiAgICBpZiBzdWNjZXMgPT0gMTAwMCBhbmQgZmFpbHMgPT0gMDoKICAgICAgICBwcmludCgiQUxMIFRFU1RTIFBBU1NFRCBTVUNDRVNTRlVMTFkhIikKCgoKCgoKCgoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIHRpbWVyLmxhcCgpCiAgICBiID0gQnVuZGxlKCkKICAgIHRyeToKICAgICAgICBtYWluKCkKICAgICAgICB0aW1lci5wcmludChtc2c9Im1haW4ucHk6IGV4ZWN1dGVkIGluIikKICAgIGV4Y2VwdCBFeGNlcHRpb246CiAgICAgICAgdHJhY2ViYWNrLnByaW50X2V4YygpCiAgICBmaW5hbGx5OgogICAgICAgIGIuc3RvcCgpICAgCgoKCgoKCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCiMgRklMRSAzLzE0OiBtYWluLnB5IChFTkQpCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCgoKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKIyBGSUxFIDQvMTQ6IHV0aWxzL19faW5pdF9fLnB5IChTVEFSVCkKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKCmZyb20gLmluY2x1ZGVzIGltcG9ydCAqCmZyb20gLmluY2x1ZGVzIGltcG9ydCBfX2FsbF9fIGFzIGluYwoKCl9fYWxsX18gPSBbCl0gKyBpbmMKCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCiMgRklMRSA0LzE0OiB1dGlscy9fX2luaXRfXy5weSAoRU5EKQojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwoKCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCiMgRklMRSA1LzE0OiB1dGlscy9idmgucHkgKFNUQVJUKQojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwoKZnJvbSBfX2Z1dHVyZV9fIGltcG9ydCBhbm5vdGF0aW9ucwpmcm9tIHR5cGluZyBpbXBvcnQgVFlQRV9DSEVDS0lORwoKaWYgVFlQRV9DSEVDS0lORzoKICAgIGZyb20gbnVtcHkudHlwaW5nIGltcG9ydCBOREFycmF5CiAgICBmcm9tIHdvcmxkLnJvd3MgaW1wb3J0IFJPV1MKICAgIGZyb20gdXRpbHMudHlwZXMgaW1wb3J0IFBPUwoKZnJvbSB3b3JsZC5yb3cgaW1wb3J0IFJPVwoKCgoKCmNsYXNzIEJWSDoKICAgIF9fc2xvdHNfXyA9ICgKICAgICAgICAicm93cyIsCiAgICAgICAgInJvb3QiLAogICAgICAgICJsZWZ0IiwKICAgICAgICAicmlnaHQiLAogICAgICAgICJwYXJlbnQiLAogICAgICAgICMgQUFCQiBhcyA2IHBhcmFsbGVsIGxpc3RzIChTb0EpCiAgICAgICAgInhtaW4iLAogICAgICAgICJ5bWluIiwKICAgICAgICAiem1pbiIsCiAgICAgICAgInhtYXgiLAogICAgICAgICJ5bWF4IiwKICAgICAgICAiem1heCIsCiAgICAgICAgIyBsZWFmIGFzIDIgcGFyYWxsZWwgbGlzdHMKICAgICAgICAibGVhZl9taWQiLAogICAgICAgICJsZWFmX3JpZCIsCiAgICAgICAgIyBmYXN0IGRlbGV0ZSBpbmRleAogICAgICAgICJsZWFmX2luZGV4IiwKICAgICkKCiAgICBkZWYgX19pbml0X18oc2VsZiwgcm93czogUk9XUykgLT4gTm9uZToKICAgICAgICBzZWxmLnJvd3MgPSByb3dzCiAgICAgICAgc2VsZi5yb290OiBpbnQgPSAtMQoKICAgICAgICBzZWxmLmxlZnQ6IGxpc3RbaW50XSA9IFtdCiAgICAgICAgc2VsZi5yaWdodDogbGlzdFtpbnRdID0gW10KICAgICAgICBzZWxmLnBhcmVudDogbGlzdFtpbnRdID0gW10KCiAgICAgICAgc2VsZi54bWluOiBsaXN0W2ludF0gPSBbXQogICAgICAgIHNlbGYueW1pbjogbGlzdFtpbnRdID0gW10KICAgICAgICBzZWxmLnptaW46IGxpc3RbaW50XSA9IFtdCiAgICAgICAgc2VsZi54bWF4OiBsaXN0W2ludF0gPSBbXQogICAgICAgIHNlbGYueW1heDogbGlzdFtpbnRdID0gW10KICAgICAgICBzZWxmLnptYXg6IGxpc3RbaW50XSA9IFtdCgogICAgICAgIHNlbGYubGVhZl9taWQ6IGxpc3RbaW50XSA9IFtdCiAgICAgICAgc2VsZi5sZWFmX3JpZDogbGlzdFtpbnRdID0gW10KCiAgICAgICAgIyAobWlkLCByaWQpIC0+IG5vZGUgaW5kZXgKICAgICAgICBzZWxmLmxlYWZfaW5kZXg6IGRpY3RbdHVwbGVbaW50LCBpbnRdLCBpbnRdID0ge30KCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQogICAgIyBub2RlIGFsbG9jCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKICAgIGRlZiBfbmV3X25vZGUoCiAgICAgICAgc2VsZiwKICAgICAgICB4bWluOiBpbnQsCiAgICAgICAgeW1pbjogaW50LAogICAgICAgIHptaW46IGludCwKICAgICAgICB4bWF4OiBpbnQsCiAgICAgICAgeW1heDogaW50LAogICAgICAgIHptYXg6IGludCwKICAgICAgICBsZWFmX21pZDogaW50ID0gLTEsCiAgICAgICAgbGVhZl9yaWQ6IGludCA9IC0xLAogICAgICAgIGxlZnQ6IGludCA9IC0xLAogICAgICAgIHJpZ2h0OiBpbnQgPSAtMSwKICAgICAgICBwYXJlbnQ6IGludCA9IC0xLAogICAgKSAtPiBpbnQ6CiAgICAgICAgaSA9IGxlbihzZWxmLmxlZnQpCgogICAgICAgIHNlbGYubGVmdC5hcHBlbmQobGVmdCkKICAgICAgICBzZWxmLnJpZ2h0LmFwcGVuZChyaWdodCkKICAgICAgICBzZWxmLnBhcmVudC5hcHBlbmQocGFyZW50KQoKICAgICAgICBzZWxmLnhtaW4uYXBwZW5kKHhtaW4pCiAgICAgICAgc2VsZi55bWluLmFwcGVuZCh5bWluKQogICAgICAgIHNlbGYuem1pbi5hcHBlbmQoem1pbikKICAgICAgICBzZWxmLnhtYXguYXBwZW5kKHhtYXgpCiAgICAgICAgc2VsZi55bWF4LmFwcGVuZCh5bWF4KQogICAgICAgIHNlbGYuem1heC5hcHBlbmQoem1heCkKCiAgICAgICAgc2VsZi5sZWFmX21pZC5hcHBlbmQobGVhZl9taWQpCiAgICAgICAgc2VsZi5sZWFmX3JpZC5hcHBlbmQobGVhZl9yaWQpCiAgICAgICAgcmV0dXJuIGkKCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQogICAgIyBoZWxwZXJzCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKICAgIEBzdGF0aWNtZXRob2QKICAgIGRlZiBfdm9sdW1lKHhtaW46IGludCwgeW1pbjogaW50LCB6bWluOiBpbnQsIHhtYXg6IGludCwgeW1heDogaW50LCB6bWF4OiBpbnQpIC0+IGludDoKICAgICAgICByZXR1cm4gKHhtYXggLSB4bWluKSAqICh5bWF4IC0geW1pbikgKiAoem1heCAtIHptaW4pCgogICAgZGVmIF9tZXJnZWRfdm9sdW1lX3dpdGhfbm9kZSgKICAgICAgICBzZWxmLAogICAgICAgIG5vZGU6IGludCwKICAgICAgICBieG1pbjogaW50LAogICAgICAgIGJ5bWluOiBpbnQsCiAgICAgICAgYnptaW46IGludCwKICAgICAgICBieG1heDogaW50LAogICAgICAgIGJ5bWF4OiBpbnQsCiAgICAgICAgYnptYXg6IGludCwKICAgICkgLT4gaW50OgogICAgICAgIGF4bWluID0gc2VsZi54bWluW25vZGVdCiAgICAgICAgYXltaW4gPSBzZWxmLnltaW5bbm9kZV0KICAgICAgICBhem1pbiA9IHNlbGYuem1pbltub2RlXQogICAgICAgIGF4bWF4ID0gc2VsZi54bWF4W25vZGVdCiAgICAgICAgYXltYXggPSBzZWxmLnltYXhbbm9kZV0KICAgICAgICBhem1heCA9IHNlbGYuem1heFtub2RlXQoKICAgICAgICBteG1pbiA9IGF4bWluIGlmIGF4bWluIDwgYnhtaW4gZWxzZSBieG1pbgogICAgICAgIG15bWluID0gYXltaW4gaWYgYXltaW4gPCBieW1pbiBlbHNlIGJ5bWluCiAgICAgICAgbXptaW4gPSBhem1pbiBpZiBhem1pbiA8IGJ6bWluIGVsc2UgYnptaW4KICAgICAgICBteG1heCA9IGF4bWF4IGlmIGF4bWF4ID4gYnhtYXggZWxzZSBieG1heAogICAgICAgIG15bWF4ID0gYXltYXggaWYgYXltYXggPiBieW1heCBlbHNlIGJ5bWF4CiAgICAgICAgbXptYXggPSBhem1heCBpZiBhem1heCA+IGJ6bWF4IGVsc2UgYnptYXgKCiAgICAgICAgcmV0dXJuIHNlbGYuX3ZvbHVtZShteG1pbiwgbXltaW4sIG16bWluLCBteG1heCwgbXltYXgsIG16bWF4KQoKICAgIGRlZiBfZml4X3Vwd2FyZHMoc2VsZiwgbm9kZTogaW50KSAtPiBOb25lOgogICAgICAgIHdoaWxlIG5vZGUgIT0gLTE6CiAgICAgICAgICAgIGwgPSBzZWxmLmxlZnRbbm9kZV0KICAgICAgICAgICAgciA9IHNlbGYucmlnaHRbbm9kZV0KCiAgICAgICAgICAgIHNlbGYueG1pbltub2RlXSA9IHNlbGYueG1pbltsXSBpZiBzZWxmLnhtaW5bbF0gPCBzZWxmLnhtaW5bcl0gZWxzZSBzZWxmLnhtaW5bcl0KICAgICAgICAgICAgc2VsZi55bWluW25vZGVdID0gc2VsZi55bWluW2xdIGlmIHNlbGYueW1pbltsXSA8IHNlbGYueW1pbltyXSBlbHNlIHNlbGYueW1pbltyXQogICAgICAgICAgICBzZWxmLnptaW5bbm9kZV0gPSBzZWxmLnptaW5bbF0gaWYgc2VsZi56bWluW2xdIDwgc2VsZi56bWluW3JdIGVsc2Ugc2VsZi56bWluW3JdCiAgICAgICAgICAgIHNlbGYueG1heFtub2RlXSA9IHNlbGYueG1heFtsXSBpZiBzZWxmLnhtYXhbbF0gPiBzZWxmLnhtYXhbcl0gZWxzZSBzZWxmLnhtYXhbcl0KICAgICAgICAgICAgc2VsZi55bWF4W25vZGVdID0gc2VsZi55bWF4W2xdIGlmIHNlbGYueW1heFtsXSA+IHNlbGYueW1heFtyXSBlbHNlIHNlbGYueW1heFtyXQogICAgICAgICAgICBzZWxmLnptYXhbbm9kZV0gPSBzZWxmLnptYXhbbF0gaWYgc2VsZi56bWF4W2xdID4gc2VsZi56bWF4W3JdIGVsc2Ugc2VsZi56bWF4W3JdCgogICAgICAgICAgICBub2RlID0gc2VsZi5wYXJlbnRbbm9kZV0KCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQogICAgIyBpbnNlcnRpb24KICAgICMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCgogICAgZGVmIGluc2VydCgKICAgICAgICBzZWxmLAogICAgICAgIG1hdDogc3RyIHwgTm9uZSA9IE5vbmUsCiAgICAgICAgcmlkOiBpbnQgfCBOb25lID0gTm9uZSwKICAgICAgICByb3c6ICJOREFycmF5W1JPVy5EVFlQRV0gfCBOb25lIiA9IE5vbmUsCiAgICApIC0+IE5vbmU6CiAgICAgICAgaWYgcm93IGlzIE5vbmU6CiAgICAgICAgICAgIG1pZCA9IHNlbGYucm93cy5tYXRzLm5hbWUyaWR4W21hdF0KICAgICAgICAgICAgcm93ID0gc2VsZi5yb3dzLmFycmF5W21pZF1bcmlkXQogICAgICAgIGVsc2U6CiAgICAgICAgICAgIG1hdF9pZCA9IGludChyb3dbKlJPVy5NQVRdKQogICAgICAgICAgICBtaWQgPSBzZWxmLnJvd3MubWF0cy5pZDJpZHhbbWF0X2lkXQogICAgICAgICAgICByaWQgPSBpbnQocm93WypST1cuSURdKQoKICAgICAgICB4bWluLCB5bWluLCB6bWluID0gUk9XLlAwKHJvdykKICAgICAgICB4bWF4LCB5bWF4LCB6bWF4ID0gUk9XLlAxKHJvdykKCiAgICAgICAgbGVhZl9ub2RlID0gc2VsZi5fbmV3X25vZGUoCiAgICAgICAgICAgIHhtaW4sIHltaW4sIHptaW4sCiAgICAgICAgICAgIHhtYXgsIHltYXgsIHptYXgsCiAgICAgICAgICAgIGxlYWZfbWlkPW1pZCwKICAgICAgICAgICAgbGVhZl9yaWQ9cmlkLAogICAgICAgICkKCiAgICAgICAgc2VsZi5sZWFmX2luZGV4WyhtaWQsIHJpZCldID0gbGVhZl9ub2RlCgogICAgICAgIGlmIHNlbGYucm9vdCA9PSAtMToKICAgICAgICAgICAgc2VsZi5yb290ID0gbGVhZl9ub2RlCiAgICAgICAgICAgIHJldHVybgoKICAgICAgICBzZWxmLnJvb3QgPSBzZWxmLl9pbnNlcnRfbm9kZShzZWxmLnJvb3QsIGxlYWZfbm9kZSkKCiAgICBkZWYgX2luc2VydF9ub2RlKHNlbGYsIHJvb3Q6IGludCwgbGVhZl9ub2RlOiBpbnQpIC0+IGludDoKICAgICAgICBieG1pbiA9IHNlbGYueG1pbltsZWFmX25vZGVdOyBieW1pbiA9IHNlbGYueW1pbltsZWFmX25vZGVdOyBiem1pbiA9IHNlbGYuem1pbltsZWFmX25vZGVdCiAgICAgICAgYnhtYXggPSBzZWxmLnhtYXhbbGVhZl9ub2RlXTsgYnltYXggPSBzZWxmLnltYXhbbGVhZl9ub2RlXTsgYnptYXggPSBzZWxmLnptYXhbbGVhZl9ub2RlXQoKICAgICAgICBub2RlID0gcm9vdAogICAgICAgIHdoaWxlIHNlbGYubGVhZl9taWRbbm9kZV0gPT0gLTE6CiAgICAgICAgICAgIGwgPSBzZWxmLmxlZnRbbm9kZV0KICAgICAgICAgICAgciA9IHNlbGYucmlnaHRbbm9kZV0KICAgICAgICAgICAgbm9kZSA9ICgKICAgICAgICAgICAgICAgIGwgaWYgc2VsZi5fbWVyZ2VkX3ZvbHVtZV93aXRoX25vZGUobCwgYnhtaW4sIGJ5bWluLCBiem1pbiwgYnhtYXgsIGJ5bWF4LCBiem1heCkKICAgICAgICAgICAgICAgIDwgc2VsZi5fbWVyZ2VkX3ZvbHVtZV93aXRoX25vZGUociwgYnhtaW4sIGJ5bWluLCBiem1pbiwgYnhtYXgsIGJ5bWF4LCBiem1heCkKICAgICAgICAgICAgICAgIGVsc2UgcgogICAgICAgICAgICApCgogICAgICAgIG9sZF9sZWFmID0gbm9kZQogICAgICAgIHBhcmVudCA9IHNlbGYucGFyZW50W29sZF9sZWFmXQoKICAgICAgICBheG1pbiA9IHNlbGYueG1pbltvbGRfbGVhZl07IGF5bWluID0gc2VsZi55bWluW29sZF9sZWFmXTsgYXptaW4gPSBzZWxmLnptaW5bb2xkX2xlYWZdCiAgICAgICAgYXhtYXggPSBzZWxmLnhtYXhbb2xkX2xlYWZdOyBheW1heCA9IHNlbGYueW1heFtvbGRfbGVhZl07IGF6bWF4ID0gc2VsZi56bWF4W29sZF9sZWFmXQoKICAgICAgICBuZXdfcGFyZW50ID0gc2VsZi5fbmV3X25vZGUoCiAgICAgICAgICAgIGF4bWluIGlmIGF4bWluIDwgYnhtaW4gZWxzZSBieG1pbiwKICAgICAgICAgICAgYXltaW4gaWYgYXltaW4gPCBieW1pbiBlbHNlIGJ5bWluLAogICAgICAgICAgICBhem1pbiBpZiBhem1pbiA8IGJ6bWluIGVsc2UgYnptaW4sCiAgICAgICAgICAgIGF4bWF4IGlmIGF4bWF4ID4gYnhtYXggZWxzZSBieG1heCwKICAgICAgICAgICAgYXltYXggaWYgYXltYXggPiBieW1heCBlbHNlIGJ5bWF4LAogICAgICAgICAgICBhem1heCBpZiBhem1heCA+IGJ6bWF4IGVsc2UgYnptYXgsCiAgICAgICAgKQoKICAgICAgICBzZWxmLmxlZnRbbmV3X3BhcmVudF0gPSBvbGRfbGVhZgogICAgICAgIHNlbGYucmlnaHRbbmV3X3BhcmVudF0gPSBsZWFmX25vZGUKICAgICAgICBzZWxmLnBhcmVudFtvbGRfbGVhZl0gPSBuZXdfcGFyZW50CiAgICAgICAgc2VsZi5wYXJlbnRbbGVhZl9ub2RlXSA9IG5ld19wYXJlbnQKCiAgICAgICAgaWYgcGFyZW50ID09IC0xOgogICAgICAgICAgICByZXR1cm4gbmV3X3BhcmVudAoKICAgICAgICBpZiBzZWxmLmxlZnRbcGFyZW50XSA9PSBvbGRfbGVhZjoKICAgICAgICAgICAgc2VsZi5sZWZ0W3BhcmVudF0gPSBuZXdfcGFyZW50CiAgICAgICAgZWxzZToKICAgICAgICAgICAgc2VsZi5yaWdodFtwYXJlbnRdID0gbmV3X3BhcmVudAoKICAgICAgICBzZWxmLnBhcmVudFtuZXdfcGFyZW50XSA9IHBhcmVudAogICAgICAgIHNlbGYuX2ZpeF91cHdhcmRzKHBhcmVudCkKICAgICAgICByZXR1cm4gcm9vdAoKICAgICMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCiAgICAjIHJlbW92YWwgKEZBU1QpCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKICAgIGRlZiByZW1vdmUoCiAgICAgICAgc2VsZiwKICAgICAgICBtYXQ6IHN0ciB8IE5vbmUgPSBOb25lLAogICAgICAgIHJpZDogaW50IHwgTm9uZSA9IE5vbmUsCiAgICAgICAgcm93OiAiTkRBcnJheVtST1cuRFRZUEVdIHwgTm9uZSIgPSBOb25lLAogICAgKSAtPiBOb25lOgogICAgICAgIGlmIHJvdyBpcyBub3QgTm9uZToKICAgICAgICAgICAgbWF0X2lkID0gaW50KHJvd1sqUk9XLk1BVF0pCiAgICAgICAgICAgIG1pZCA9IHNlbGYucm93cy5tYXRzLmlkMmlkeFttYXRfaWRdCiAgICAgICAgICAgIHJpZCA9IGludChyb3dbKlJPVy5JRF0pCiAgICAgICAgZWxzZToKICAgICAgICAgICAgbWlkID0gc2VsZi5yb3dzLm1hdHMubmFtZTJpZHhbbWF0XQoKICAgICAgICB0cnk6CiAgICAgICAgICAgIGZvdW5kID0gc2VsZi5sZWFmX2luZGV4LnBvcCgobWlkLCByaWQpKQogICAgICAgIGV4Y2VwdCBLZXlFcnJvcjoKICAgICAgICAgICAgcmFpc2UgS2V5RXJyb3IoInJvdyBub3QgZm91bmQgaW4gQlZIIikKCiAgICAgICAgcGFyZW50ID0gc2VsZi5wYXJlbnRbZm91bmRdCiAgICAgICAgaWYgcGFyZW50ID09IC0xOgogICAgICAgICAgICBzZWxmLnJvb3QgPSAtMQogICAgICAgICAgICByZXR1cm4KCiAgICAgICAgc2libGluZyA9IHNlbGYucmlnaHRbcGFyZW50XSBpZiBzZWxmLmxlZnRbcGFyZW50XSA9PSBmb3VuZCBlbHNlIHNlbGYubGVmdFtwYXJlbnRdCiAgICAgICAgZ3JhbmQgPSBzZWxmLnBhcmVudFtwYXJlbnRdCgogICAgICAgIGlmIGdyYW5kID09IC0xOgogICAgICAgICAgICBzZWxmLnJvb3QgPSBzaWJsaW5nCiAgICAgICAgICAgIHNlbGYucGFyZW50W3NpYmxpbmddID0gLTEKICAgICAgICBlbHNlOgogICAgICAgICAgICBpZiBzZWxmLmxlZnRbZ3JhbmRdID09IHBhcmVudDoKICAgICAgICAgICAgICAgIHNlbGYubGVmdFtncmFuZF0gPSBzaWJsaW5nCiAgICAgICAgICAgIGVsc2U6CiAgICAgICAgICAgICAgICBzZWxmLnJpZ2h0W2dyYW5kXSA9IHNpYmxpbmcKICAgICAgICAgICAgc2VsZi5wYXJlbnRbc2libGluZ10gPSBncmFuZAogICAgICAgICAgICBzZWxmLl9maXhfdXB3YXJkcyhncmFuZCkKCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQogICAgIyBmaW5kCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKICAgIGRlZiBmaW5kKHNlbGYsIHBvczogIlBPUyIpIC0+IHR1cGxlW3N0ciwgaW50LCAiTkRBcnJheVtST1cuRFRZUEVdIl06CiAgICAgICAgaWYgc2VsZi5yb290ID09IC0xOgogICAgICAgICAgICByYWlzZSBMb29rdXBFcnJvcigiZW1wdHkgQlZIIikKCiAgICAgICAgeCwgeSwgeiA9IHBvcwogICAgICAgIHN0YWNrID0gW3NlbGYucm9vdF0KCiAgICAgICAgeG1pbkwgPSBzZWxmLnhtaW47IHltaW5MID0gc2VsZi55bWluOyB6bWluTCA9IHNlbGYuem1pbgogICAgICAgIHhtYXhMID0gc2VsZi54bWF4OyB5bWF4TCA9IHNlbGYueW1heDsgem1heEwgPSBzZWxmLnptYXgKICAgICAgICBsZWZ0TCA9IHNlbGYubGVmdDsgcmlnaHRMID0gc2VsZi5yaWdodAogICAgICAgIGxlYWZfbWlkTCA9IHNlbGYubGVhZl9taWQ7IGxlYWZfcmlkTCA9IHNlbGYubGVhZl9yaWQKICAgICAgICByb3dzX2FyciA9IHNlbGYucm93cy5hcnJheQogICAgICAgIGlkeDJuYW1lID0gc2VsZi5yb3dzLm1hdHMuaWR4Mm5hbWUKICAgICAgICBjb250YWlucyA9IFJPVy5DT05UQUlOUwoKICAgICAgICB3aGlsZSBzdGFjazoKICAgICAgICAgICAgbiA9IHN0YWNrLnBvcCgpCiAgICAgICAgICAgIGlmIG4gPT0gLTE6CiAgICAgICAgICAgICAgICBjb250aW51ZQoKICAgICAgICAgICAgaWYgbm90ICh4bWluTFtuXSA8PSB4IDwgeG1heExbbl0gYW5kIHltaW5MW25dIDw9IHkgPCB5bWF4TFtuXSBhbmQgem1pbkxbbl0gPD0geiA8IHptYXhMW25dKToKICAgICAgICAgICAgICAgIGNvbnRpbnVlCgogICAgICAgICAgICBtaWQgPSBsZWFmX21pZExbbl0KICAgICAgICAgICAgaWYgbWlkICE9IC0xOgogICAgICAgICAgICAgICAgcmlkID0gbGVhZl9yaWRMW25dCiAgICAgICAgICAgICAgICByb3cgPSByb3dzX2FyclttaWRdW3JpZF0KICAgICAgICAgICAgICAgIGlmIGNvbnRhaW5zKHJvdz1yb3csIHBvcz1wb3MpOgogICAgICAgICAgICAgICAgICAgIHJldHVybiBpZHgybmFtZVttaWRdLCByaWQsIHJvdwogICAgICAgICAgICAgICAgY29udGludWUKCiAgICAgICAgICAgIGwgPSBsZWZ0TFtuXQogICAgICAgICAgICByID0gcmlnaHRMW25dCgogICAgICAgICAgICBpZiBsICE9IC0xIGFuZCAoeG1pbkxbbF0gPD0geCA8IHhtYXhMW2xdIGFuZCB5bWluTFtsXSA8PSB5IDwgeW1heExbbF0gYW5kIHptaW5MW2xdIDw9IHogPCB6bWF4TFtsXSk6CiAgICAgICAgICAgICAgICBzdGFjay5hcHBlbmQobCkKICAgICAgICAgICAgaWYgciAhPSAtMSBhbmQgKHhtaW5MW3JdIDw9IHggPCB4bWF4TFtyXSBhbmQgeW1pbkxbcl0gPD0geSA8IHltYXhMW3JdIGFuZCB6bWluTFtyXSA8PSB6IDwgem1heExbcl0pOgogICAgICAgICAgICAgICAgc3RhY2suYXBwZW5kKHIpCgogICAgICAgIHJhaXNlIExvb2t1cEVycm9yKAogICAgICAgICAgICAiQlZILmZpbmQgZmFpbGVkOiBwb2ludCBub3QgZm91bmQgKHBhcnRpdGlvbiBpbnZhcmlhbnQgdmlvbGF0ZWQgb3IgQlZIIG5vdCB1cGRhdGVkKSIKICAgICAgICApCgoKCgoKCgoKCgoKCgoKCgoKCmNsYXNzIEJWSF86CiAgICBfX3Nsb3RzX18gPSAoCiAgICAgICAgInJvd3MiLAogICAgICAgICJyb290IiwKICAgICAgICAibGVmdCIsCiAgICAgICAgInJpZ2h0IiwKICAgICAgICAicGFyZW50IiwKICAgICAgICAjIEFBQkIgYXMgNiBwYXJhbGxlbCBsaXN0cyAoU29BKQogICAgICAgICJ4bWluIiwKICAgICAgICAieW1pbiIsCiAgICAgICAgInptaW4iLAogICAgICAgICJ4bWF4IiwKICAgICAgICAieW1heCIsCiAgICAgICAgInptYXgiLAogICAgICAgICMgbGVhZiBhcyAyIHBhcmFsbGVsIGxpc3RzCiAgICAgICAgImxlYWZfbWlkIiwKICAgICAgICAibGVhZl9yaWQiLAogICAgKQoKICAgIGRlZiBfX2luaXRfXyhzZWxmLCByb3dzOiBST1dTKSAtPiBOb25lOgogICAgICAgIHNlbGYucm93cyA9IHJvd3MKICAgICAgICBzZWxmLnJvb3Q6IGludCA9IC0xCgogICAgICAgIHNlbGYubGVmdDogbGlzdFtpbnRdID0gW10KICAgICAgICBzZWxmLnJpZ2h0OiBsaXN0W2ludF0gPSBbXQogICAgICAgIHNlbGYucGFyZW50OiBsaXN0W2ludF0gPSBbXQoKICAgICAgICBzZWxmLnhtaW46IGxpc3RbaW50XSA9IFtdCiAgICAgICAgc2VsZi55bWluOiBsaXN0W2ludF0gPSBbXQogICAgICAgIHNlbGYuem1pbjogbGlzdFtpbnRdID0gW10KICAgICAgICBzZWxmLnhtYXg6IGxpc3RbaW50XSA9IFtdCiAgICAgICAgc2VsZi55bWF4OiBsaXN0W2ludF0gPSBbXQogICAgICAgIHNlbGYuem1heDogbGlzdFtpbnRdID0gW10KCiAgICAgICAgc2VsZi5sZWFmX21pZDogbGlzdFtpbnRdID0gW10KICAgICAgICBzZWxmLmxlYWZfcmlkOiBsaXN0W2ludF0gPSBbXQoKICAgICMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCiAgICAjIG5vZGUgYWxsb2MKICAgICMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCgogICAgZGVmIF9uZXdfbm9kZSgKICAgICAgICBzZWxmLAogICAgICAgIHhtaW46IGludCwKICAgICAgICB5bWluOiBpbnQsCiAgICAgICAgem1pbjogaW50LAogICAgICAgIHhtYXg6IGludCwKICAgICAgICB5bWF4OiBpbnQsCiAgICAgICAgem1heDogaW50LAogICAgICAgIGxlYWZfbWlkOiBpbnQgPSAtMSwKICAgICAgICBsZWFmX3JpZDogaW50ID0gLTEsCiAgICAgICAgbGVmdDogaW50ID0gLTEsCiAgICAgICAgcmlnaHQ6IGludCA9IC0xLAogICAgICAgIHBhcmVudDogaW50ID0gLTEsCiAgICApIC0+IGludDoKICAgICAgICBpID0gbGVuKHNlbGYubGVmdCkKCiAgICAgICAgc2VsZi5sZWZ0LmFwcGVuZChsZWZ0KQogICAgICAgIHNlbGYucmlnaHQuYXBwZW5kKHJpZ2h0KQogICAgICAgIHNlbGYucGFyZW50LmFwcGVuZChwYXJlbnQpCgogICAgICAgIHNlbGYueG1pbi5hcHBlbmQoeG1pbikKICAgICAgICBzZWxmLnltaW4uYXBwZW5kKHltaW4pCiAgICAgICAgc2VsZi56bWluLmFwcGVuZCh6bWluKQogICAgICAgIHNlbGYueG1heC5hcHBlbmQoeG1heCkKICAgICAgICBzZWxmLnltYXguYXBwZW5kKHltYXgpCiAgICAgICAgc2VsZi56bWF4LmFwcGVuZCh6bWF4KQoKICAgICAgICBzZWxmLmxlYWZfbWlkLmFwcGVuZChsZWFmX21pZCkKICAgICAgICBzZWxmLmxlYWZfcmlkLmFwcGVuZChsZWFmX3JpZCkKICAgICAgICByZXR1cm4gaQoKICAgICMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCiAgICAjIHNtYWxsIGdlb21ldHJ5IGhlbHBlcnMgKGlubGluZWQgcGF0dGVybnMgaW4gaG90IGNvZGUpCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKICAgIEBzdGF0aWNtZXRob2QKICAgIGRlZiBfdm9sdW1lKHhtaW46IGludCwgeW1pbjogaW50LCB6bWluOiBpbnQsIHhtYXg6IGludCwgeW1heDogaW50LCB6bWF4OiBpbnQpIC0+IGludDoKICAgICAgICByZXR1cm4gKHhtYXggLSB4bWluKSAqICh5bWF4IC0geW1pbikgKiAoem1heCAtIHptaW4pCgogICAgZGVmIF9tZXJnZWRfdm9sdW1lX3dpdGhfbm9kZSgKICAgICAgICBzZWxmLAogICAgICAgIG5vZGU6IGludCwKICAgICAgICBieG1pbjogaW50LAogICAgICAgIGJ5bWluOiBpbnQsCiAgICAgICAgYnptaW46IGludCwKICAgICAgICBieG1heDogaW50LAogICAgICAgIGJ5bWF4OiBpbnQsCiAgICAgICAgYnptYXg6IGludCwKICAgICkgLT4gaW50OgogICAgICAgIGF4bWluID0gc2VsZi54bWluW25vZGVdCiAgICAgICAgYXltaW4gPSBzZWxmLnltaW5bbm9kZV0KICAgICAgICBhem1pbiA9IHNlbGYuem1pbltub2RlXQogICAgICAgIGF4bWF4ID0gc2VsZi54bWF4W25vZGVdCiAgICAgICAgYXltYXggPSBzZWxmLnltYXhbbm9kZV0KICAgICAgICBhem1heCA9IHNlbGYuem1heFtub2RlXQoKICAgICAgICBteG1pbiA9IGF4bWluIGlmIGF4bWluIDwgYnhtaW4gZWxzZSBieG1pbgogICAgICAgIG15bWluID0gYXltaW4gaWYgYXltaW4gPCBieW1pbiBlbHNlIGJ5bWluCiAgICAgICAgbXptaW4gPSBhem1pbiBpZiBhem1pbiA8IGJ6bWluIGVsc2UgYnptaW4KICAgICAgICBteG1heCA9IGF4bWF4IGlmIGF4bWF4ID4gYnhtYXggZWxzZSBieG1heAogICAgICAgIG15bWF4ID0gYXltYXggaWYgYXltYXggPiBieW1heCBlbHNlIGJ5bWF4CiAgICAgICAgbXptYXggPSBhem1heCBpZiBhem1heCA+IGJ6bWF4IGVsc2UgYnptYXgKCiAgICAgICAgcmV0dXJuIHNlbGYuX3ZvbHVtZShteG1pbiwgbXltaW4sIG16bWluLCBteG1heCwgbXltYXgsIG16bWF4KQoKICAgIGRlZiBfZml4X3Vwd2FyZHMoc2VsZiwgbm9kZTogaW50KSAtPiBOb25lOgogICAgICAgICMgUmVjb21wdXRlIEFBQkJzIHVwIHRvIHJvb3QKICAgICAgICB3aGlsZSBub2RlICE9IC0xOgogICAgICAgICAgICBsID0gc2VsZi5sZWZ0W25vZGVdCiAgICAgICAgICAgIHIgPSBzZWxmLnJpZ2h0W25vZGVdCgogICAgICAgICAgICBseG1pbiA9IHNlbGYueG1pbltsXTsgbHltaW4gPSBzZWxmLnltaW5bbF07IGx6bWluID0gc2VsZi56bWluW2xdCiAgICAgICAgICAgIGx4bWF4ID0gc2VsZi54bWF4W2xdOyBseW1heCA9IHNlbGYueW1heFtsXTsgbHptYXggPSBzZWxmLnptYXhbbF0KICAgICAgICAgICAgcnhtaW4gPSBzZWxmLnhtaW5bcl07IHJ5bWluID0gc2VsZi55bWluW3JdOyByem1pbiA9IHNlbGYuem1pbltyXQogICAgICAgICAgICByeG1heCA9IHNlbGYueG1heFtyXTsgcnltYXggPSBzZWxmLnltYXhbcl07IHJ6bWF4ID0gc2VsZi56bWF4W3JdCgogICAgICAgICAgICBzZWxmLnhtaW5bbm9kZV0gPSBseG1pbiBpZiBseG1pbiA8IHJ4bWluIGVsc2UgcnhtaW4KICAgICAgICAgICAgc2VsZi55bWluW25vZGVdID0gbHltaW4gaWYgbHltaW4gPCByeW1pbiBlbHNlIHJ5bWluCiAgICAgICAgICAgIHNlbGYuem1pbltub2RlXSA9IGx6bWluIGlmIGx6bWluIDwgcnptaW4gZWxzZSByem1pbgogICAgICAgICAgICBzZWxmLnhtYXhbbm9kZV0gPSBseG1heCBpZiBseG1heCA+IHJ4bWF4IGVsc2UgcnhtYXgKICAgICAgICAgICAgc2VsZi55bWF4W25vZGVdID0gbHltYXggaWYgbHltYXggPiByeW1heCBlbHNlIHJ5bWF4CiAgICAgICAgICAgIHNlbGYuem1heFtub2RlXSA9IGx6bWF4IGlmIGx6bWF4ID4gcnptYXggZWxzZSByem1heAoKICAgICAgICAgICAgbm9kZSA9IHNlbGYucGFyZW50W25vZGVdCgogICAgIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KICAgICMgaW5zZXJ0aW9uCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKICAgIGRlZiBpbnNlcnQoCiAgICAgICAgc2VsZiwKICAgICAgICBtYXQ6IHN0ciB8IE5vbmUgPSBOb25lLAogICAgICAgIHJpZDogaW50IHwgTm9uZSA9IE5vbmUsCiAgICAgICAgcm93OiAiTkRBcnJheVtST1cuRFRZUEVdIHwgTm9uZSIgPSBOb25lLAogICAgKSAtPiBOb25lOgogICAgICAgIGlmIHJvdyBpcyBOb25lOgogICAgICAgICAgICBtaWQgPSBzZWxmLnJvd3MubWF0cy5uYW1lMmlkeFttYXRdCiAgICAgICAgICAgIHJvdyA9IHNlbGYucm93cy5hcnJheVttaWRdW3JpZF0KICAgICAgICBlbHNlOgogICAgICAgICAgICBtYXRfaWQgPSBpbnQocm93WypST1cuTUFUXSkKICAgICAgICAgICAgbWlkID0gc2VsZi5yb3dzLm1hdHMuaWQyaWR4W21hdF9pZF0KICAgICAgICAgICAgcmlkID0gaW50KHJvd1sqUk9XLklEXSkKCiAgICAgICAgeG1pbiwgeW1pbiwgem1pbiA9IFJPVy5QMChyb3cpCiAgICAgICAgeG1heCwgeW1heCwgem1heCA9IFJPVy5QMShyb3cpCgogICAgICAgIGxlYWZfbm9kZSA9IHNlbGYuX25ld19ub2RlKAogICAgICAgICAgICB4bWluPXhtaW4sIHltaW49eW1pbiwgem1pbj16bWluLAogICAgICAgICAgICB4bWF4PXhtYXgsIHltYXg9eW1heCwgem1heD16bWF4LAogICAgICAgICAgICBsZWFmX21pZD1taWQsIGxlYWZfcmlkPXJpZCwKICAgICAgICApCgogICAgICAgIGlmIHNlbGYucm9vdCA9PSAtMToKICAgICAgICAgICAgc2VsZi5yb290ID0gbGVhZl9ub2RlCiAgICAgICAgICAgIHJldHVybgoKICAgICAgICBzZWxmLnJvb3QgPSBzZWxmLl9pbnNlcnRfbm9kZShzZWxmLnJvb3QsIGxlYWZfbm9kZSkKCiAgICBkZWYgX2luc2VydF9ub2RlKHNlbGYsIHJvb3Q6IGludCwgbGVhZl9ub2RlOiBpbnQpIC0+IGludDoKICAgICAgICAjIENhY2hlIGxlYWYgQUFCQiBsb2NhbGx5IChob3QpCiAgICAgICAgYnhtaW4gPSBzZWxmLnhtaW5bbGVhZl9ub2RlXTsgYnltaW4gPSBzZWxmLnltaW5bbGVhZl9ub2RlXTsgYnptaW4gPSBzZWxmLnptaW5bbGVhZl9ub2RlXQogICAgICAgIGJ4bWF4ID0gc2VsZi54bWF4W2xlYWZfbm9kZV07IGJ5bWF4ID0gc2VsZi55bWF4W2xlYWZfbm9kZV07IGJ6bWF4ID0gc2VsZi56bWF4W2xlYWZfbm9kZV0KCiAgICAgICAgbm9kZSA9IHJvb3QKCiAgICAgICAgIyBkZXNjZW5kIHVudGlsIGxlYWYKICAgICAgICB3aGlsZSBzZWxmLmxlYWZfbWlkW25vZGVdID09IC0xOgogICAgICAgICAgICBsID0gc2VsZi5sZWZ0W25vZGVdCiAgICAgICAgICAgIHIgPSBzZWxmLnJpZ2h0W25vZGVdCgogICAgICAgICAgICBjb3N0X2xlZnQgPSBzZWxmLl9tZXJnZWRfdm9sdW1lX3dpdGhfbm9kZShsLCBieG1pbiwgYnltaW4sIGJ6bWluLCBieG1heCwgYnltYXgsIGJ6bWF4KQogICAgICAgICAgICBjb3N0X3JpZ2h0ID0gc2VsZi5fbWVyZ2VkX3ZvbHVtZV93aXRoX25vZGUociwgYnhtaW4sIGJ5bWluLCBiem1pbiwgYnhtYXgsIGJ5bWF4LCBiem1heCkKCiAgICAgICAgICAgIG5vZGUgPSBsIGlmIGNvc3RfbGVmdCA8IGNvc3RfcmlnaHQgZWxzZSByCgogICAgICAgICMgbm9kZSBpcyBsZWFmIOKGkiBzcGxpdAogICAgICAgIG9sZF9sZWFmID0gbm9kZQogICAgICAgIHBhcmVudCA9IHNlbGYucGFyZW50W29sZF9sZWFmXQoKICAgICAgICAjIG1lcmdlZCBBQUJCIG9mIG9sZF9sZWFmIGFuZCBuZXcgbGVhZl9ub2RlCiAgICAgICAgYXhtaW4gPSBzZWxmLnhtaW5bb2xkX2xlYWZdOyBheW1pbiA9IHNlbGYueW1pbltvbGRfbGVhZl07IGF6bWluID0gc2VsZi56bWluW29sZF9sZWFmXQogICAgICAgIGF4bWF4ID0gc2VsZi54bWF4W29sZF9sZWFmXTsgYXltYXggPSBzZWxmLnltYXhbb2xkX2xlYWZdOyBhem1heCA9IHNlbGYuem1heFtvbGRfbGVhZl0KCiAgICAgICAgbXhtaW4gPSBheG1pbiBpZiBheG1pbiA8IGJ4bWluIGVsc2UgYnhtaW4KICAgICAgICBteW1pbiA9IGF5bWluIGlmIGF5bWluIDwgYnltaW4gZWxzZSBieW1pbgogICAgICAgIG16bWluID0gYXptaW4gaWYgYXptaW4gPCBiem1pbiBlbHNlIGJ6bWluCiAgICAgICAgbXhtYXggPSBheG1heCBpZiBheG1heCA+IGJ4bWF4IGVsc2UgYnhtYXgKICAgICAgICBteW1heCA9IGF5bWF4IGlmIGF5bWF4ID4gYnltYXggZWxzZSBieW1heAogICAgICAgIG16bWF4ID0gYXptYXggaWYgYXptYXggPiBiem1heCBlbHNlIGJ6bWF4CgogICAgICAgIG5ld19wYXJlbnQgPSBzZWxmLl9uZXdfbm9kZSgKICAgICAgICAgICAgeG1pbj1teG1pbiwgeW1pbj1teW1pbiwgem1pbj1tem1pbiwKICAgICAgICAgICAgeG1heD1teG1heCwgeW1heD1teW1heCwgem1heD1tem1heCwKICAgICAgICAgICAgbGVhZl9taWQ9LTEsIGxlYWZfcmlkPS0xLAogICAgICAgICkKCiAgICAgICAgc2VsZi5sZWZ0W25ld19wYXJlbnRdID0gb2xkX2xlYWYKICAgICAgICBzZWxmLnJpZ2h0W25ld19wYXJlbnRdID0gbGVhZl9ub2RlCiAgICAgICAgc2VsZi5wYXJlbnRbb2xkX2xlYWZdID0gbmV3X3BhcmVudAogICAgICAgIHNlbGYucGFyZW50W2xlYWZfbm9kZV0gPSBuZXdfcGFyZW50CgogICAgICAgIGlmIHBhcmVudCA9PSAtMToKICAgICAgICAgICAgcmV0dXJuIG5ld19wYXJlbnQKCiAgICAgICAgaWYgc2VsZi5sZWZ0W3BhcmVudF0gPT0gb2xkX2xlYWY6CiAgICAgICAgICAgIHNlbGYubGVmdFtwYXJlbnRdID0gbmV3X3BhcmVudAogICAgICAgIGVsc2U6CiAgICAgICAgICAgIHNlbGYucmlnaHRbcGFyZW50XSA9IG5ld19wYXJlbnQKCiAgICAgICAgc2VsZi5wYXJlbnRbbmV3X3BhcmVudF0gPSBwYXJlbnQKICAgICAgICBzZWxmLl9maXhfdXB3YXJkcyhwYXJlbnQpCiAgICAgICAgcmV0dXJuIHJvb3QKCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQogICAgIyByZW1vdmFsCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKICAgIGRlZiByZW1vdmUoCiAgICAgICAgc2VsZiwKICAgICAgICBtYXQ6IHN0ciB8IE5vbmUgPSBOb25lLAogICAgICAgIHJpZDogaW50IHwgTm9uZSA9IE5vbmUsCiAgICAgICAgcm93OiAiTkRBcnJheVtST1cuRFRZUEVdIHwgTm9uZSIgPSBOb25lLAogICAgKSAtPiBOb25lOgogICAgICAgIGlmIHJvdyBpcyBub3QgTm9uZToKICAgICAgICAgICAgbWF0X2lkID0gaW50KHJvd1sqUk9XLk1BVF0pCiAgICAgICAgICAgIG1pZCA9IHNlbGYucm93cy5tYXRzLmlkMmlkeFttYXRfaWRdCiAgICAgICAgICAgIHJpZCA9IGludChyb3dbKlJPVy5JRF0pCiAgICAgICAgZWxzZToKICAgICAgICAgICAgbWlkID0gc2VsZi5yb3dzLm1hdHMubmFtZTJpZHhbbWF0XQoKICAgICAgICBpZiBzZWxmLnJvb3QgPT0gLTE6CiAgICAgICAgICAgIHJhaXNlIEtleUVycm9yKCJyb3cgbm90IGZvdW5kIGluIEJWSCIpCgogICAgICAgIHRhcmdldF9taWQgPSBtaWQKICAgICAgICB0YXJnZXRfcmlkID0gcmlkCgogICAgICAgICMgZmluZCBsZWFmCiAgICAgICAgc3RhY2sgPSBbc2VsZi5yb290XQogICAgICAgIGZvdW5kID0gLTEKICAgICAgICB3aGlsZSBzdGFjazoKICAgICAgICAgICAgbiA9IHN0YWNrLnBvcCgpCiAgICAgICAgICAgIGlmIG4gPT0gLTE6CiAgICAgICAgICAgICAgICBjb250aW51ZQoKICAgICAgICAgICAgbG0gPSBzZWxmLmxlYWZfbWlkW25dCiAgICAgICAgICAgIGlmIGxtID09IHRhcmdldF9taWQgYW5kIHNlbGYubGVhZl9yaWRbbl0gPT0gdGFyZ2V0X3JpZDoKICAgICAgICAgICAgICAgIGZvdW5kID0gbgogICAgICAgICAgICAgICAgYnJlYWsKCiAgICAgICAgICAgIGlmIGxtID09IC0xOiAgIyBpbnRlcm5hbAogICAgICAgICAgICAgICAgc3RhY2suYXBwZW5kKHNlbGYubGVmdFtuXSkKICAgICAgICAgICAgICAgIHN0YWNrLmFwcGVuZChzZWxmLnJpZ2h0W25dKQoKICAgICAgICBpZiBmb3VuZCA9PSAtMToKICAgICAgICAgICAgcmFpc2UgS2V5RXJyb3IoInJvdyBub3QgZm91bmQgaW4gQlZIIikKCiAgICAgICAgcGFyZW50ID0gc2VsZi5wYXJlbnRbZm91bmRdCiAgICAgICAgaWYgcGFyZW50ID09IC0xOgogICAgICAgICAgICBzZWxmLnJvb3QgPSAtMQogICAgICAgICAgICByZXR1cm4KCiAgICAgICAgc2libGluZyA9IHNlbGYucmlnaHRbcGFyZW50XSBpZiBzZWxmLmxlZnRbcGFyZW50XSA9PSBmb3VuZCBlbHNlIHNlbGYubGVmdFtwYXJlbnRdCiAgICAgICAgZ3JhbmQgPSBzZWxmLnBhcmVudFtwYXJlbnRdCgogICAgICAgIGlmIGdyYW5kID09IC0xOgogICAgICAgICAgICBzZWxmLnJvb3QgPSBzaWJsaW5nCiAgICAgICAgICAgIHNlbGYucGFyZW50W3NpYmxpbmddID0gLTEKICAgICAgICBlbHNlOgogICAgICAgICAgICBpZiBzZWxmLmxlZnRbZ3JhbmRdID09IHBhcmVudDoKICAgICAgICAgICAgICAgIHNlbGYubGVmdFtncmFuZF0gPSBzaWJsaW5nCiAgICAgICAgICAgIGVsc2U6CiAgICAgICAgICAgICAgICBzZWxmLnJpZ2h0W2dyYW5kXSA9IHNpYmxpbmcKICAgICAgICAgICAgc2VsZi5wYXJlbnRbc2libGluZ10gPSBncmFuZAogICAgICAgICAgICBzZWxmLl9maXhfdXB3YXJkcyhncmFuZCkKCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQogICAgIyBmaW5kCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKICAgIGRlZiBmaW5kKHNlbGYsIHBvczogIlBPUyIpIC0+IHR1cGxlW3N0ciwgaW50LCAiTkRBcnJheVtST1cuRFRZUEVdIl06CiAgICAgICAgaWYgc2VsZi5yb290ID09IC0xOgogICAgICAgICAgICByYWlzZSBMb29rdXBFcnJvcigiZW1wdHkgQlZIIikKCiAgICAgICAgeCwgeSwgeiA9IHBvcwogICAgICAgIHN0YWNrID0gW3NlbGYucm9vdF0KCiAgICAgICAgIyBsb2NhbCBiaW5kaW5ncyAocmVkdWNlIGF0dHJpYnV0ZSBsb29rdXBzIGluIGxvb3ApCiAgICAgICAgeG1pbkwgPSBzZWxmLnhtaW47IHltaW5MID0gc2VsZi55bWluOyB6bWluTCA9IHNlbGYuem1pbgogICAgICAgIHhtYXhMID0gc2VsZi54bWF4OyB5bWF4TCA9IHNlbGYueW1heDsgem1heEwgPSBzZWxmLnptYXgKICAgICAgICBsZWZ0TCA9IHNlbGYubGVmdDsgcmlnaHRMID0gc2VsZi5yaWdodAogICAgICAgIGxlYWZfbWlkTCA9IHNlbGYubGVhZl9taWQ7IGxlYWZfcmlkTCA9IHNlbGYubGVhZl9yaWQKICAgICAgICByb3dzX2FyciA9IHNlbGYucm93cy5hcnJheQogICAgICAgIGlkeDJuYW1lID0gc2VsZi5yb3dzLm1hdHMuaWR4Mm5hbWUKCiAgICAgICAgd2hpbGUgc3RhY2s6CiAgICAgICAgICAgIG4gPSBzdGFjay5wb3AoKQogICAgICAgICAgICBpZiBuID09IC0xOgogICAgICAgICAgICAgICAgY29udGludWUKCiAgICAgICAgICAgICMgaW5saW5lIEFBQkIgY29udGFpbnMgY2hlY2sgKHhtaW4gPD0geCA8IHhtYXggZXRjLikKICAgICAgICAgICAgaWYgbm90ICh4bWluTFtuXSA8PSB4IDwgeG1heExbbl0gYW5kIHltaW5MW25dIDw9IHkgPCB5bWF4TFtuXSBhbmQgem1pbkxbbl0gPD0geiA8IHptYXhMW25dKToKICAgICAgICAgICAgICAgIGNvbnRpbnVlCgogICAgICAgICAgICBtaWQgPSBsZWFmX21pZExbbl0KCiAgICAgICAgICAgIGlmIG1pZCAhPSAtMToKICAgICAgICAgICAgICAgIHJpZCA9IGxlYWZfcmlkTFtuXQogICAgICAgICAgICAgICAgcm93ID0gcm93c19hcnJbbWlkXVtyaWRdCiAgICAgICAgICAgICAgICBpZiBST1cuQ09OVEFJTlMocm93PXJvdywgcG9zPXBvcyk6CiAgICAgICAgICAgICAgICAgICAgcmV0dXJuIGlkeDJuYW1lW21pZF0sIHJpZCwgcm93CiAgICAgICAgICAgICAgICBjb250aW51ZQoKICAgICAgICAgICAgbCA9IGxlZnRMW25dCiAgICAgICAgICAgIHIgPSByaWdodExbbl0KCiAgICAgICAgICAgICMgcHVzaCBib3RoIGNoaWxkcmVuIHRoYXQgbWlnaHQgY29udGFpbiBwb3MgKG92ZXJsYXAtc2FmZSkKICAgICAgICAgICAgaWYgbCAhPSAtMSBhbmQgKHhtaW5MW2xdIDw9IHggPCB4bWF4TFtsXSBhbmQgeW1pbkxbbF0gPD0geSA8IHltYXhMW2xdIGFuZCB6bWluTFtsXSA8PSB6IDwgem1heExbbF0pOgogICAgICAgICAgICAgICAgc3RhY2suYXBwZW5kKGwpCiAgICAgICAgICAgIGlmIHIgIT0gLTEgYW5kICh4bWluTFtyXSA8PSB4IDwgeG1heExbcl0gYW5kIHltaW5MW3JdIDw9IHkgPCB5bWF4TFtyXSBhbmQgem1pbkxbcl0gPD0geiA8IHptYXhMW3JdKToKICAgICAgICAgICAgICAgIHN0YWNrLmFwcGVuZChyKQoKICAgICAgICByYWlzZSBMb29rdXBFcnJvcigKICAgICAgICAgICAgIkJWSC5maW5kIGZhaWxlZDogcG9pbnQgbm90IGZvdW5kIChwYXJ0aXRpb24gaW52YXJpYW50IHZpb2xhdGVkIG9yIEJWSCBub3QgdXBkYXRlZCkiCiAgICAgICAgKQoKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKIyBGSUxFIDUvMTQ6IHV0aWxzL2J2aC5weSAoRU5EKQojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwoKCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCiMgRklMRSA2LzE0OiB1dGlscy9ldmVudC5weSAoU1RBUlQpCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCgpmcm9tIF9fZnV0dXJlX18gaW1wb3J0IGFubm90YXRpb25zCmZyb20gdHlwaW5nIGltcG9ydCBBbnksIENhbGxhYmxlCmZyb20gZGF0YWNsYXNzZXMgaW1wb3J0IGRhdGFjbGFzcywgZmllbGQKZnJvbSAuZXZlbnQgaW1wb3J0IEV2ZW50CmZyb20gLnNjaGVkdWxlIGltcG9ydCBTY2hlZHVsZQoKCgpAZGF0YWNsYXNzKG9yZGVyPVRydWUpCmNsYXNzIEV2ZW50OgogICAgZHVlX25zOiBpbnQKICAgIHNlcTogaW50CiAgICBjYWxsYmFjazogQ2FsbGFibGVbLi4uLCBBbnldID0gZmllbGQoY29tcGFyZT1GYWxzZSkKICAgIGFyZ3M6IHR1cGxlW0FueSwgLi4uXSA9IGZpZWxkKGRlZmF1bHRfZmFjdG9yeT10dXBsZSwgY29tcGFyZT1GYWxzZSkKICAgIGt3YXJnczogZGljdFtzdHIsIEFueV0gPSBmaWVsZChkZWZhdWx0X2ZhY3Rvcnk9ZGljdCwgY29tcGFyZT1GYWxzZSkKICAgIGNhbmNlbGxlZDogYm9vbCA9IGZpZWxkKGRlZmF1bHQ9RmFsc2UsIGNvbXBhcmU9RmFsc2UpCgoKY2xhc3MgSGFuZGxlcjoKICAgIF9fc2xvdHNfXyA9ICgiX3NjaGVkdWxlciIsICJfZXZlbnQiKQoKICAgIGRlZiBfX2luaXRfXyhzZWxmLCBzY2hlZHVsZXI6ICJTY2hlZHVsZSIsIGV2ZW50OiBFdmVudCkgLT4gTm9uZToKICAgICAgICBzZWxmLl9zY2hlZHVsZXIgPSBzY2hlZHVsZXIKICAgICAgICBzZWxmLl9ldmVudCA9IGV2ZW50CgogICAgZGVmIGNhbmNlbChzZWxmKSAtPiBib29sOgogICAgICAgIHJldHVybiBzZWxmLl9zY2hlZHVsZXIuY2FuY2VsKHNlbGYpCgoKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKIyBGSUxFIDYvMTQ6IHV0aWxzL2V2ZW50LnB5IChFTkQpCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCgoKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKIyBGSUxFIDcvMTQ6IHV0aWxzL2luY2x1ZGVzLnB5IChTVEFSVCkKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKCmZyb20gX19mdXR1cmVfXyBpbXBvcnQgYW5ub3RhdGlvbnMgICMgTVVTVCBCRSBGSVJTVAoKIyBFWENFUFRJT04gSU1QT1JUUwpmcm9tIC50aW1lciBpbXBvcnQgVGltZXIsIHRpbWUgICAgICAjIE5PTiBTT1JURUQgLT4gSEVSRSBCRUNBVVNFIFRpbWVyIElTIFVTRUQgSU1NRURJQVRFTFkKdGltZXIgPSBUaW1lcigpCgojIElNUE9SVFMgRlJPTSBTVEFOREFSRCBMSUJSQVJZIEFORCBUSElSRC1QQVJUWSBMSUJSQVJJRVMKZnJvbSB0eXBpbmcgaW1wb3J0IFRZUEVfQ0hFQ0tJTkcsIEFueSwgSXRlcmF0b3IsIFR5cGVWYXIsIEdlbmVyaWMsIFVuaW9uLCBUdXBsZSwgTGlzdCwgRGljdCwgQ2FsbGFibGUsIE9wdGlvbmFsCmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aApmcm9tIG51bXB5LnR5cGluZyBpbXBvcnQgTkRBcnJheQpmcm9tIFBJTCBpbXBvcnQgSW1hZ2UsIEltYWdlRHJhdywgSW1hZ2VGb250CgoKIyBTSU1QTEUgSU1QT1JUUwppbXBvcnQgbWF0aAppbXBvcnQgbnVtcHkgYXMgbnAKaW1wb3J0IHRvcmNoIAppbXBvcnQgaGVhcHEKaW1wb3J0IHRocmVhZGluZwppbXBvcnQganNvbgppbXBvcnQgdGltZQppbXBvcnQgcGF0aGxpYgppbXBvcnQgc3lzCmltcG9ydCBvcwppbXBvcnQgcmFuZG9tCmltcG9ydCBzaHV0aWwKaW1wb3J0IGRhdGV0aW1lCmltcG9ydCBiaXNlY3QKaW1wb3J0IHB5Z2FtZQppbXBvcnQgbW9kZXJuZ2wKaW1wb3J0IHRyYWNlYmFjawoKCgoKIyBteSBvd24gbW9kdWxlcyAodXRpbHMpCmZyb20gLnR5cGVzIGltcG9ydCBQT1MsIFNJWkUKCgojIEV4cG9ydHMKX19hbGxfXyA9IFsKICAgICJtYXRoIiwKICAgICJ0aW1lIiwKICAgICJucCIsCiAgICAiTkRBcnJheSIsCiAgICAidG9yY2giLAogICAgIlRZUEVfQ0hFQ0tJTkciLAogICAgImFubm90YXRpb25zIiwKICAgICJBbnkiLAogICAgIkl0ZXJhdG9yIiwKICAgICJUeXBlVmFyIiwKICAgICJHZW5lcmljIiwKICAgICJVbmlvbiIsCiAgICAiVHVwbGUiLAogICAgIkxpc3QiLAogICAgIkRpY3QiLAogICAgIkNhbGxhYmxlIiwKICAgICJPcHRpb25hbCIsCiAgICAiSW1hZ2UiLAogICAgIkltYWdlRHJhdyIsCiAgICAiSW1hZ2VGb250IiwKICAgICJUaW1lciIsCiAgICAiaGVhcHEiLAogICAgInRocmVhZGluZyIsCiAgICAianNvbiIsCiAgICAiUGF0aCIsCiAgICAiUE9TIiwKICAgICJTSVpFIiwKICAgICJwYXRobGliIiwKICAgICJzeXMiLAogICAgIm9zIiwKICAgICJyYW5kb20iLAogICAgInNodXRpbCIsCiAgICAiZGF0ZXRpbWUiLAogICAgImJpc2VjdCIsCiAgICAicHlnYW1lIiwKICAgICJtb2Rlcm5nbCIsCiAgICAidGltZXIiLCAjIGluY2x1ZGUgdGhlIGluc3RhbmNlIHRpbWVyIC0+IGNhbiBiZSB1c2VkIGFzIHV0aWxzLnRpbWVyCiAgICAidHJhY2ViYWNrIiwKXQoKCnRpbWVyLnByaW50KG1zZz1mInV0aWxzL2luY2x1ZGVzLnB5OiB7bGVuKF9fYWxsX18pfSBtb2R1bGVzIGxvYWRlZCBpbiIpCnRpbWVyLnJlc2V0KCkKCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCiMgRklMRSA3LzE0OiB1dGlscy9pbmNsdWRlcy5weSAoRU5EKQojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwoKCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCiMgRklMRSA4LzE0OiB1dGlscy9zY2hlZHVsZS5weSAoU1RBUlQpCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCgppbXBvcnQgdGhyZWFkaW5nCmZyb20gdHlwaW5nIGltcG9ydCBBbnksIENhbGxhYmxlLCBPcHRpb25hbAppbXBvcnQgaGVhcHEKZnJvbSAudGltZXIgaW1wb3J0IFRpbWVyLCBub3cKZnJvbSAuZXZlbnQgaW1wb3J0IEV2ZW50LCBIYW5kbGVyCgoKCmNsYXNzIFNjaGVkdWxlOgogICAgZGVmIF9faW5pdF9fKHNlbGYpIC0+IE5vbmU6CiAgICAgICAgc2VsZi5fdGltZXIgPSBUaW1lcigpCgogICAgICAgIHNlbGYuX2xvY2sgPSB0aHJlYWRpbmcuTG9jaygpCiAgICAgICAgc2VsZi5fY3YgPSB0aHJlYWRpbmcuQ29uZGl0aW9uKHNlbGYuX2xvY2spCiAgICAgICAgc2VsZi5fcHE6IGxpc3RbRXZlbnRdID0gW10KICAgICAgICBzZWxmLl9zZXEgPSAwCgogICAgICAgIHNlbGYuX3dvcmtlcjogT3B0aW9uYWxbdGhyZWFkaW5nLlRocmVhZF0gPSBOb25lCiAgICAgICAgc2VsZi5fc3RvcCA9IEZhbHNlCiAgICAgICAgc2VsZi5fcnVubmluZyA9IEZhbHNlCgogICAgICAgIHNlbGYuc3RhcnQoKQoKICAgIGRlZiBzdGFydChzZWxmKSAtPiBOb25lOgogICAgICAgIHdpdGggc2VsZi5fbG9jazoKICAgICAgICAgICAgaWYgc2VsZi5fcnVubmluZzoKICAgICAgICAgICAgICAgIHJldHVybgogICAgICAgICAgICBzZWxmLl9zdG9wID0gRmFsc2UKICAgICAgICAgICAgc2VsZi5fd29ya2VyID0gdGhyZWFkaW5nLlRocmVhZCh0YXJnZXQ9c2VsZi5fcnVuLCBuYW1lPSJTY2hlZHVsZXJXb3JrZXIiLCBkYWVtb249VHJ1ZSkKICAgICAgICAgICAgc2VsZi5fcnVubmluZyA9IFRydWUKICAgICAgICAgICAgc2VsZi5fd29ya2VyLnN0YXJ0KCkKCiAgICBkZWYgc3RvcChzZWxmKSAtPiBOb25lOgogICAgICAgIHdpdGggc2VsZi5fbG9jazoKICAgICAgICAgICAgaWYgbm90IHNlbGYuX3J1bm5pbmc6CiAgICAgICAgICAgICAgICByZXR1cm4KICAgICAgICAgICAgc2VsZi5fc3RvcCA9IFRydWUKICAgICAgICAgICAgc2VsZi5fY3Yubm90aWZ5X2FsbCgpCgogICAgICAgIGlmIHNlbGYuX3dvcmtlcjoKICAgICAgICAgICAgc2VsZi5fd29ya2VyLmpvaW4odGltZW91dD0yLjApCgogICAgICAgIHdpdGggc2VsZi5fbG9jazoKICAgICAgICAgICAgc2VsZi5fcnVubmluZyA9IEZhbHNlCiAgICAgICAgICAgIHNlbGYuX3dvcmtlciA9IE5vbmUKCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tCiAgICAjIFNjaGVkdWxpbmcgQVBJCiAgICAjIC0tLS0tLS0tLS0tLS0tLS0tLS0tCgogICAgZGVmIHNjaGVkdWxlKHNlbGYsIG5zOiBpbnQ9Tm9uZSwgZm46IENhbGxhYmxlWy4uLiwgQW55XT1Ob25lLCAqYXJnczogQW55LCAqKmt3YXJnczogQW55KSAtPiBIYW5kbGVyOgogICAgICAgIHdpdGggc2VsZi5fbG9jazoKICAgICAgICAgICAgc2VsZi5fc2VxICs9IDEKICAgICAgICAgICAgZXYgPSBFdmVudChkdWVfbnM9bnMsIHNlcT1zZWxmLl9zZXEsIGNhbGxiYWNrPWZuLCBhcmdzPWFyZ3MsIGt3YXJncz1rd2FyZ3MpCiAgICAgICAgICAgIGhlYXBxLmhlYXBwdXNoKHNlbGYuX3BxLCBldikKICAgICAgICAgICAgc2VsZi5fY3Yubm90aWZ5X2FsbCgpCiAgICAgICAgICAgIHJldHVybiBIYW5kbGVyKHNlbGYsIGV2KQoKICAgIGRlZiBuZXcoc2VsZiwgc2Vjb25kczpmbG9hdD1Ob25lLCBmbjpDYWxsYWJsZVsuLi4sIEFueV09Tm9uZSwgZGVsYXk9RmFsc2UsICphcmdzOiBBbnksICoqa3dhcmdzOiBBbnkpIC0+IEhhbmRsZXI6CiAgICAgICAgaWYgZGVsYXk9PVRydWU6CiAgICAgICAgICAgIG5zID0gbm93KCkgKyBpbnQoc2Vjb25kcyAqIDFlOSkKICAgICAgICBpZiBkZWxheT09RmFsc2U6CiAgICAgICAgICAgIG5zID0gaW50KHNlY29uZHMgKiAxZTkpCiAgICAgICAgcmV0dXJuIHNlbGYuc2NoZWR1bGUobnM9bnMsIGZuPWZuLCAqYXJncywgKiprd2FyZ3MpCiAgICAKCiAgICBkZWYgY2FuY2VsKHNlbGYsIGhhbmRsZTogSGFuZGxlcikgLT4gYm9vbDoKICAgICAgICB3aXRoIHNlbGYuX2xvY2s6CiAgICAgICAgICAgIGlmIGhhbmRsZS5fZXZlbnQuY2FuY2VsbGVkOgogICAgICAgICAgICAgICAgcmV0dXJuIEZhbHNlCiAgICAgICAgICAgIGhhbmRsZS5fZXZlbnQuY2FuY2VsbGVkID0gVHJ1ZQogICAgICAgICAgICBzZWxmLl9jdi5ub3RpZnlfYWxsKCkKICAgICAgICAgICAgcmV0dXJuIFRydWUKCiAgICBkZWYgX3J1bihzZWxmKSAtPiBOb25lOgogICAgICAgIHdoaWxlIFRydWU6CiAgICAgICAgICAgIHdpdGggc2VsZi5fbG9jazoKICAgICAgICAgICAgICAgICMgV2FpdCB1bnRpbCB0aGVyZSBpcyB3b3JrIG9yIHN0b3AgcmVxdWVzdGVkCiAgICAgICAgICAgICAgICB3aGlsZSBub3Qgc2VsZi5fcHEgYW5kIG5vdCBzZWxmLl9zdG9wOgogICAgICAgICAgICAgICAgICAgIHNlbGYuX2N2LndhaXQoKQoKICAgICAgICAgICAgICAgIGlmIHNlbGYuX3N0b3A6CiAgICAgICAgICAgICAgICAgICAgcmV0dXJuCgogICAgICAgICAgICAgICAgIyBEcm9wIGNhbmNlbGxlZCBldmVudHMgYXQgaGVhZAogICAgICAgICAgICAgICAgd2hpbGUgc2VsZi5fcHEgYW5kIHNlbGYuX3BxWzBdLmNhbmNlbGxlZDoKICAgICAgICAgICAgICAgICAgICBoZWFwcS5oZWFwcG9wKHNlbGYuX3BxKQoKICAgICAgICAgICAgICAgIGlmIG5vdCBzZWxmLl9wcToKICAgICAgICAgICAgICAgICAgICBjb250aW51ZQoKICAgICAgICAgICAgICAgIGV2ID0gc2VsZi5fcHFbMF0KICAgICAgICAgICAgICAgIGR1ZSA9IGV2LmR1ZV9ucwoKICAgICAgICAgICAgIyAyKSBXYWl0IHVudGlsIGRlYWRsaW5lIChubyBsb2NrIGhlbGQpCiAgICAgICAgICAgIHNlbGYuX3RpbWVyLndhaXRfdW50aWxfbnMoZHVlKQoKICAgICAgICAgICAgIyAzKSBQb3AtYW5kLWV4ZWN1dGUgaWYgc3RpbGwgdmFsaWQKICAgICAgICAgICAgd2l0aCBzZWxmLl9sb2NrOgogICAgICAgICAgICAgICAgaWYgc2VsZi5fc3RvcDoKICAgICAgICAgICAgICAgICAgICByZXR1cm4KCiAgICAgICAgICAgICAgICAjIEhlYWQgbWF5IGhhdmUgY2hhbmdlZDsgcmUtY2hlY2sKICAgICAgICAgICAgICAgIGlmIG5vdCBzZWxmLl9wcToKICAgICAgICAgICAgICAgICAgICBjb250aW51ZQogICAgICAgICAgICAgICAgaWYgc2VsZi5fcHFbMF0gaXMgbm90IGV2OgogICAgICAgICAgICAgICAgICAgIGNvbnRpbnVlCgogICAgICAgICAgICAgICAgaGVhcHEuaGVhcHBvcChzZWxmLl9wcSkKICAgICAgICAgICAgICAgIGlmIGV2LmNhbmNlbGxlZDoKICAgICAgICAgICAgICAgICAgICBjb250aW51ZQoKICAgICAgICAgICAgIyBFeGVjdXRlIGNhbGxiYWNrIG91dHNpZGUgbG9jawogICAgICAgICAgICB0cnk6CiAgICAgICAgICAgICAgICBldi5jYWxsYmFjaygqZXYuYXJncywgKipldi5rd2FyZ3MpCiAgICAgICAgICAgIGV4Y2VwdCBFeGNlcHRpb24gYXMgZToKICAgICAgICAgICAgICAgICMgS2VlcCBzY2hlZHVsZXIgYWxpdmU7IHJlcGxhY2Ugd2l0aCBsb2dnaW5nIGlmIGRlc2lyZWQKICAgICAgICAgICAgICAgIHByaW50KGYiW1NjaGVkdWxlXSBjYWxsYmFjayBlcnJvcjoge2Uhcn0iKQoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKIyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0KIyBFeGFtcGxlIHVzYWdlCiMgPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CgppZiBfX25hbWVfXyA9PSAiX19tYWluX18iOgogICAgaW1wb3J0IHRpbWUKCiAgICBzY2hlZCA9IFNjaGVkdWxlKCkKICAgIGRlZiBoZWxsbyh3aG86c3RyPU5vbmUsIG46aW50PTEpIC0+IE5vbmU6CiAgICAgICAgcHJpbnQoZiJ7dGltZS5wZXJmX2NvdW50ZXIoKTouM2Z9IGhlbGxvIHt3aG99IHh7bn0iKQogICAgZGVmIHRlc3Qod2hvOnN0cj1Ob25lLCAgbjppbnQ9MSkgLT4gTm9uZToKICAgICAgICBwcmludCh3aG8sIG4qbikKCiAgICBoMSA9IHNjaGVkLm5ldyhzZWNvbmRzPTAuMDUwLCBmbj10ZXN0LCB3aG89IkEiLCBuPTIsIGRlbGF5PVRydWUpCiAgICBoMiA9IHNjaGVkLm5ldyhzZWNvbmRzPTAuMTIwLCBmbj1oZWxsbywgd2hvPSJCIiwgbj0zLCBkZWxheT1UcnVlKQogICAgaDMgPSBzY2hlZC5uZXcoc2Vjb25kcz0wLjA4MCwgZm49dGVzdCwgd2hvPSJDIiwgbj0xLCBkZWxheT1UcnVlKQogICAgaDIuY2FuY2VsKCkKICAgIGZ1dHVyZXRpbWUgPSB0aW1lLnBlcmZfY291bnRlcigpICsgMC4xMDAKICAgIGg0ID0gc2NoZWQubmV3KHNlY29uZHM9ZnV0dXJldGltZSwgZm49aGVsbG8sIHdobz0iRCIsIG49NCwgZGVsYXk9RmFsc2UpCiAgICBoNSA9IHNjaGVkLm5ldyhzZWNvbmRzPWZ1dHVyZXRpbWUsIGZuPXRlc3QsIHdobz0iRSIsIG49NSwgZGVsYXk9RmFsc2UpCiAgICBoNiA9IHNjaGVkLm5ldyhzZWNvbmRzPWZ1dHVyZXRpbWUsIGZuPWhlbGxvLCB3aG89IkYiLCBuPTYsIGRlbGF5PUZhbHNlKQoKCiAgICB0aW1lLnNsZWVwKDAuMikKICAgIHNjaGVkLnN0b3AoKQoKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKIyBGSUxFIDgvMTQ6IHV0aWxzL3NjaGVkdWxlLnB5IChFTkQpCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCgoKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKIyBGSUxFIDkvMTQ6IHV0aWxzL3RpbWVyLnB5IChTVEFSVCkKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKCmZyb20gX19mdXR1cmVfXyBpbXBvcnQgYW5ub3RhdGlvbnMKaW1wb3J0IHN0YXQKaW1wb3J0IHRpbWUKZnJvbSB0dXJ0bGUgaW1wb3J0IHN0CgoKCmNsYXNzIFRpbWVyOgogICAgZGVmIF9faW5pdF9fKHNlbGYpIC0+IE5vbmU6CiAgICAgICAgc2VsZi5jb2Fyc2VfbnMgPSAyXzAwMF8wMDAKICAgICAgICBzZWxmLnNwaW5fbnMgPSAxXzAwMF8wMDAKCiAgICAgICAgc2VsZi5zdGFydCgpCgogICAgZGVmIG5vd25zKHNlbGYpIC0+IGludDogICMgY2FuIGJlIHVzZWQgYXMgVGltZXIoKS5ub3ducygpCiAgICAgICAgcmV0dXJuIHRpbWUucGVyZl9jb3VudGVyX25zKCkKICAgIAogICAgQHN0YXRpY21ldGhvZCAgICMgY2FuIGJlIHVzZWQgYXMgVGltZXIubm93KCkKICAgIGRlZiBub3coKSAtPiBmbG9hdDoKICAgICAgICByZXR1cm4gdGltZS5wZXJmX2NvdW50ZXJfbnMoKQoKICAgIGRlZiBzdGFydChzZWxmKSAtPiBpbnQ6CiAgICAgICAgc2VsZi5zdGFydGVkID0gc2VsZi5ub3ducygpCiAgICAgICAgc2VsZi50MCA9IHNlbGYuc3RhcnRlZAogICAgICAgIHNlbGYuZGVsdGEgPSBbXQogICAgICAgIHNlbGYudGltZXMgPSBbXQogICAgICAgIHJldHVybiBzZWxmLnQwCiAgICAKICAgIGRlZiBsYXAoc2VsZikgLT4gaW50OgogICAgICAgIHQxID0gc2VsZi5ub3ducygpCiAgICAgICAgdDAgPSBzZWxmLnQwCiAgICAgICAgc2VsZi50MCA9IHQxCiAgICAgICAgZHQgPSByb3VuZCgodDEgLSB0MCkgLyAxZTksIDYpICMgc2Vjb25kcwogICAgICAgIHNlbGYuZGVsdGEuYXBwZW5kKGR0KQogICAgICAgIHNlbGYudGltZXMuYXBwZW5kKHQxKQogICAgICAgIHJldHVybiBkdCAgICAgICAjIHRpbWUgc2luY2UgbGFzdCBsYXAgaW4gc2Vjb25kcwogICAgCiAgICBkZWYgc3RvcChzZWxmKSAtPiBpbnQ6CiAgICAgICAgc2VsZi5sYXAoKQogICAgICAgIGZpcnN0ID0gc2VsZi5zdGFydGVkCiAgICAgICAgbGFzdCA9IHNlbGYudGltZXNbLTFdCiAgICAgICAgdCA9IHJvdW5kKChsYXN0IC0gZmlyc3QpIC8gMWU5LCA2KSAjIHNlY29uZHMgd2l0aCA2IGRlY2ltYWwgcGxhY2VzIChtaWNyb3NlY29uZHMpIAogICAgICAgIHJldHVybiB0ICAgICAgICAjIHRvdGFsIHNpbmNlIHN0YXJ0ZWQKICAgIAogICAgZGVmIHByaW50KHNlbGYsIG1zZzpzdHI9Tm9uZSkgLT4gTm9uZToKICAgICAgICBzZWxmLmxhcCgpCiAgICAgICAgdHh0ID0gZiJsYXAge2xlbihzZWxmLmRlbHRhKX06IHtzZWxmLmRlbHRhWy0xXX0gc2Vjb25kcywgdG90YWwge3JvdW5kKChzZWxmLnRpbWVzWy0xXSAtIHNlbGYuc3RhcnRlZCkgLyAxZTksIDYpfSBzZWNvbmRzIgogICAgICAgIGlmIG1zZyBpcyBub3QgTm9uZToKICAgICAgICAgICAgdHh0ID0gZiJ7bXNnfToge3R4dH0iCiAgICAgICAgcHJpbnQodHh0KQoKICAgIGRlZiB3YWl0bnMoc2VsZiwgZGVhZGxpbmVfbnM6IGludCkgLT4gTm9uZToKICAgICAgICBjb2Fyc2VfbnMgPSBzZWxmLmNvYXJzZV9ucwogICAgICAgIHNwaW5fbnMgPSBzZWxmLnNwaW5fbnMKCiAgICAgICAgd2hpbGUgVHJ1ZToKICAgICAgICAgICAgbiA9IHNlbGYubm93bnMoKQogICAgICAgICAgICByZW1haW5pbmcgPSBkZWFkbGluZV9ucyAtIG4KICAgICAgICAgICAgaWYgcmVtYWluaW5nIDw9IDA6CiAgICAgICAgICAgICAgICByZXR1cm4KCiAgICAgICAgICAgICMgRkFSOiBzbGVlcCB1bnRpbCB3aXRoaW4gY29hcnNlX25zCiAgICAgICAgICAgIGlmIHJlbWFpbmluZyA+IGNvYXJzZV9uczoKICAgICAgICAgICAgICAgIHRpbWUuc2xlZXAoKHJlbWFpbmluZyAtIGNvYXJzZV9ucykgLyAxZTkpCiAgICAgICAgICAgICAgICBjb250aW51ZQoKICAgICAgICAgICAgIyBORUFSOiB5aWVsZCB1bnRpbCB3aXRoaW4gc3Bpbl9ucwogICAgICAgICAgICBpZiByZW1haW5pbmcgPiBzcGluX25zOgogICAgICAgICAgICAgICAgdGltZS5zbGVlcCgwKQogICAgICAgICAgICAgICAgY29udGludWUKCiAgICAgICAgICAgICMgRklOQUw6IGJ1c3ktc3BpbgogICAgICAgICAgICB3aGlsZSBzZWxmLm5vd25zKCkgPCBkZWFkbGluZV9uczoKICAgICAgICAgICAgICAgIHBhc3MKICAgICAgICAgICAgcmV0dXJuCgogICAgZGVmIHdhaXQoc2VsZiwgc2Vjb25kczogZmxvYXQpIC0+IE5vbmU6CiAgICAgICAgaWYgc2Vjb25kcyA8PSAwOgogICAgICAgICAgICByZXR1cm4KICAgICAgICBzZWxmLndhaXRucyhzZWxmLm5vd25zKCkgKyBpbnQoc2Vjb25kcyAqIDFlOSkpCgogICAgZGVmIHJlc2V0KHNlbGYpIC0+IGludDoKICAgICAgICB0ID0gc2VsZi5zdG9wKCkKICAgICAgICBzZWxmLnN0YXJ0KCkKICAgICAgICByZXR1cm4gdCAgIyB0b3RhbCBzaW5jZSBzdGFydGVkIGJlZm9yZSByZXNldAoKCm5vdyA9IFRpbWVyLm5vdyAjIG5vdzogbm93KCkgcmV0dXJucyB0aGUgY3VycmVudCB0aW1lIGluIG5hbm9zZWNvbmRzCgojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwojIEZJTEUgOS8xNDogdXRpbHMvdGltZXIucHkgKEVORCkKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKCgojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwojIEZJTEUgMTAvMTQ6IHV0aWxzL3R5cGVzLnB5IChTVEFSVCkKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKCmZyb20gdHlwaW5nIGltcG9ydCBUeXBlQWxpYXMKUE9TOiBUeXBlQWxpYXMgPSB0dXBsZVtpbnQsIGludCwgaW50XQpTSVpFOiBUeXBlQWxpYXMgPSB0dXBsZVtpbnQsIGludCwgaW50XQoKX19hbGxfXyA9IFsKICAgICJQT1MiLAogICAgIlNJWkUiLApdCgojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwojIEZJTEUgMTAvMTQ6IHV0aWxzL3R5cGVzLnB5IChFTkQpCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCgoKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKIyBGSUxFIDExLzE0OiB3b3JsZC9fX2luaXRfXy5weSAoU1RBUlQpCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCgpmcm9tIC5yb3dzIGltcG9ydCBST1dTLCByb3dzCmZyb20gLnJvdyBpbXBvcnQgUk9XCmZyb20gLm1hdGVyaWFscyBpbXBvcnQgTUFURVJJQUxTLCBNYXRlcmlhbHMsIE1hdGVyaWFsCgpmcm9tIHV0aWxzIGltcG9ydCAqCmZyb20gd29ybGQgaW1wb3J0ICoKZnJvbSBidW5kbGUgaW1wb3J0ICoKCl9fYWxsX18gPSBbCiAgICAiTUFURVJJQUxTIiwKICAgICJNYXRlcmlhbHMiLAogICAgIk1hdGVyaWFsIiwKICAgICJST1ciLAogICAgIlJPV1MiLAogICAgInJvd3MiLApdCgojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwojIEZJTEUgMTEvMTQ6IHdvcmxkL19faW5pdF9fLnB5IChFTkQpCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCgoKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKIyBGSUxFIDEyLzE0OiB3b3JsZC9tYXRlcmlhbHMucHkgKFNUQVJUKQojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwoKCgoKCgoKCgoKCgoKCgoKY2xhc3MgTUFURVJJQUxTOgogICAgVFlQRVMgPSB7CiAgICAgICAgIklOVklTIjogMCwgICAgICMgc3RhcnQgYXQgMTYzODQgICAgICAgICAgICAgICAgIyBpbnZpc2libGUKICAgICAgICAiVFJBTlMiOiAxLCAgICAgIyBzdGFydCBhdCAzMjc2OCAgICAgICAgICAgICAgICAjIHRyYW5zcGFyZW50CiAgICAgICAgIlNPTElEIjogMiwgICAgICMgc3RhcnQgYXQgNjU1MzYgICAgICAgICAgICAgICAgIyBzb2xpZAogICAgICAgICJST0NLUyI6IDMsICAgICAjIHN0YXJ0IGF0IDQyOTQ5NjcyOTYgICAgICAgICAgICMgaW5kZXN0cnVjdGlibGUKICAgIH0KCiAgICBEQVRBICA9IHsKICAgICAgICAiQUlSIjogICAgICAoMTYzODQrMCwgICAgIFRZUEVTWyJJTlZJUyJdKSwKCiAgICAgICAgIldBVEVSIjogICAgKDMyNzY4KzAsICAgICBUWVBFU1siVFJBTlMiXSksIAogICAgICAgICJMQVZBIjogICAgICgzMjc2OCsxLCAgICAgVFlQRVNbIlRSQU5TIl0pLAogICAgICAgICJHTEFTUyI6ICAgICgzMjc2OCsyLCAgICAgVFlQRVNbIlRSQU5TIl0pLAoKICAgICAgICAiU1RPTkUiOiAgICAoNjU1MzYrMCwgICAgIFRZUEVTWyJTT0xJRCJdKSwKICAgICAgICAiT0JTSURJQU4iOiAoNjU1MzYrMSwgICAgIFRZUEVTWyJTT0xJRCJdKSwKCiAgICAgICAgIkJFRFJPQ0siOiAgKDQyOTQ5NjcyOTYrMCxUWVBFU1siUk9DS1MiXSksCiAgICB9CgogICAgSURYID0ge25hbWU6IGkgZm9yIGksIG5hbWUgaW4gZW51bWVyYXRlKERBVEEua2V5cygpKX0KCiAgICBOVU0gPSBsZW4oREFUQSkKCmNsYXNzIE1hdGVyaWFsOgogICAgZGVmIF9faW5pdF9fKHNlbGYsIG5hbWU6c3RyPU5vbmUpIC0+IE5vbmU6CiAgICAgICAgc2VsZi5pZCwgc2VsZi50eXBlID0gTUFURVJJQUxTLkRBVEEuZ2V0KG5hbWUsIChOb25lLCBOb25lKSkgCiAgICAgICAgc2VsZi5pZHggPSBNQVRFUklBTFMuSURYLmdldChuYW1lLCBOb25lKSAKICAgICAgICBpZiBzZWxmLmlkIGlzIE5vbmUgb3Igc2VsZi50eXBlIGlzIE5vbmUgb3Igc2VsZi5pZHggaXMgTm9uZToKICAgICAgICAgICAgcmFpc2UgVmFsdWVFcnJvcihmIkludmFsaWQgbWF0ZXJpYWwgbmFtZToge25hbWV9IikKCiAgICBkZWYgaXNyb2NrcyhzZWxmKSAtPiBib29sOgogICAgICAgIHJldHVybiBzZWxmLnR5cGUgPT0gTUFURVJJQUxTLlRZUEVTWyJST0NLUyJdCgogICAgZGVmIGlzc29saWQoc2VsZikgLT4gYm9vbDoKICAgICAgICByZXR1cm4gc2VsZi50eXBlID09IE1BVEVSSUFMUy5UWVBFU1siU09MSUQiXQogICAgCiAgICBkZWYgaXN0cmFucyhzZWxmKSAtPiBib29sOgogICAgICAgIHJldHVybiBzZWxmLnR5cGUgPT0gTUFURVJJQUxTLlRZUEVTWyJUUkFOUyJdCiAgICAKICAgIGRlZiBpc2ludmlzaWJsZShzZWxmKSAtPiBib29sOgogICAgICAgIHJldHVybiBzZWxmLnR5cGUgPT0gTUFURVJJQUxTLlRZUEVTWyJJTlZJUyJdCiAgICAKICAgIGRlZiBpc2luZGVzdHJ1Y3RpYmxlKHNlbGYpIC0+IGJvb2w6CiAgICAgICAgcmV0dXJuIHNlbGYudHlwZSA9PSBNQVRFUklBTFMuVFlQRVNbIlJPQ0tTIl0KCmNsYXNzIE1hdGVyaWFsczoKICAgIGlkeDJuYW1lID0ge2lkeDogbmFtZSBmb3IgbmFtZSwgaWR4IGluIE1BVEVSSUFMUy5JRFguaXRlbXMoKX0KICAgIG5hbWUyaWR4ID0gTUFURVJJQUxTLklEWAoKICAgIG5hbWUyaWQgID0ge25hbWU6IHBhaXJbMF0gZm9yIG5hbWUsIHBhaXIgaW4gTUFURVJJQUxTLkRBVEEuaXRlbXMoKX0KICAgIGlkMm5hbWUgID0ge3BhaXJbMF06IG5hbWUgZm9yIG5hbWUsIHBhaXIgaW4gTUFURVJJQUxTLkRBVEEuaXRlbXMoKX0KCiAgICAjIHRoZSBvbmUgeW91IGFjdHVhbGx5IG5lZWQ6CiAgICBpZDJpZHggICA9IHtwYWlyWzBdOiBNQVRFUklBTFMuSURYW25hbWVdIGZvciBuYW1lLCBwYWlyIGluIE1BVEVSSUFMUy5EQVRBLml0ZW1zKCl9CiAgICBpZHgyaWQgICA9IHtNQVRFUklBTFMuSURYW25hbWVdOiBwYWlyWzBdIGZvciBuYW1lLCBwYWlyIGluIE1BVEVSSUFMUy5EQVRBLml0ZW1zKCl9CgoKICAgIGRlZiBfX2luaXRfXyhzZWxmKSAtPiBOb25lOgogICAgICAgIGZvciBuYW1lIGluIE1BVEVSSUFMUy5EQVRBLmtleXMoKToKICAgICAgICAgICAgc2V0YXR0cihzZWxmLCBuYW1lLmxvd2VyKCksIE1hdGVyaWFsKG5hbWU9bmFtZSkpCgogICAgZGVmIGlkeChzZWxmLCBuYW1lOiBzdHIgPSBOb25lLCBpZDogaW50ID0gTm9uZSkgLT4gaW50OgogICAgICAgIGlmIChuYW1lIGlzIE5vbmUpID09IChpZCBpcyBOb25lKToKICAgICAgICAgICAgcmFpc2UgVmFsdWVFcnJvcigiUHJvdmlkZSBleGFjdGx5IG9uZSBvZiBuYW1lIG9yIGlkIikKICAgICAgICByZXR1cm4gc2VsZi5uYW1lMmlkeFtuYW1lXSBpZiBuYW1lIGlzIG5vdCBOb25lIGVsc2Ugc2VsZi5pZDJpZHhbaWRdCgogICAgZGVmIGlkKHNlbGYsIG5hbWU6IHN0ciA9IE5vbmUsIGlkeDogaW50ID0gTm9uZSkgLT4gaW50OgogICAgICAgIGlmIChuYW1lIGlzIE5vbmUpID09IChpZHggaXMgTm9uZSk6CiAgICAgICAgICAgIHJhaXNlIFZhbHVlRXJyb3IoIlByb3ZpZGUgZXhhY3RseSBvbmUgb2YgbmFtZSBvciBpZHgiKQogICAgICAgIHJldHVybiBzZWxmLm5hbWUyaWRbbmFtZV0gaWYgbmFtZSBpcyBub3QgTm9uZSBlbHNlIHNlbGYuaWR4MmlkW2lkeF0KCiAgICBkZWYgbmFtZShzZWxmLCBpZDogaW50ID0gTm9uZSwgaWR4OiBpbnQgPSBOb25lKSAtPiBzdHI6CiAgICAgICAgaWYgKGlkIGlzIE5vbmUpID09IChpZHggaXMgTm9uZSk6CiAgICAgICAgICAgIHJhaXNlIFZhbHVlRXJyb3IoIlByb3ZpZGUgZXhhY3RseSBvbmUgb2YgaWQgb3IgaWR4IikKICAgICAgICByZXR1cm4gc2VsZi5pZDJuYW1lW2lkXSBpZiBpZCBpcyBub3QgTm9uZSBlbHNlIHNlbGYuaWR4Mm5hbWVbaWR4XQoKCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCiMgRklMRSAxMi8xNDogd29ybGQvbWF0ZXJpYWxzLnB5IChFTkQpCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCgoKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKIyBGSUxFIDEzLzE0OiB3b3JsZC9yb3cucHkgKFNUQVJUKQojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwoKZnJvbSBfX2Z1dHVyZV9fIGltcG9ydCBhbm5vdGF0aW9ucwpmcm9tIHR5cGluZyBpbXBvcnQgVFlQRV9DSEVDS0lORwppZiBUWVBFX0NIRUNLSU5HOgogICAgcGFzcwoKCgppbXBvcnQgbnVtcHkgYXMgbnAKZnJvbSBudW1weS50eXBpbmcgaW1wb3J0IE5EQXJyYXkKCgpmcm9tIHV0aWxzLnR5cGVzIGltcG9ydCBTSVpFLCBQT1MKZnJvbSB3b3JsZC5tYXRlcmlhbHMgaW1wb3J0IE1hdGVyaWFsCgoKCgoKY2xhc3MgUk9XOgogICAgRFRZUEUgPSBucC51aW50NjQKICAgIFNIQVBFID0gKDQsIDQpCiAgICBOQklUUyA9IERUWVBFKDApLm5ieXRlcyAqIDggICAgICAgICAgICAgICAgICAgICAgIyAtPiA2NCBiaXRzCgogICAgWEJJVFMgPSAyMAogICAgWUJJVFMgPSAyMAogICAgWkJJVFMgPSAxNgogICAgaWYgWEJJVFMgKyBZQklUUyArIFpCSVRTICsgMSA+IE5CSVRTOgogICAgICAgIHJhaXNlIFZhbHVlRXJyb3IoImJpdCBhbGxvY2F0aW9uIGVycm9yIikKCiAgICBYTUlOID0gMAogICAgWU1JTiA9IDAKICAgIFpNSU4gPSAwCiAgICBYTUFYID0gMioqWEJJVFMKICAgIFlNQVggPSAyKipZQklUUwogICAgWk1BWCA9IDIqKlpCSVRTCiAgICBOTUFYID0gWE1BWCAqIFlNQVggKiBaTUFYCgoKICAgICMgUE9TSVRJT05TIChNSU4pIOKAlCBzdG9yZWQgaW4gcm93IDAKICAgIFgwID0gKDAsIDApCiAgICBZMCA9ICgwLCAxKQogICAgWjAgPSAoMCwgMikKCiAgICAjIFBPU0lUSU9OUyAoTUFYKSDigJQgc3RvcmVkIGluIHJvdyAxCiAgICBYMSA9ICgxLCAwKQogICAgWTEgPSAoMSwgMSkKICAgIFoxID0gKDEsIDIpCgogICAgIyBESU1FTlNJT05TIOKAlCBzdG9yZWQgaW4gcm93IDIKICAgIERYID0gKDIsIDApCiAgICBEWSA9ICgyLCAxKQogICAgRFogPSAoMiwgMikKCiAgICAjIE1FVEFEQVRBIOKAlCBzdG9yZWQgaW4gcm93IDMKICAgIElEICAgID0gKDMsIDApCiAgICBNQVQgICA9ICgzLCAxKQogICAgRkxBR1MgPSAoMywgMikKCiAgICBESVJUWSAgICAgICAgPSBEVFlQRSgxIDw8IDApCiAgICBBTElWRSAgICAgICAgPSBEVFlQRSgxIDw8IDEpCiAgICBTT0xJRCAgICAgICAgPSBEVFlQRSgxIDw8IDIpCiAgICBERVNUUlVDVEFCTEUgPSBEVFlQRSgxIDw8IDMpCiAgICBWSVNJQkxFICAgICAgPSBEVFlQRSgxIDw8IDQpCgogICAgU0VOVElORUwgPSBucC5paW5mbyhEVFlQRSkubWF4CiAgICBBUlJBWTogTkRBcnJheVtEVFlQRV0gPSBucC56ZXJvcyhTSEFQRSwgZHR5cGU9RFRZUEUpCiAgICBmb3IgaSBpbiByYW5nZSg0KToKICAgICAgICBmb3IgaiBpbiByYW5nZSg0KToKICAgICAgICAgICAgQVJSQVlbaSwgal0gPSBTRU5USU5FTCAgIyBpbml0aWFsaXplIGFsbCB0byAtMSAtPiBpbnZhbGlkCiAgICBfSUQgPSAwCiAgICAKICAgIEBzdGF0aWNtZXRob2QKICAgIGRlZiBQMChyb3c6TkRBcnJheVtEVFlQRV09Tm9uZSkgLT4gUE9TOgogICAgICAgIHJldHVybiAoaW50KHJvd1sqUk9XLlgwXSksIGludChyb3dbKlJPVy5ZMF0pLCBpbnQocm93WypST1cuWjBdKSkKICAgIAogICAgQHN0YXRpY21ldGhvZAogICAgZGVmIFAxKHJvdzpOREFycmF5W0RUWVBFXT1Ob25lKSAtPiBQT1M6CiAgICAgICAgcmV0dXJuIChpbnQocm93WypST1cuWDFdKSwgaW50KHJvd1sqUk9XLlkxXSksIGludChyb3dbKlJPVy5aMV0pKQogICAgCiAgICBAc3RhdGljbWV0aG9kCiAgICBkZWYgU0laRShyb3c6TkRBcnJheVtEVFlQRV09Tm9uZSkgLT4gU0laRToKICAgICAgICByZXR1cm4gKGludChyb3dbKlJPVy5EWF0pLCBpbnQocm93WypST1cuRFldKSwgaW50KHJvd1sqUk9XLkRaXSkpCiAgICAKICAgIEBzdGF0aWNtZXRob2QKICAgIGRlZiBWT0xVTUUocm93Ok5EQXJyYXlbRFRZUEVdPU5vbmUpIC0+IGludDoKICAgICAgICBkeCwgZHksIGR6ID0gUk9XLlNJWkUocm93PXJvdykKICAgICAgICByZXR1cm4gZHggKiBkeSAqIGR6CgogICAgQHN0YXRpY21ldGhvZAogICAgZGVmIENPUFkoKSAtPiBOREFycmF5W0RUWVBFXToKICAgICAgICByZXR1cm4gbnAuY29weShST1cuQVJSQVkpCiAgICAKICAgIEBzdGF0aWNtZXRob2QKICAgIGRlZiBDTElQKHBvczpQT1M9Tm9uZSkgLT4gUE9TOgogICAgICAgIHgsIHksIHogPSBwb3MKICAgICAgICBjeCA9IG1pbihtYXgoeCwgUk9XLlhNSU4pLCBST1cuWE1BWCAtIDEpCiAgICAgICAgY3kgPSBtaW4obWF4KHksIFJPVy5ZTUlOKSwgUk9XLllNQVggLSAxKQogICAgICAgIGN6ID0gbWluKG1heCh6LCBST1cuWk1JTiksIFJPVy5aTUFYIC0gMSkKICAgICAgICBwb3M6IFBPUyA9IChjeCwgY3ksIGN6KQogICAgICAgIHJldHVybiBwb3MKICAgIAogICAgQHN0YXRpY21ldGhvZAogICAgZGVmIFNPUlQocDA6UE9TPU5vbmUsIHAxOlBPUz1Ob25lKSAtPiB0dXBsZVtQT1MsIFBPU106CiAgICAgICAgeDAsIHkwLCB6MCA9IHAwCiAgICAgICAgeDEsIHkxLCB6MSA9IHAxCiAgICAgICAgc3gwLCBzeDEgPSAobWluKHgwLCB4MSksIG1heCh4MCwgeDEpKQogICAgICAgIHN5MCwgc3kxID0gKG1pbih5MCwgeTEpLCBtYXgoeTAsIHkxKSkKICAgICAgICBzejAsIHN6MSA9IChtaW4oejAsIHoxKSwgbWF4KHowLCB6MSkpCiAgICAgICAgcDA6IFBPUyA9IChzeDAsIHN5MCwgc3owKQogICAgICAgIHAxOiBQT1MgPSAoc3gxLCBzeTEsIHN6MSkKICAgICAgICByZXR1cm4gKHAwLCBwMSkKICAgIAogICAgQHN0YXRpY21ldGhvZAogICAgZGVmIENPTlRBSU5TKHJvdzogTkRBcnJheVtEVFlQRV0sIHBvczogUE9TKSAtPiBib29sOgogICAgICAgIHgsIHksIHogPSBwb3MKICAgICAgICByZXR1cm4gKAogICAgICAgICAgICBpbnQocm93WypST1cuWDBdKSA8PSB4IDwgaW50KHJvd1sqUk9XLlgxXSkgYW5kCiAgICAgICAgICAgIGludChyb3dbKlJPVy5ZMF0pIDw9IHkgPCBpbnQocm93WypST1cuWTFdKSBhbmQKICAgICAgICAgICAgaW50KHJvd1sqUk9XLlowXSkgPD0geiA8IGludChyb3dbKlJPVy5aMV0pCiAgICAgICAgKQogICAgCiAgICBAc3RhdGljbWV0aG9kCiAgICBkZWYgTUVSR0Uocm93MDogTkRBcnJheVtEVFlQRV09Tm9uZSwgcm93MTogTkRBcnJheVtEVFlQRV09Tm9uZSkgLT4gdHVwbGVbYm9vbCwgYm9vbCwgYm9vbF06CiAgICAgICAgaWYgcm93MFsqUk9XLk1BVF0gIT0gcm93MVsqUk9XLk1BVF06CiAgICAgICAgICAgIHJldHVybiAoRmFsc2UsIEZhbHNlLCBGYWxzZSkKCiAgICAgICAgcDAwID0gKHJvdzBbKlJPVy5YMF0sIHJvdzBbKlJPVy5ZMF0sIHJvdzBbKlJPVy5aMF0pCiAgICAgICAgcDAxID0gKHJvdzBbKlJPVy5YMV0sIHJvdzBbKlJPVy5ZMV0sIHJvdzBbKlJPVy5aMV0pCiAgICAgICAgcDEwID0gKHJvdzFbKlJPVy5YMF0sIHJvdzFbKlJPVy5ZMF0sIHJvdzFbKlJPVy5aMF0pCiAgICAgICAgcDExID0gKHJvdzFbKlJPVy5YMV0sIHJvdzFbKlJPVy5ZMV0sIHJvdzFbKlJPVy5aMV0pCgogICAgICAgIGRlZiBvdmVybGFwKGEwOmludD1Ob25lLCBhMTppbnQ9Tm9uZSwgYjA6aW50PU5vbmUsIGIxOmludD1Ob25lKSAtPiBib29sOiByZXR1cm4gYTAgPCBiMSBhbmQgYjAgPCBhMQogICAgICAgIGRlZiB0b3VjaGVzKGEwOmludD1Ob25lLCBhMTppbnQ9Tm9uZSwgYjA6aW50PU5vbmUsIGIxOmludD1Ob25lKSAtPiBib29sOiByZXR1cm4gYTEgPT0gYjAgb3IgYjEgPT0gYTAKCiAgICAgICAgdG91Y2hpbmcgPSBbRmFsc2UsIEZhbHNlLCBGYWxzZV0KICAgICAgICBvdmVybGFwcyA9IFtGYWxzZSwgRmFsc2UsIEZhbHNlXQoKICAgICAgICBmb3IgaSBpbiByYW5nZSgzKToKICAgICAgICAgICAgaWYgb3ZlcmxhcChhMD1wMDBbaV0sIGExPXAwMVtpXSwgYjA9cDEwW2ldLCBiMT1wMTFbaV0pOgogICAgICAgICAgICAgICAgb3ZlcmxhcHNbaV0gPSBUcnVlCiAgICAgICAgICAgIGVsaWYgdG91Y2hlcyhhMD1wMDBbaV0sIGExPXAwMVtpXSwgYjA9cDEwW2ldLCBiMT1wMTFbaV0pOgogICAgICAgICAgICAgICAgdG91Y2hpbmdbaV0gPSBUcnVlCiAgICAgICAgICAgIGVsc2U6CiAgICAgICAgICAgICAgICByZXR1cm4gKEZhbHNlLCBGYWxzZSwgRmFsc2UpICAjIHNlcGFyYXRlZCBvbiB0aGlzIGF4aXMKCiAgICAgICAgIyBtZXJnZWFibGUg4oeUIGV4YWN0bHkgb25lIHRvdWNoaW5nIGF4aXMgYW5kIHR3byBvdmVybGFwcGluZyBheGVzCiAgICAgICAgaWYgc3VtKHRvdWNoaW5nKSA9PSAxIGFuZCBzdW0ob3ZlcmxhcHMpID09IDI6CiAgICAgICAgICAgIHJldHVybiB0dXBsZSh0b3VjaGluZykgICMgKHhfdG91Y2gsIHlfdG91Y2gsIHpfdG91Y2gpCgogICAgICAgIHJldHVybiAoRmFsc2UsIEZhbHNlLCBGYWxzZSkKICAgICAgICAgICAgICAgIAoKICAgIEBzdGF0aWNtZXRob2QKICAgIGRlZiBuZXcocDA6UE9TPU5vbmUsIHAxOlBPUz1Ob25lLCBtYXQ6c3RyPU5vbmUsIHJpZDppbnQ9Tm9uZSwgZGlydHk6Ym9vbD1UcnVlLCBhbGl2ZTpib29sPVRydWUpIC0+IE5EQXJyYXlbRFRZUEVdOgogICAgICAgIHAwLCBwMSA9IFJPVy5TT1JUKHAwPVJPVy5DTElQKHBvcz1wMCksIHAxPVJPVy5DTElQKHBvcz1wMSkpCiAgICAgICAgbWF0OiBNYXRlcmlhbCA9IE1hdGVyaWFsKG5hbWU9bWF0KQogICAgICAgIGZsYWdzOiBpbnQgPSBST1cuZW5jb2RlKGRpcnR5PWRpcnR5LCBhbGl2ZT1hbGl2ZSwgc29saWQ9bWF0Lmlzc29saWQoKSwgZGVzdHJ1Y3RhYmxlPW5vdCBtYXQuaXNpbmRlc3RydWN0aWJsZSgpLCB2aXNpYmxlPW5vdCBtYXQuaXNpbnZpc2libGUoKSkKICAgICAgICAKICAgICAgICBjb3B5OiBOREFycmF5W1JPVy5EVFlQRV0gPSBST1cuQ09QWSgpCgogICAgICAgICMgUE9TMAogICAgICAgIGNvcHlbKlJPVy5YMF0gICAgPSBucC51aW50NjQocDBbMF0pCiAgICAgICAgY29weVsqUk9XLlkwXSAgICA9IG5wLnVpbnQ2NChwMFsxXSkKICAgICAgICBjb3B5WypST1cuWjBdICAgID0gbnAudWludDY0KHAwWzJdKQogICAgICAgICMgUE9TMQogICAgICAgIGNvcHlbKlJPVy5YMV0gICAgPSBucC51aW50NjQocDFbMF0pCiAgICAgICAgY29weVsqUk9XLlkxXSAgICA9IG5wLnVpbnQ2NChwMVsxXSkKICAgICAgICBjb3B5WypST1cuWjFdICAgID0gbnAudWludDY0KHAxWzJdKQogICAgICAgICMgU0laRQogICAgICAgIGNvcHlbKlJPVy5EWF0gICAgPSBucC51aW50NjQocDFbMF0gLSBwMFswXSkKICAgICAgICBjb3B5WypST1cuRFldICAgID0gbnAudWludDY0KHAxWzFdIC0gcDBbMV0pCiAgICAgICAgY29weVsqUk9XLkRaXSAgICA9IG5wLnVpbnQ2NChwMVsyXSAtIHAwWzJdKQogICAgICAgICMgTUVUQURBVEEKICAgICAgICBjb3B5WypST1cuSURdICAgID0gbnAudWludDY0KHJpZCkgICAgICAgIyBzdG9yZXMgbm93IHRoZSByb3cgaW5kZXggd2l0aGluIG1hdGVyaWFsIGFycmF5IGluc3RlYWQgb2YgZ2xvYmFsIHVuaXF1ZSBpZAogICAgICAgIGNvcHlbKlJPVy5NQVRdICAgPSBucC51aW50NjQobWF0LmlkKQogICAgICAgIGNvcHlbKlJPVy5GTEFHU10gPSBucC51aW50NjQoZmxhZ3MpCgogICAgICAgIGlmIGFueSh2IDwgMCBmb3IgdiBpbiAoY29weVsqUk9XLkRYXSwgY29weVsqUk9XLkRZXSwgY29weVsqUk9XLkRaXSkpOgogICAgICAgICAgICByYWlzZSBWYWx1ZUVycm9yKCJwMSBtdXN0IGJlIGdyZWF0ZXIgdGhhbiBvciBlcXVhbCB0byBwMCBvbiBhbGwgYXhlcyIpCiAgICAgICAgaWYgYW55KHYgPCAwIGZvciB2IGluIChjb3B5WypST1cuWDBdLCBjb3B5WypST1cuWTBdLCBjb3B5WypST1cuWjBdKSk6CiAgICAgICAgICAgIHJhaXNlIFZhbHVlRXJyb3IoInBvc2l0aW9ucyBtdXN0IGJlIG5vbi1uZWdhdGl2ZSIpCiAgICAgICAgcmV0dXJuIGNvcHkKICAgIAogICAgQHN0YXRpY21ldGhvZAogICAgZGVmIGVuY29kZShkaXJ0eTpib29sPU5vbmUsIGFsaXZlOmJvb2w9Tm9uZSwgc29saWQ6Ym9vbD1Ob25lLCBkZXN0cnVjdGFibGU6Ym9vbD1Ob25lLCB2aXNpYmxlOmJvb2w9Tm9uZSkgLT4gaW50OgogICAgICAgIGY6IGludCA9IDAKICAgICAgICBpZiBkaXJ0eToKICAgICAgICAgICAgZiB8PSBpbnQoUk9XLkRJUlRZKQogICAgICAgIGlmIGFsaXZlOgogICAgICAgICAgICBmIHw9IGludChST1cuQUxJVkUpCiAgICAgICAgaWYgc29saWQ6CiAgICAgICAgICAgIGYgfD0gaW50KFJPVy5TT0xJRCkKICAgICAgICBpZiBkZXN0cnVjdGFibGU6CiAgICAgICAgICAgIGYgfD0gaW50KFJPVy5ERVNUUlVDVEFCTEUpCiAgICAgICAgaWYgdmlzaWJsZToKICAgICAgICAgICAgZiB8PSBpbnQoUk9XLlZJU0lCTEUpCiAgICAgICAgcmV0dXJuIGYKICAgIAogICAgQHN0YXRpY21ldGhvZAogICAgZGVmIGRlY29kZShmbGFncykgLT4gdHVwbGVbYm9vbCwgYm9vbCwgYm9vbCwgYm9vbCwgYm9vbF06CiAgICAgICAgZjogaW50ID0gaW50KGZsYWdzKQoKICAgICAgICBkaXJ0eSA9IChmICYgaW50KFJPVy5ESVJUWSkpICE9IDAKICAgICAgICBhbGl2ZSA9IChmICYgaW50KFJPVy5BTElWRSkpICE9IDAKICAgICAgICBzb2xpZCA9IChmICYgaW50KFJPVy5TT0xJRCkpICE9IDAKICAgICAgICBkZXN0ciA9IChmICYgaW50KFJPVy5ERVNUUlVDVEFCTEUpKSAhPSAwCiAgICAgICAgdmlzaWIgPSAoZiAmIGludChST1cuVklTSUJMRSkpICE9IDAKCiAgICAgICAgcmV0dXJuIGRpcnR5LCBhbGl2ZSwgc29saWQsIGRlc3RyLCB2aXNpYgoKCgoKCgoKCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCiMgRklMRSAxMy8xNDogd29ybGQvcm93LnB5IChFTkQpCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCgoKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKIyBGSUxFIDE0LzE0OiB3b3JsZC9yb3dzLnB5IChTVEFSVCkKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMKCmZyb20gX19mdXR1cmVfXyBpbXBvcnQgYW5ub3RhdGlvbnMKZnJvbSB0eXBpbmcgaW1wb3J0IFRZUEVfQ0hFQ0tJTkcKaWYgVFlQRV9DSEVDS0lORzoKICAgIHBhc3MKCgppbXBvcnQgbnVtcHkgYXMgbnAKZnJvbSBudW1weS50eXBpbmcgaW1wb3J0IE5EQXJyYXkKCmZyb20gd29ybGQucm93IGltcG9ydCBST1cKZnJvbSB1dGlscy5idmggaW1wb3J0IEJWSApmcm9tIHdvcmxkLm1hdGVyaWFscyBpbXBvcnQgTWF0ZXJpYWxzLCBNQVRFUklBTFMKZnJvbSB1dGlscy50eXBlcyBpbXBvcnQgUE9TLCBTSVpFCgoKCgoKY2xhc3MgUk9XUzoKICAgIFNJWkUgPSA2NTUzNiAgIyA2NEsgcm93cyAjIGZvciBlYWNoIG1hdGVyaWFsCiAgICBkZWYgX19pbml0X18oc2VsZikgLT4gTm9uZToKICAgICAgICBzZWxmLnNpemUgPSBST1dTLlNJWkUKICAgICAgICBzZWxmLm1hdHMgPSBNYXRlcmlhbHMoKQogICAgICAgIHNlbGYuYnZoID0gQlZIKHJvd3M9c2VsZikKICAgICAgICAjIG4gaXMgYSBkaWN0IG9mIG4KICAgICAgICBzZWxmLm46ZGljdFtpbnQsIGludF0gPSB7bWlkOiAwIGZvciBtaWQgaW4gcmFuZ2UoTUFURVJJQUxTLk5VTSl9ICAjIG51bWJlciBvZiB2YWxpZCByb3dzIHBlciBtYXRlcmlhbAogICAgICAgIHNlbGYubSA9IDAgICMgZm9yIHRoZSB0b3RhbCBudW1iZXIgb2Ygcm93cyB1c2VkCgogICAgICAgIHNlbGYuYXJyYXk6IE5EQXJyYXlbUk9XLkRUWVBFXSA9IG5wLmZ1bGwoKE1BVEVSSUFMUy5OVU0sIHNlbGYuc2l6ZSwgKlJPVy5TSEFQRSksIGZpbGxfdmFsdWU9Uk9XLlNFTlRJTkVMLCBkdHlwZT1ST1cuRFRZUEUpCiAgICAgICAgc2VsZi5zaGFwZSA9IHNlbGYuYXJyYXkuc2hhcGUKICAgICAgICBzZWxmLm5ieXRlcyA9IHNlbGYuYXJyYXkubmJ5dGVzCiAgICAgICAgc2VsZi5nYnl0ZXMgPSBzZWxmLm5ieXRlcyAvICgxMDI0KiozKQoKICAgICAgICBtYXQgPSAiU1RPTkUiCiAgICAgICAgc2VsZi5hcHBlbmQocDA9KFJPVy5YTUlOLCBST1cuWU1JTiwgUk9XLlpNSU4pLCBwMT0oUk9XLlhNQVgsIFJPVy5ZTUFYLCBST1cuWk1BWCksIG1hdD1tYXQpICAjIGFsaXZlIGFuZCBkaXJ0eSBieSBkZWZhdWx0IGFyZSB0cnVlIHNvIG5vIG5lZWQgdG8gc3BlY2lmeSA6IGVhc2llciB0byB1c2Ugbm93ISEhCgoKICAgIGRlZiBuZXduKHNlbGYsIG1hdDpzdHI9Tm9uZSkgLT4gaW50OgogICAgICAgIG1pZDogaW50ID0gTUFURVJJQUxTLklEWFttYXRdCiAgICAgICAgbjogaW50ID0gc2VsZi5uW21pZF0KICAgICAgICBzZWxmLm5bbWlkXSArPSAxCiAgICAgICAgc2VsZi5tICs9IDEKICAgICAgICByZXR1cm4gbgogICAgCiAgICBkZWYgZGVsbihzZWxmLCBtYXQ6IHN0cj1Ob25lKSAtPiBpbnQ6CiAgICAgICAgaWYgbWF0IGlzIE5vbmU6CiAgICAgICAgICAgIHJhaXNlIFZhbHVlRXJyb3IoIm1hdGVyaWFsIG11c3QgYmUgc3BlY2lmaWVkIikKICAgICAgICBtaWQgPSBNQVRFUklBTFMuSURYW21hdF0KICAgICAgICBpZiBzZWxmLm5bbWlkXSA8PSAwOgogICAgICAgICAgICByYWlzZSBWYWx1ZUVycm9yKCJubyByb3dzIHRvIGZyZWUiKQogICAgICAgIHNlbGYublttaWRdIC09IDEKICAgICAgICBzZWxmLm0gLT0gMQogICAgICAgIHJldHVybiBzZWxmLm5bbWlkXQogICAgICAgICAgICAKCiAgICBkZWYgYXBwZW5kKHNlbGYsIHAwOlBPUz1Ob25lLCBwMTpQT1M9Tm9uZSwgbWF0OnN0cj1Ob25lLCBkaXJ0eTpib29sPVRydWUsIGFsaXZlOmJvb2w9VHJ1ZSkgLT4gUk9XUzoKICAgICAgICBtYXRpZDogaW50ID0gTUFURVJJQUxTLklEWFttYXRdCiAgICAgICAgcmlkOiBpbnQgPSBzZWxmLm5ld24obWF0PW1hdCkKICAgICAgICBzZWxmLmFycmF5W21hdGlkXVtyaWRdID0gUk9XLm5ldyhwMD1wMCwgcDE9cDEsIG1hdD1tYXQsIHJpZD1yaWQsIGRpcnR5PWRpcnR5LCBhbGl2ZT1hbGl2ZSkgIyBhZGRlZCByaWQ9biBzbyB0aGF0IGJ2aCBjYW4gdXNlIGl0IHdoZW4gaSBwcm92aWRlIGEgcm93IGFzIGFyZ3VtZW50CiAgICAgICAgc2VsZi5idmguaW5zZXJ0KG1hdD1tYXQsIHJpZD1yaWQpICAjIGluc2VydCBpbnRvIGJ2aCBpbmRleAogICAgICAgIHJldHVybiBzZWxmCiAgICAKICAgIGRlZiBkZWxldGUoc2VsZiwgaW5kZXg6IGludCwgbWF0OiBzdHIpIC0+IFJPV1M6CiAgICAgICAgbWF0aWQgPSBNQVRFUklBTFMuSURYW21hdF0KICAgICAgICBuID0gc2VsZi5uW21hdGlkXQogICAgICAgIGlmIGluZGV4IDwgMCBvciBpbmRleCA+PSBuOgogICAgICAgICAgICByYWlzZSBJbmRleEVycm9yKCJpbmRleCBvdXQgb2YgcmFuZ2UiKQogICAgICAgIGxhc3QgPSBuIC0gMQogICAgICAgIHNlbGYuYnZoLnJlbW92ZShtYXQ9bWF0LCByaWQ9aW5kZXgpCgogICAgICAgIGlmIGluZGV4ICE9IGxhc3Q6CiAgICAgICAgICAgIHNlbGYuYnZoLnJlbW92ZShtYXQ9bWF0LCByaWQ9bGFzdCkKICAgICAgICAgICAgc2VsZi5hcnJheVttYXRpZF1baW5kZXhdID0gc2VsZi5hcnJheVttYXRpZF1bbGFzdF0KICAgICAgICAgICAgc2VsZi5hcnJheVttYXRpZF1baW5kZXhdWypST1cuSURdID0gbnAudWludDY0KGluZGV4KQogICAgICAgICAgICBzZWxmLmJ2aC5pbnNlcnQobWF0PW1hdCwgcmlkPWluZGV4KQoKICAgICAgICBzZWxmLmFycmF5W21hdGlkXVtsYXN0XSA9IFJPVy5BUlJBWQogICAgICAgIHNlbGYuZGVsbihtYXQ9bWF0KQogICAgICAgIHJldHVybiBzZWxmCiAgICAKCiAgICBkZWYgZmluZChzZWxmLCBwb3M6UE9TPU5vbmUpIC0+IHR1cGxlW3N0ciwgaW50LCBOREFycmF5W1JPVy5EVFlQRV1dOgogICAgICAgIG1hdCwgcmlkLCByb3cgPSBzZWxmLmJ2aC5maW5kKHBvcz1wb3MpCiAgICAgICAgcmV0dXJuIChtYXQsIHJpZCwgcm93KQoKICAgIGRlZiBsZW4oc2VsZikgLT4gaW50OgogICAgICAgIHJldHVybiBsZW4oc2VsZi5hcnJheSkKICAgIAogICAgZGVmIG5yb3dzKHNlbGYsIG1hdDpzdHI9Tm9uZSkgLT4gaW50OgogICAgICAgIHJldHVybiBzZWxmLm5bTUFURVJJQUxTLklEWFttYXRdXQoKICAgIGRlZiBfX3JlcHJfXyhzZWxmKSAtPiBzdHI6CiAgICAgICAgcmV0dXJuIHNlbGYuX19zdHJfXygpCgogICAgZGVmIF9fc3RyX18oc2VsZikgLT4gc3RyOgogICAgICAgIG4gPSBzZWxmLm5yb3dzKG1hdD0iU1RPTkUiKQogICAgICAgIHJldHVybiBmIlJPV1Moc2hhcGU9e3NlbGYuc2hhcGV9LCBuYnl0ZXM9e3NlbGYubmJ5dGVzfSwgZ2J5dGVzPXtzZWxmLmdieXRlczouM2Z9IHdpdGgge259IHZhbGlkIHJvd3MpIgoKCgoKCnJvd3MgPSBST1dTKCkKCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCiMgRklMRSAxNC8xNDogd29ybGQvcm93cy5weSAoRU5EKQojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwoKIyBUb3RhbCBsaW5lcyBpbiBidW5kbGU6IDE3NDMKIyBUb3RhbCBmaWxlcyBpbiBidW5kbGU6IDE0CiMgR2VuZXJhdGVkIGF0IHRoZSB0aW1lOiAyMDI2LTAxLTI5VDA0OjUzOjUxLjUzNDI2NgotLS0gRU5EIE9GIEZJTEUgLS0tCgojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwojIyMgQ0FQVFVSRUQgT1VUUFVUICMjIwojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwoKIyMjIFBST0dSQU0gT1VUUFVUIChDQVBUVVJFRCBJTi1QUk9DRVNTKSAjIyMKUm9vdDogQzpcVk9YRUxTCiMjIyBPVVRQVVQgU1RBUlQgIyMjCgozRCBncmlkIHBhcnRpdGlvbiBidWlsdDogbGFwIDM6IDUuMDc1NjU5IHNlY29uZHMsIHRvdGFsIDUuMTAxMTI3IHNlY29uZHMKQWxsIHJhbmRvbSBDT05UQUlOUyBjaGVja3MgcGFzc2VkLiBTdWNjZXNzZXM6IDEwMDAsIEZhaWxzOiAwIGlzIGEgc3VjY2VzIHBlcmNlbnRhZ2Ugb2YgMTAwLjAwJSBhZG4gcGVyIGxvb2t1cCAxOTcuMDIgbG9va3Vwcy9zZWNvbmQKUmFuZG9tIENPTlRBSU5TIGNoZWNrcyBjb21wbGV0ZWQgaW46IGxhcCA0OiAwLjM3NzMyNiBzZWNvbmRzLCB0b3RhbCA1LjQ3ODQ1MyBzZWNvbmRzCk5vdyBkZWxldGluZyBhbGwgcm93cy4uLgpBbGwgMTAwMDAgcm93cyBkZWxldGVkIGluOiBsYXAgNTogMC4zNjMzMDQgc2Vjb25kcywgdG90YWwgNS44NDE3NTcgc2Vjb25kcwpSZWJ1aWxkaW5nIHJvd3MgYWZ0ZXIgZGVsZXRpb24uLi4Kc2Vjb25kIHRpbWUgM0QgZ3JpZCBwYXJ0aXRpb24gYnVpbHQ6IGxhcCA2OiAwLjU1NTAyOCBzZWNvbmRzLCB0b3RhbCA2LjM5Njc4NSBzZWNvbmRzCkFsbCByYW5kb20gQ09OVEFJTlMgY2hlY2tzIHBhc3NlZC4gU3VjY2Vzc2VzOiAxMDAwLCBGYWlsczogMCBpcyBhIHN1Y2NlcyBwZXJjZW50YWdlIG9mIDEwMC4wMCUgYWRuIHBlciBsb29rdXAgMTgwMS43MSBsb29rdXBzL3NlY29uZApTZWNvbmQgcmFuZG9tIENPTlRBSU5TIGNoZWNrcyBjb21wbGV0ZWQgaW46IGxhcCA3OiAwLjIwOTY0OCBzZWNvbmRzLCB0b3RhbCA2LjYwNjQzMyBzZWNvbmRzCkFMTCBURVNUUyBQQVNTRUQgU1VDQ0VTU0ZVTExZIQptYWluLnB5OiBleGVjdXRlZCBpbjogbGFwIDg6IDAuMDAwMjQ1IHNlY29uZHMsIHRvdGFsIDYuNjA2Njc3IHNlY29uZHMKCiMjIyBPVVRQVVQgRU5EICMjIwojIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwojIyMgRU5EIE9GIENBUFRVUkVEIE9VVFBVVCAjIyMKIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMK</script>
+</body>
+</html>
