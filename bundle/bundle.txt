@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T11:53:55
+#Time when generated: 2026-01-29T11:55:06
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -692,7 +692,7 @@ def main() -> None:
     print("STEP 3 : Now testing SPLIT functionality...")
     rows = ROWS() # it has by default a large enough array to hold 10000 rows per material
     for i in range(10):
-        rows.split(pos=(10,10,10), mat="AIR")  # should raise error since no rows exist yet
+        rows.split(pos=(i*10,i*10,i*10), mat="AIR")  # should raise error since no rows exist yet
 
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
@@ -2092,30 +2092,35 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.019308 seconds, total 5.054018 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 199.23 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.448535 seconds, total 5.502553 seconds
+STEP 1 :  3D grid partition built: lap 3: 5.05629 seconds, total 5.075832 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 197.77 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.4015 seconds, total 5.477332 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.365185 seconds, total 5.867739 seconds
+ - All 10000 rows deleted in: lap 5: 0.355519 seconds, total 5.832851 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.545928 seconds, total 6.413666 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1831.74 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.197205 seconds, total 6.610872 seconds
+ - second time 3D grid partition built: lap 6: 0.539486 seconds, total 6.372337 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1853.62 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.171047 seconds, total 6.543384 seconds
 FINALLY: TESTS PASSED SUCCESSFULLY!
 STEP 3 : Now testing SPLIT functionality...
-Material AIR has 0 rows after SPLIT tests.
-Material WATER has 0 rows after SPLIT tests.
-Material LAVA has 0 rows after SPLIT tests.
-Material GLASS has 0 rows after SPLIT tests.
-Material STONE has 261 rows after SPLIT tests.
-Material OBSIDIAN has 0 rows after SPLIT tests.
-Material BEDROCK has 0 rows after SPLIT tests.
-main.py: executed in: lap 8: 0.018373 seconds, total 6.629245 seconds
+Traceback (most recent call last):
+  File "c:\VOXELS\main.py", line 127, in <module>
+    main()
+    ~~~~^^
+  File "c:\VOXELS\main.py", line 110, in main
+    rows.split(pos=(i*10,i*10,i*10), mat="AIR")  # should raise error since no rows exist yet
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 118, in split
+    self.delete(index=ROW.RID(row=row), mat=mat)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 70, in delete
+    raise IndexError("index out of range")
+IndexError: index out of range
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2117
+# Total lines in bundle: 2122
 # Total files in bundle: 21
-# Generated at the time: 2026-01-29T11:53:55
+# Generated at the time: 2026-01-29T11:55:06
 --- END OF FILE ---

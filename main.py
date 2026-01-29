@@ -107,7 +107,7 @@ def main() -> None:
     print("STEP 3 : Now testing SPLIT functionality...")
     rows = ROWS() # it has by default a large enough array to hold 10000 rows per material
     for i in range(10):
-        rows.split(pos=(10,10,10), mat="AIR")  # should raise error since no rows exist yet
+        rows.split(pos=(i*10,i*10,i*10), mat="AIR")  # should raise error since no rows exist yet
 
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
