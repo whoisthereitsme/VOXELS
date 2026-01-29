@@ -10,7 +10,7 @@ from bundle import *
 def main() -> None:
     rows = ROWS()
     row = rows.array[ MATERIALS.IDX["STONE"] ][0]
-    rows.delete(row=row)
+    rows.remove(row=row)
 
     cell = 20          # cube edge length
     nx = 40            # number of cells in X  -> world X size = nx*cell
@@ -28,7 +28,7 @@ def main() -> None:
             for iz in range(nz):
                 z0 = iz * cell
                 z1 = z0 + cell
-                rows.append(p0=(x0, y0, z0), p1=(x1, y1, z1), mat="STONE")
+                rows.insert(p0=(x0, y0, z0), p1=(x1, y1, z1), mat="STONE")
                 
 
     timer.print(msg="STEP 1 :  3D grid partition built")
@@ -59,7 +59,7 @@ def main() -> None:
     print(" - Now deleting all rows...")
     for i in range(10000):
         row = rows.array[ MATERIALS.IDX["STONE"] ][n-1-i]
-        rows.delete(row=row)
+        rows.remove(row=row)
     timer.print(msg=" - All 10000 rows deleted in")
     # and now test wiht a new set adn see if it still works
     print("STEP 2 : Rebuilding rows after deletion...")
@@ -78,7 +78,7 @@ def main() -> None:
             for iz in range(nz):
                 z0 = iz * cell
                 z1 = z0 + cell
-                rows.append(p0=(x0, y0, z0), p1=(x1, y1, z1), mat="STONE")
+                rows.insert(p0=(x0, y0, z0), p1=(x1, y1, z1), mat="STONE")
                 
 
     timer.print(msg=" - second time 3D grid partition built")
