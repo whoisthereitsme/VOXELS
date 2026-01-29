@@ -109,7 +109,7 @@ def main() -> None:
     print("WORLD VOLUME BEFORE: ", rows.volume())
     print(rows.size)
     # 1 row exists normally at tis point -> its created at init with STONE material
-    for i in range(100):
+    for i in range(1000):
         x = random.randint(a=1000, b=999000)
         y = random.randint(a=1000, b=999000)
         z = random.randint(a=1000, b=64000)
