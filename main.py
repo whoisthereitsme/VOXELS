@@ -108,7 +108,10 @@ def main() -> None:
     rows = ROWS() # it has by default a large enough array to hold 10000 rows per material
     # 1 row exists normally at tis point -> its created at init with STONE material
     for i in range(10):
-        rows.split(pos=(i*10,i*10,i*10), mat="AIR")  # should raise error since no rows exist yet
+        x = random.randint(1000, b=9000)
+        y = random.randint(a=1000, b=9000)
+        z = random.randint(a=1000, b=9000)
+        rows.split(pos=(x, y, z), mat="AIR")  # should raise error since no rows exist yet
         print(f" - SPLIT test {i+1}/10 passed.")
 
     for i in range(len(rows.array)):
