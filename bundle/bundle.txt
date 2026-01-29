@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T11:34:31
+#Time when generated: 2026-01-29T11:35:51
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -594,8 +594,8 @@ from bundle import *
 
 def main() -> None:
     rows = ROWS()
-
-    rows.delete(index=0, mat="STONE")
+    row = rows.array[ MATERIALS.IDX["STONE"] ][0]
+    rows.delete(row=row)
 
     cell = 20          # cube edge length
     nx = 40            # number of cells in X  -> world X size = nx*cell
@@ -643,7 +643,8 @@ def main() -> None:
 
     print("Now deleting all rows...")
     for i in range(10000):
-        rows.delete(index=n-1-i, mat="STONE")
+        row = rows.array[ MATERIALS.IDX["STONE"] ][n-1-i]
+        rows.delete(row=row)
     timer.print(msg="All 10000 rows deleted in")
 
     # and now test wiht a new set adn see if it still works
@@ -2422,22 +2423,19 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-3D grid partition built: lap 3: 5.061767 seconds, total 5.103215 seconds
-All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 197.56 lookups/second
-Random CONTAINS checks completed in: lap 4: 0.405173 seconds, total 5.508388 seconds
-Now deleting all rows...
-All 10000 rows deleted in: lap 5: 0.33388 seconds, total 5.842268 seconds
-Rebuilding rows after deletion...
-second time 3D grid partition built: lap 6: 0.527301 seconds, total 6.36957 seconds
-All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1896.45 lookups/second
-Second random CONTAINS checks completed in: lap 7: 0.170113 seconds, total 6.539682 seconds
-ALL TESTS PASSED SUCCESSFULLY!
-main.py: executed in: lap 8: 0.000261 seconds, total 6.539944 seconds
+Traceback (most recent call last):
+  File "c:\VOXELS\main.py", line 120, in <module>
+    main()
+    ~~~~^^
+  File "c:\VOXELS\main.py", line 13, in main
+    rows.delete(row=row)
+    ~~~~~~~~~~~^^^^^^^^^
+TypeError: ROWS.delete() missing 2 required positional arguments: 'index' and 'mat'
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2439
+# Total lines in bundle: 2437
 # Total files in bundle: 21
-# Generated at the time: 2026-01-29T11:34:31
+# Generated at the time: 2026-01-29T11:35:51
 --- END OF FILE ---

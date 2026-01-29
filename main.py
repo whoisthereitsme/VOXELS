@@ -9,8 +9,8 @@ from bundle import *
 
 def main() -> None:
     rows = ROWS()
-
-    rows.delete(index=0, mat="STONE")
+    row = rows.array[ MATERIALS.IDX["STONE"] ][0]
+    rows.delete(row=row)
 
     cell = 20          # cube edge length
     nx = 40            # number of cells in X  -> world X size = nx*cell
@@ -58,7 +58,8 @@ def main() -> None:
 
     print("Now deleting all rows...")
     for i in range(10000):
-        rows.delete(index=n-1-i, mat="STONE")
+        row = rows.array[ MATERIALS.IDX["STONE"] ][n-1-i]
+        rows.delete(row=row)
     timer.print(msg="All 10000 rows deleted in")
 
     # and now test wiht a new set adn see if it still works
