@@ -107,7 +107,7 @@ def main() -> None:
     print("STEP 3 : Now testing SPLIT functionality...")
     rows = ROWS() # it has by default a large enough array to hold 10000 rows per material
     print("WORLD VOLUME BEFORE: ", rows.volume())
-
+    print(rows.size)
     # 1 row exists normally at tis point -> its created at init with STONE material
     for i in range(10):
         x = random.randint(1000, b=90000)

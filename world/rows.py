@@ -19,20 +19,19 @@ from utils.types import POS, SIZE
 class ROWS:
     SIZE = 65536
     def __init__(self) -> None:
-        self.size = ROWS.SIZE
         self.mats = Materials()
         self.bvh = BVH(rows=self)
-        # n is a dict of n
         self.n:dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}  # number of valid rows per material
         self.m = 0  # for the total number of rows used
 
-        self.array: NDArray[ROW.DTYPE] = np.full((MATERIALS.NUM, self.size, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
+        self.array: NDArray[ROW.DTYPE] = np.full((MATERIALS.NUM, ROWS.SIZE, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
         self.shape = self.array.shape
         self.nbytes = self.array.nbytes
         self.gbytes = self.nbytes / (1024**3)
 
         mat = "STONE"
         self.append(p0=(ROW.XMIN, ROW.YMIN, ROW.ZMIN), p1=(ROW.XMAX, ROW.YMAX, ROW.ZMAX), mat=mat)  # alive and dirty by default are true so no need to specify : easier to use now!!!
+        self.size = ROW.XMAX - ROW.XMIN, ROW.YMAX - ROW.YMIN, ROW.ZMAX - ROW.ZMIN
 
     def newn(self, mat:str=None) -> int:
         mid: int = Materials.name2idx[mat]
