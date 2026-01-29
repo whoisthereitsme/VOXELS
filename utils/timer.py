@@ -1,7 +1,5 @@
 from __future__ import annotations
-import stat
 import time
-from turtle import st
 
 
 

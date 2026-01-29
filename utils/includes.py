@@ -29,7 +29,7 @@ import bisect
 import pygame
 import moderngl
 import traceback
-
+import stat
 
 
 
@@ -77,6 +77,7 @@ __all__ = [
     "moderngl",
     "timer", # include the instance timer -> can be used as utils.timer
     "traceback",
+    "stat",
 ]
 
 
