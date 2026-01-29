@@ -31,7 +31,7 @@ def main() -> None:
                 rows.append(p0=(x0, y0, z0), p1=(x1, y1, z1), mat="STONE")
                 
 
-    timer.print(msg="3D grid partition built")
+    timer.print(msg="STEP 1 :  3D grid partition built")
 
     max_x = nx * cell - 1
     max_y = ny * cell - 1
@@ -53,17 +53,16 @@ def main() -> None:
             fails += 1
             pass
 
-    print("All random CONTAINS checks passed.", f"Successes: {succes}, Fails: {fails} is a succes percentage of {100-fails/(succes+fails)*100:.2f}% adn per lookup {(succes+fails)/timer.delta[-1]:.2f} lookups/second")
-    timer.print(msg="Random CONTAINS checks completed in")
+    print(" - All random CONTAINS checks passed.", f"Successes: {succes}, Fails: {fails} is a succes percentage of {100-fails/(succes+fails)*100:.2f}% adn per lookup {(succes+fails)/timer.delta[-1]:.2f} lookups/second")
+    timer.print(msg=" - Random CONTAINS checks completed in")
 
-    print("Now deleting all rows...")
+    print(" - Now deleting all rows...")
     for i in range(10000):
         row = rows.array[ MATERIALS.IDX["STONE"] ][n-1-i]
         rows.delete(row=row)
-    timer.print(msg="All 10000 rows deleted in")
-
+    timer.print(msg=" - All 10000 rows deleted in")
     # and now test wiht a new set adn see if it still works
-    print("Rebuilding rows after deletion...")
+    print("STEP 2 : Rebuilding rows after deletion...")
     cell = 40          # double size
     nx = 20            # half number of cells in X  -> world X size = nx*cell
     ny = 20            # half number of cells in Y
@@ -82,7 +81,7 @@ def main() -> None:
                 rows.append(p0=(x0, y0, z0), p1=(x1, y1, z1), mat="STONE")
                 
 
-    timer.print(msg="second time 3D grid partition built")
+    timer.print(msg=" - second time 3D grid partition built")
     succes = 0
     fails = 0
     for _ in range(1000):
@@ -99,11 +98,11 @@ def main() -> None:
             fails += 1
             pass
 
-    print("All random CONTAINS checks passed.", f"Successes: {succes}, Fails: {fails} is a succes percentage of {100-fails/(succes+fails)*100:.2f}% adn per lookup {(succes+fails)/timer.delta[-1]:.2f} lookups/second")
-    timer.print(msg="Second random CONTAINS checks completed in")
+    print(" - All random CONTAINS checks passed.", f"Successes: {succes}, Fails: {fails} is a succes percentage of {100-fails/(succes+fails)*100:.2f}% adn per lookup {(succes+fails)/timer.delta[-1]:.2f} lookups/second")
+    timer.print(msg=" - Second random CONTAINS checks completed in")
 
     if succes == 1000 and fails == 0:
-        print("ALL TESTS PASSED SUCCESSFULLY!")
+        print("FINALLY: TESTS PASSED SUCCESSFULLY!")
 
 
 
