@@ -11,7 +11,7 @@ from world.row import ROW
 from utils.bvh import BVH
 from world.materials import Materials, MATERIALS
 from utils.types import POS, SIZE
-
+from utils.mdx import MDX
 
 
 
@@ -21,6 +21,7 @@ class ROWS:
     def __init__(self) -> None:
         self.mats = Materials()
         self.bvh = BVH(rows=self)
+        self.mdx = MDX(rows=self)
         self.n:dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}  # number of valid rows per material
         self.m = 0  # for the total number of rows used
 
@@ -30,7 +31,7 @@ class ROWS:
         self.gbytes = self.nbytes / (1024**3)
 
         mat = "STONE"
-        self.append(p0=(ROW.XMIN, ROW.YMIN, ROW.ZMIN), p1=(ROW.XMAX, ROW.YMAX, ROW.ZMAX), mat=mat)  # alive and dirty by default are true so no need to specify : easier to use now!!!
+        self.insert(p0=(ROW.XMIN, ROW.YMIN, ROW.ZMIN), p1=(ROW.XMAX, ROW.YMAX, ROW.ZMAX), mat=mat)  # alive and dirty by default are true so no need to specify : easier to use now!!!
         self.size = ROW.XMAX - ROW.XMIN, ROW.YMAX - ROW.YMIN, ROW.ZMAX - ROW.ZMIN
 
     def newn(self, mat:str=None) -> int:
@@ -50,15 +51,16 @@ class ROWS:
         self.m -= 1
         return self.n[mid]
             
-    def append(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -> ROWS:
+    def insert(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -> ROWS:
         mid: int = Materials.name2idx[mat]
         rid: int = self.newn(mat=mat)
         row = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
         self.array[mid][rid] = row  # added rid=n so that bvh can use it when i provide a row as argument
         self.bvh.insert(row=row)  # insert into bvh index
+        self.mdx.insert(row=row)
         return self
     
-    def delete(self, index:int=None, mat:str=None, row:NDArray[ROW.DTYPE]=None) -> ROWS:
+    def remove(self, index:int=None, mat:str=None, row:NDArray[ROW.DTYPE]=None) -> ROWS:
         if row is not None and index is None and mat is None:
             mat = ROW.MAT(row=row)
             index = ROW.RID(row=row)
@@ -68,6 +70,7 @@ class ROWS:
             raise IndexError("index out of range")
         last = n - 1
         self.bvh.remove(mat=mat, rid=index)
+        self.mdx.remove(mat=mat, rid=index)
 
         if index != last:
             self.bvh.remove(mat=mat, rid=last)
@@ -118,13 +121,15 @@ class ROWS:
                     size = (X1 - X0) * (Y1 - Y0) * (Z1 - Z0)
                     if size > 0:
                         if i == 1 and j == 1 and k == 1:    # the center cube should get the new material (its the one containing pos)
-                            self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use new the material given for the new row
-                            succes += 1
+                            self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use new the material given for the new row
                         else:
-                            self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
+                            self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
 
-        self.delete(row=row)  # delete the original row
+        self.remove(row=row)  # remove the original row
 
+    """
+    -> TODO : yet has to be redone
+    """
     def merge(self, mat:str=None, axis:int=None) -> None:
         mid = Materials.name2idx[mat]
         n = self.n[mid]
@@ -134,13 +139,11 @@ class ROWS:
                 for row1 in self.array[mid]:
                     for row2 in self.array[mid]:
                         if ROW.MERGE(row1=row1, row2=row2, axis=axis):
-                            self.delete(row=row1)
-                            self.delete(row=row2)
                             p0 = ROW.SORT(p0=ROW.P0(row=row1), p1=ROW.P0(row=row2))[0]      # minium of both rows
                             p1 = ROW.SORT(p0=ROW.P1(row=row1), p1=ROW.P1(row=row2))[1]      # maximum of both rows
-                            self.append(p0=p0, p1=p1, mat=mat)
-                            self.delete(row=row1)
-                            self.delete(row=row2)
+                            self.insert(p0=p0, p1=p1, mat=mat)
+                            self.remove(row=row1)
+                            self.remove(row=row2)
                         else:
                             merged = False
 

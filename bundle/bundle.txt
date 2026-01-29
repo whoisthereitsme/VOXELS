@@ -1,12 +1,12 @@
-#Time when generated: 2026-01-29T13:29:08
+#Time when generated: 2026-01-29T13:49:47
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
-Files included: 21
+Files included: 22
 
 
 ################################################################################
-# FILE 1/21: __init__.py (START)
+# FILE 1/22: __init__.py (START)
 ################################################################################
 
 import utils
@@ -17,12 +17,12 @@ __all__ = world.__all__ + utils.__all__ + bundle.__all__
 
 
 ################################################################################
-# FILE 1/21: __init__.py (END)
+# FILE 1/22: __init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 2/21: __main__.py (START)
+# FILE 2/22: __main__.py (START)
 ################################################################################
 
 from main import main
@@ -31,12 +31,12 @@ if __name__ == "__main__":
     main()
 
 ################################################################################
-# FILE 2/21: __main__.py (END)
+# FILE 2/22: __main__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 3/21: bundle/__init__.py (START)
+# FILE 3/22: bundle/__init__.py (START)
 ################################################################################
 
 from .bundle import *
@@ -48,12 +48,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 3/21: bundle/__init__.py (END)
+# FILE 3/22: bundle/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 4/21: bundle/bundle.py (START)
+# FILE 4/22: bundle/bundle.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -316,12 +316,12 @@ class Bundle:
 
 
 ################################################################################
-# FILE 4/21: bundle/bundle.py (END)
+# FILE 4/22: bundle/bundle.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 5/21: bundle/github.py (START)
+# FILE 5/22: bundle/github.py (START)
 ################################################################################
 
 import base64
@@ -534,12 +534,12 @@ class GitHub:
 
 
 ################################################################################
-# FILE 5/21: bundle/github.py (END)
+# FILE 5/22: bundle/github.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 6/21: credentials/__init__.py (START)
+# FILE 6/22: credentials/__init__.py (START)
 ################################################################################
 
 from .environ import Environ
@@ -549,12 +549,12 @@ __all__ = [
 ]   
 
 ################################################################################
-# FILE 6/21: credentials/__init__.py (END)
+# FILE 6/22: credentials/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 7/21: credentials/environ.py (START)
+# FILE 7/22: credentials/environ.py (START)
 ################################################################################
 
 
@@ -575,12 +575,12 @@ class Environ:
 
 
 ################################################################################
-# FILE 7/21: credentials/environ.py (END)
+# FILE 7/22: credentials/environ.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 8/21: main.py (START)
+# FILE 8/22: main.py (START)
 ################################################################################
 
 
@@ -727,12 +727,12 @@ if __name__ == "__main__":
 
 
 ################################################################################
-# FILE 8/21: main.py (END)
+# FILE 8/22: main.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 9/21: TODO.md (START)
+# FILE 9/22: TODO.md (START)
 ################################################################################
 
 
@@ -750,12 +750,12 @@ if __name__ == "__main__":
 # TODO: CLEANUP!!!
 
 ################################################################################
-# FILE 9/21: TODO.md (END)
+# FILE 9/22: TODO.md (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 10/21: utils/__init__.py (START)
+# FILE 10/22: utils/__init__.py (START)
 ################################################################################
 
 from .request import Request
@@ -766,12 +766,12 @@ __all__ = [
 ] + inc
 
 ################################################################################
-# FILE 10/21: utils/__init__.py (END)
+# FILE 10/22: utils/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 11/21: utils/bvh.py (START)
+# FILE 11/22: utils/bvh.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1086,12 +1086,12 @@ class BVH:
 
 
 ################################################################################
-# FILE 11/21: utils/bvh.py (END)
+# FILE 11/22: utils/bvh.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 12/21: utils/event.py (START)
+# FILE 12/22: utils/event.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1124,12 +1124,12 @@ class Handler:
 
 
 ################################################################################
-# FILE 12/21: utils/event.py (END)
+# FILE 12/22: utils/event.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 13/21: utils/includes.py (START)
+# FILE 13/22: utils/includes.py (START)
 ################################################################################
 
 from __future__ import annotations  # MUST BE FIRST
@@ -1219,12 +1219,188 @@ timer.print(msg=f"utils/includes.py: {len(__all__)} modules loaded in")
 timer.reset()
 
 ################################################################################
-# FILE 13/21: utils/includes.py (END)
+# FILE 13/22: utils/includes.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 14/21: utils/request.py (START)
+# FILE 14/22: utils/mdx.py (START)
+################################################################################
+
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from world.rows import ROWS
+
+
+
+from collections import defaultdict
+from dataclasses import dataclass
+from typing import DefaultDict, Dict, Optional, Set, Tuple
+
+from world.row import ROW
+
+# rid locator
+Loc = Tuple[int, int]  # (mid, rid)
+
+# Face keys:
+# We include mid (material index) so we can merge per-material quickly.
+# The spans must match exactly on the other two axes.
+FaceKey = Tuple[int, int, int, int, int, int]  # (mid, a0, a1, b0, b1, face_coord)
+
+
+@dataclass
+class _RowFaces:
+    # store the 6 keys so we can unregister quickly without recomputing
+    x0: FaceKey
+    x1: FaceKey
+    y0: FaceKey
+    y1: FaceKey
+    z0: FaceKey
+    z1: FaceKey
+
+
+class MDX:
+    """
+    Tracks adjacency candidates for merges using face hashing.
+
+    For each axis we maintain:
+      neg[axis][key] -> set of (mid,rid) with face at MIN along that axis
+      pos[axis][key] -> set of (mid,rid) with face at MAX along that axis
+
+    A merge along X exists when:
+      pos[X][(mid, y0,y1,z0,z1, x)] intersects neg[X][(mid, y0,y1,z0,z1, x)]
+    """
+
+    AX_X = 0
+    AX_Y = 1
+    AX_Z = 2
+
+    def __init__(self, rows:ROWS=None) -> None:
+        self.rows = rows
+        # axis -> key -> set(loc)
+        self.neg: Tuple[DefaultDict[FaceKey, Set[Loc]], ...] = (
+            defaultdict(set), defaultdict(set), defaultdict(set)
+        )
+        self.pos: Tuple[DefaultDict[FaceKey, Set[Loc]], ...] = (
+            defaultdict(set), defaultdict(set), defaultdict(set)
+        )
+
+        # (mid,rid) -> stored face keys (for O(1) unregister)
+        self._faces: Dict[Loc, _RowFaces] = {}
+
+    # ---------------------------
+    # key construction
+    # ---------------------------
+    @staticmethod
+    def _faces_for(mid: int, row) -> _RowFaces:
+        x0, y0, z0 = ROW.P0(row=row)
+        x1, y1, z1 = ROW.P1(row=row)
+        # axis X: spans are (y0,y1,z0,z1), face coord is x0 or x1
+        kx0: FaceKey = (mid, y0, y1, z0, z1, x0)
+        kx1: FaceKey = (mid, y0, y1, z0, z1, x1)
+        # axis Y: spans are (x0,x1,z0,z1), face coord is y0 or y1
+        ky0: FaceKey = (mid, x0, x1, z0, z1, y0)
+        ky1: FaceKey = (mid, x0, x1, z0, z1, y1)
+        # axis Z: spans are (x0,x1,y0,y1), face coord is z0 or z1
+        kz0: FaceKey = (mid, x0, x1, y0, y1, z0)
+        kz1: FaceKey = (mid, x0, x1, y0, y1, z1)
+        return _RowFaces(x0=kx0, x1=kx1, y0=ky0, y1=ky1, z0=kz0, z1=kz1)
+
+    # ---------------------------
+    # register / unregister
+    # ---------------------------
+    def insert(self, row=None) -> None:
+        mid = self.rows.mats.name2idx[ROW.MAT(row=row)]
+        rid = ROW.RID(row=row)
+        loc = (mid, rid)
+        faces = self._faces_for(mid, row)
+        self._faces[loc] = faces
+
+        self.neg[self.AX_X][faces.x0].add(loc)
+        self.pos[self.AX_X][faces.x1].add(loc)
+
+        self.neg[self.AX_Y][faces.y0].add(loc)
+        self.pos[self.AX_Y][faces.y1].add(loc)
+
+        self.neg[self.AX_Z][faces.z0].add(loc)
+        self.pos[self.AX_Z][faces.z1].add(loc)
+
+    def remove(self, mat:str=None, rid:int=None) -> None:
+        mid = self.rows.mats.name2idx[mat]
+        loc = (mid, rid)
+        faces = self._faces.pop(loc, None)
+        if faces is None:
+            return
+
+        self._discard(self.neg[self.AX_X], faces.x0, loc)
+        self._discard(self.pos[self.AX_X], faces.x1, loc)
+
+        self._discard(self.neg[self.AX_Y], faces.y0, loc)
+        self._discard(self.pos[self.AX_Y], faces.y1, loc)
+
+        self._discard(self.neg[self.AX_Z], faces.z0, loc)
+        self._discard(self.pos[self.AX_Z], faces.z1, loc)
+
+    @staticmethod
+    def _discard(m: DefaultDict[FaceKey, Set[Loc]], key: FaceKey, loc: Loc) -> None:
+        s = m.get(key)
+        if not s:
+            return
+        s.discard(loc)
+        if not s:
+            # keep dict small
+            del m[key]
+
+    # ---------------------------
+    # rid move helper (swap-delete)
+    # ---------------------------
+    def move_rid(self, mid: int, old_rid: int, new_rid: int, row) -> None:
+        self.remove(mat=self.rows.mats.idx2name[mid], rid=old_rid)
+        self.insert(row=row)
+
+    # ---------------------------
+    # partner query
+    # ---------------------------
+    def find_partner(self, mid: int, rid: int, axis: int) -> Optional[Loc]:
+        """
+        Finds any merge partner for (mid,rid) along given axis.
+        Returns (mid, rid2) or None.
+        """
+        loc = (mid, rid)
+        faces = self._faces.get(loc)
+        if faces is None:
+            return None
+
+        if axis == self.AX_X:
+            # partner has x0 == our x1, same yz span
+            key = faces.x1
+            candidates = self.neg[self.AX_X].get(key)
+        elif axis == self.AX_Y:
+            key = faces.y1
+            candidates = self.neg[self.AX_Y].get(key)
+        elif axis == self.AX_Z:
+            key = faces.z1
+            candidates = self.neg[self.AX_Z].get(key)
+        else:
+            raise ValueError("axis must be 0,1,2")
+
+        if not candidates:
+            return None
+
+        # return any candidate that isn't self
+        for c in candidates:
+            if c != loc:
+                return c
+        return None
+
+################################################################################
+# FILE 14/22: utils/mdx.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 15/22: utils/request.py (START)
 ################################################################################
 
 import time
@@ -1281,12 +1457,12 @@ class Request:
             raise RuntimeError(f"[ERROR] unexpected error for {self.url}\n{e!r}") from e
 
 ################################################################################
-# FILE 14/21: utils/request.py (END)
+# FILE 15/22: utils/request.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 15/21: utils/schedule.py (START)
+# FILE 16/22: utils/schedule.py (START)
 ################################################################################
 
 import threading
@@ -1450,12 +1626,12 @@ if __name__ == "__main__":
     sched.stop()
 
 ################################################################################
-# FILE 15/21: utils/schedule.py (END)
+# FILE 16/22: utils/schedule.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 16/21: utils/timer.py (START)
+# FILE 17/22: utils/timer.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1546,12 +1722,12 @@ class Timer:
 now = Timer.now # now: now() returns the current time in nanoseconds
 
 ################################################################################
-# FILE 16/21: utils/timer.py (END)
+# FILE 17/22: utils/timer.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 17/21: utils/types.py (START)
+# FILE 18/22: utils/types.py (START)
 ################################################################################
 
 from typing import TypeAlias
@@ -1564,12 +1740,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 17/21: utils/types.py (END)
+# FILE 18/22: utils/types.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 18/21: world/__init__.py (START)
+# FILE 19/22: world/__init__.py (START)
 ################################################################################
 
 from .rows import ROWS, rows
@@ -1590,12 +1766,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 18/21: world/__init__.py (END)
+# FILE 19/22: world/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 19/21: world/materials.py (START)
+# FILE 20/22: world/materials.py (START)
 ################################################################################
 
 
@@ -1693,12 +1869,12 @@ class Materials:
 
 
 ################################################################################
-# FILE 19/21: world/materials.py (END)
+# FILE 20/22: world/materials.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 20/21: world/row.py (START)
+# FILE 21/22: world/row.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1946,12 +2122,12 @@ class ROW:
     
 
 ################################################################################
-# FILE 20/21: world/row.py (END)
+# FILE 21/22: world/row.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 21/21: world/rows.py (START)
+# FILE 22/22: world/rows.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1967,7 +2143,7 @@ from world.row import ROW
 from utils.bvh import BVH
 from world.materials import Materials, MATERIALS
 from utils.types import POS, SIZE
-
+from utils.mdx import MDX
 
 
 
@@ -1977,6 +2153,7 @@ class ROWS:
     def __init__(self) -> None:
         self.mats = Materials()
         self.bvh = BVH(rows=self)
+        self.mdx = MDX(rows=self)
         self.n:dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}  # number of valid rows per material
         self.m = 0  # for the total number of rows used
 
@@ -1986,7 +2163,7 @@ class ROWS:
         self.gbytes = self.nbytes / (1024**3)
 
         mat = "STONE"
-        self.append(p0=(ROW.XMIN, ROW.YMIN, ROW.ZMIN), p1=(ROW.XMAX, ROW.YMAX, ROW.ZMAX), mat=mat)  # alive and dirty by default are true so no need to specify : easier to use now!!!
+        self.insert(p0=(ROW.XMIN, ROW.YMIN, ROW.ZMIN), p1=(ROW.XMAX, ROW.YMAX, ROW.ZMAX), mat=mat)  # alive and dirty by default are true so no need to specify : easier to use now!!!
         self.size = ROW.XMAX - ROW.XMIN, ROW.YMAX - ROW.YMIN, ROW.ZMAX - ROW.ZMIN
 
     def newn(self, mat:str=None) -> int:
@@ -2006,15 +2183,16 @@ class ROWS:
         self.m -= 1
         return self.n[mid]
             
-    def append(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -> ROWS:
+    def insert(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -> ROWS:
         mid: int = Materials.name2idx[mat]
         rid: int = self.newn(mat=mat)
         row = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
         self.array[mid][rid] = row  # added rid=n so that bvh can use it when i provide a row as argument
         self.bvh.insert(row=row)  # insert into bvh index
+        self.mdx.insert(row=row)
         return self
     
-    def delete(self, index:int=None, mat:str=None, row:NDArray[ROW.DTYPE]=None) -> ROWS:
+    def remove(self, index:int=None, mat:str=None, row:NDArray[ROW.DTYPE]=None) -> ROWS:
         if row is not None and index is None and mat is None:
             mat = ROW.MAT(row=row)
             index = ROW.RID(row=row)
@@ -2024,6 +2202,7 @@ class ROWS:
             raise IndexError("index out of range")
         last = n - 1
         self.bvh.remove(mat=mat, rid=index)
+        self.mdx.remove(mat=mat, rid=index)
 
         if index != last:
             self.bvh.remove(mat=mat, rid=last)
@@ -2074,13 +2253,15 @@ class ROWS:
                     size = (X1 - X0) * (Y1 - Y0) * (Z1 - Z0)
                     if size > 0:
                         if i == 1 and j == 1 and k == 1:    # the center cube should get the new material (its the one containing pos)
-                            self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use new the material given for the new row
-                            succes += 1
+                            self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use new the material given for the new row
                         else:
-                            self.append(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
+                            self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
 
-        self.delete(row=row)  # delete the original row
+        self.remove(row=row)  # remove the original row
 
+    """
+    -> TODO : yet has to be redone
+    """
     def merge(self, mat:str=None, axis:int=None) -> None:
         mid = Materials.name2idx[mat]
         n = self.n[mid]
@@ -2090,13 +2271,11 @@ class ROWS:
                 for row1 in self.array[mid]:
                     for row2 in self.array[mid]:
                         if ROW.MERGE(row1=row1, row2=row2, axis=axis):
-                            self.delete(row=row1)
-                            self.delete(row=row2)
                             p0 = ROW.SORT(p0=ROW.P0(row=row1), p1=ROW.P0(row=row2))[0]      # minium of both rows
                             p1 = ROW.SORT(p0=ROW.P1(row=row1), p1=ROW.P1(row=row2))[1]      # maximum of both rows
-                            self.append(p0=p0, p1=p1, mat=mat)
-                            self.delete(row=row1)
-                            self.delete(row=row2)
+                            self.insert(p0=p0, p1=p1, mat=mat)
+                            self.remove(row=row1)
+                            self.remove(row=row2)
                         else:
                             merged = False
 
@@ -2115,7 +2294,7 @@ class ROWS:
 rows = ROWS()
 
 ################################################################################
-# FILE 21/21: world/rows.py (END)
+# FILE 22/22: world/rows.py (END)
 ################################################################################
 
 
@@ -2123,35 +2302,19 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 4.976339 seconds, total 5.012461 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 200.95 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.415486 seconds, total 5.427947 seconds
- - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.344763 seconds, total 5.77271 seconds
-STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.531539 seconds, total 6.304249 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1881.33 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.182937 seconds, total 6.487186 seconds
-FINALLY: TESTS PASSED SUCCESSFULLY!
-STEP 3 : Now testing SPLIT functionality...
-WORLD VOLUME BEFORE:  72056357089509375
-(1048576, 1048576, 65536)
 Traceback (most recent call last):
   File "c:\VOXELS\main.py", line 135, in <module>
     main()
     ~~~~^^
-  File "c:\VOXELS\main.py", line 116, in main
-    rows.split(pos=(x, y, z), mat="AIR")  # should raise error since no rows exist yet
-    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 122, in split
-    succes += 1
-    ^^^^^^
-UnboundLocalError: cannot access local variable 'succes' where it is not associated with a value
+  File "c:\VOXELS\main.py", line 13, in main
+    rows.delete(row=row)
+    ^^^^^^^^^^^
+AttributeError: 'ROWS' object has no attribute 'delete'
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2153
-# Total files in bundle: 21
-# Generated at the time: 2026-01-29T13:29:08
+# Total lines in bundle: 2316
+# Total files in bundle: 22
+# Generated at the time: 2026-01-29T13:49:47
 --- END OF FILE ---
