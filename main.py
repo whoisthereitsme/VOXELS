@@ -108,6 +108,10 @@ def main() -> None:
     rows = ROWS() # it has by default a large enough array to hold 10000 rows per material
     for i in range(10):
         rows.split(pos=(10,10,10), mat="AIR")  # should raise error since no rows exist yet
+
+    for i in range(len(rows.array)):
+        n = rows.nrows(mat=Materials.idx2name[i])
+        print(f"Material {Materials.idx2name[i]} has {n} rows after SPLIT tests.")
     
 
 
