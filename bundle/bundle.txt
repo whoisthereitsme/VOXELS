@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-29T15:08:02
+#Time when generated: 2026-01-29T15:09:14
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2272,6 +2272,7 @@ class ROWS:
                             self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
 
         self.remove(row=row)  # remove the original row
+        self.merge(mat=mat0)  # try to merge the old material rows
 
 
 
@@ -2360,15 +2361,15 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.833677 seconds, total 5.854587 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 171.42 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.369332 seconds, total 6.223919 seconds
+STEP 1 :  3D grid partition built: lap 3: 5.65509 seconds, total 5.691137 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 176.83 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.38702 seconds, total 6.078157 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.39863 seconds, total 6.622549 seconds
+ - All 10000 rows deleted in: lap 5: 0.405607 seconds, total 6.483764 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.625801 seconds, total 7.24835 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1597.95 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.201145 seconds, total 7.449495 seconds
+ - second time 3D grid partition built: lap 6: 0.601692 seconds, total 7.085456 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1661.98 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.169951 seconds, total 7.255407 seconds
 FINALLY: TESTS PASSED SUCCESSFULLY!
 STEP 3 : Now testing SPLIT functionality...
 WORLD VOLUME BEFORE:  72056357089509375
@@ -2477,27 +2478,27 @@ Material AIR has 100 rows after SPLIT tests.
 Material WATER has 0 rows after SPLIT tests.
 Material LAVA has 0 rows after SPLIT tests.
 Material GLASS has 0 rows after SPLIT tests.
-Material STONE has 2501 rows after SPLIT tests.
+Material STONE has 501 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
 WORLD VOLUME AFTER:  72056357089509375
-STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.20804 seconds, total 7.657535 seconds
- - SWEEP completed in: lap 9: 0.302228 seconds, total 7.959763 seconds
- - Second SWEEP completed in: lap 10: 0.001124 seconds, total 7.960887 seconds
+STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.581733 seconds, total 7.83714 seconds
+ - SWEEP completed in: lap 9: 0.000834 seconds, total 7.837973 seconds
+ - Second SWEEP completed in: lap 10: 0.000656 seconds, total 7.838629 seconds
 WORLD VOLUME AFTER SWEEP:  72056357089509375
 Material AIR has 100 rows after SWEEP tests.
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
-Material STONE has 683 rows after SWEEP tests.
+Material STONE has 501 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
-main.py: executed in: lap 11: 0.001588 seconds, total 7.962475 seconds
+main.py: executed in: lap 11: 0.001503 seconds, total 7.840132 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2499
+# Total lines in bundle: 2500
 # Total files in bundle: 22
-# Generated at the time: 2026-01-29T15:08:02
+# Generated at the time: 2026-01-29T15:09:14
 --- END OF FILE ---

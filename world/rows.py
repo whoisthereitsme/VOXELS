@@ -128,6 +128,7 @@ class ROWS:
                             self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
 
         self.remove(row=row)  # remove the original row
+        self.merge(mat=mat0)  # try to merge the old material rows
 
 
 
