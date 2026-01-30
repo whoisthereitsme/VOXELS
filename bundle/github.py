@@ -23,7 +23,7 @@ class GitHub:
     def __init__(
         self,
         root: Path = Path.cwd(),
-        verbose: bool = True,
+        verbose: bool = False,
         workers: int = 12,
         message: str = "Publish project snapshot",
         exts: Optional[Set[str]] = None,
