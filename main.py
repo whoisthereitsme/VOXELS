@@ -144,7 +144,7 @@ def test3() -> None:
                     pos = (x, y, z)
                     rows.split(pos=pos, mat="AIR")
 
-    for i in range(1):
+    for i in range(10):
         print("Performing SWEEP to consolidate AIR rows... AIR rows before:", rows.nrows(mat="AIR"), "in sweep iteration:", i+1)
         rows.sweep()
         print("SWEEP completed. AIR rows after:", rows.nrows(mat="AIR"))

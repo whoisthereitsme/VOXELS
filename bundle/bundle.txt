@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T15:53:55
+#Time when generated: 2026-01-30T15:54:13
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -729,7 +729,7 @@ def test3() -> None:
                     pos = (x, y, z)
                     rows.split(pos=pos, mat="AIR")
 
-    for i in range(1):
+    for i in range(10):
         print("Performing SWEEP to consolidate AIR rows... AIR rows before:", rows.nrows(mat="AIR"), "in sweep iteration:", i+1)
         rows.sweep()
         print("SWEEP completed. AIR rows after:", rows.nrows(mat="AIR"))
@@ -2495,31 +2495,48 @@ rows = ROWS()
 10 mines to be created at random positions.
 Performing SWEEP to consolidate AIR rows... AIR rows before: 12 in sweep iteration: 1
 SWEEP completed. AIR rows after: 11
-Material AIR has 11 rows after SWEEP tests.
-  AIR row 0: p0=(865758, 206808, 29414), p1=(865763, 206813, 29419)
-  AIR row 1: p0=(443342, 767146, 7334), p1=(443347, 767151, 7339)
-  AIR row 2: p0=(411309, 183073, 54846), p1=(411314, 183078, 54851)
-  AIR row 3: p0=(295914, 556119, 24797), p1=(295919, 556124, 24802)
-  AIR row 4: p0=(689123, 331440, 30052), p1=(689128, 331445, 30057)
-  AIR row 5: p0=(740579, 789558, 31495), p1=(740584, 789563, 31500)
-  AIR row 6: p0=(672900, 470197, 45102), p1=(672905, 470202, 45107)
-  AIR row 7: p0=(169895, 316507, 5460), p1=(169900, 316512, 5465)
-  AIR row 8: p0=(904940, 497690, 48963), p1=(904945, 497695, 48968)
-  AIR row 9: p0=(44146, 907945, 61754), p1=(44150, 907950, 61759)
-  AIR row 10: p0=(44150, 907945, 61754), p1=(44151, 907950, 61759)
+Performing SWEEP to consolidate AIR rows... AIR rows before: 11 in sweep iteration: 2
+SWEEP completed. AIR rows after: 10
+Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 3
+SWEEP completed. AIR rows after: 10
+Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 4
+SWEEP completed. AIR rows after: 10
+Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 5
+SWEEP completed. AIR rows after: 10
+Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 6
+SWEEP completed. AIR rows after: 10
+Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 7
+SWEEP completed. AIR rows after: 10
+Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 8
+SWEEP completed. AIR rows after: 10
+Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 9
+SWEEP completed. AIR rows after: 10
+Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 10
+SWEEP completed. AIR rows after: 10
+Material AIR has 10 rows after SWEEP tests.
+  AIR row 0: p0=(916321, 729838, 19330), p1=(916326, 729843, 19335)
+  AIR row 1: p0=(446614, 808798, 7665), p1=(446619, 808803, 7670)
+  AIR row 2: p0=(499443, 882118, 10614), p1=(499448, 882123, 10619)
+  AIR row 3: p0=(129472, 80468, 35002), p1=(129477, 80473, 35007)
+  AIR row 4: p0=(622032, 504494, 57440), p1=(622037, 504499, 57445)
+  AIR row 5: p0=(36644, 946546, 31916), p1=(36649, 946551, 31921)
+  AIR row 6: p0=(615777, 337455, 22740), p1=(615782, 337460, 22745)
+  AIR row 7: p0=(16041, 284213, 12205), p1=(16046, 284218, 12210)
+  AIR row 8: p0=(944772, 751574, 10287), p1=(944777, 751579, 10292)
+  AIR row 9: p0=(333149, 91386, 2980), p1=(333154, 91391, 2985)
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
 Material STONE has 51 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
-air rows= 11 stone rows= 51
-main.py: executed in: lap 2: 2.144011 seconds, total 2.157751 seconds
+air rows= 10 stone rows= 51
+main.py: executed in: lap 2: 2.138789 seconds, total 2.152826 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2521
+# Total lines in bundle: 2538
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T15:53:55
+# Generated at the time: 2026-01-30T15:54:13
 --- END OF FILE ---
