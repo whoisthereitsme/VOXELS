@@ -166,11 +166,10 @@ class ROWS:
         lo = rid_b if hi == rid_a else rid_a
         self.remove(mat=mat, index=hi)
         self.remove(mat=mat, index=lo)
-
         self.insert(p0=p0, p1=p1, mat=mat)
         return True
 
-    def merge_pass(self, mat: str, axis: int) -> int:
+    def merge_pass(self, mat:str=None, axis:int=None) -> int:
         mid = Materials.name2idx[mat]
         merges = 0
 
@@ -184,7 +183,6 @@ class ROWS:
             _, rid2 = partner
             if self.merge_pair(mat=mat, rid_a=rid, rid_b=rid2):
                 merges += 1
-                # don't increment rid: slot now contains swapped-in row
             else:
                 rid += 1
 
@@ -193,14 +191,13 @@ class ROWS:
     def merge(self, mat:str=None) -> int:
         total = 0
         while True:
-            m = (
-                self.merge_pass(mat, axis=self.mdx.AX_X) +
-                self.merge_pass(mat, axis=self.mdx.AX_Y) +
-                self.merge_pass(mat, axis=self.mdx.AX_Z)
-            )
-            total += m
-            if m == 0:
+            total2 = 0
+            for ax in range(3):
+                total2 += self.merge_pass(mat=mat, axis=ax) 
+            total += total2
+            if total2 == 0:
                 return total
+
             
     def sweep(self) -> int:
         for mat in self.mats.name2idx.keys():
