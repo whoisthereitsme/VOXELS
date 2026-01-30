@@ -1,22 +1,28 @@
-
 from utils import *
 from world import *
 from bundle import *
 
 
-
-
-
 def test1() -> None:
+    """
+    test1:
+    Build a dense 3D grid of STONE AABBs, then verify BVH partition integrity by:
+    - random point lookups must always find a row
+    - found row must CONTAIN the queried point
+    Then delete a chunk of rows, rebuild a different grid, and re-run the same checks.
+    """
     rows = ROWS()
-    row = rows.array[ MATERIALS.IDX["STONE"] ][0]
-    rows.remove(row=row)
 
-    cell = 20          # cube edge length
-    nx = 40            # number of cells in X  -> world X size = nx*cell
-    ny = 40            # number of cells in Y
-    nz = 40            # number of cells in Z
-    n = nx * ny * nz  # total number of cells
+    # remove the default huge row
+    row0 = rows.array[MATERIALS.IDX["STONE"]][0]
+    rows.remove(row=row0)
+
+    # STEP 1 grid
+    cell = 20
+    nx = 40
+    ny = 40
+    nz = 40
+    n = nx * ny * nz
 
     timer.lap()
     for ix in range(nx):
@@ -29,9 +35,7 @@ def test1() -> None:
                 z0 = iz * cell
                 z1 = z0 + cell
                 rows.insert(p0=(x0, y0, z0), p1=(x1, y1, z1), mat="STONE")
-                
-
-    timer.print(msg="STEP 1 :  3D grid partition built")
+    timer.print(msg="STEP 1 : 3D grid partition built")
 
     max_x = nx * cell - 1
     max_y = ny * cell - 1
@@ -40,35 +44,44 @@ def test1() -> None:
     succes = 0
     fails = 0
     for _ in range(1000):
+        pos = (
+            random.randint(0, max_x),
+            random.randint(0, max_y),
+            random.randint(0, max_z),
+        )
         try:
-            pos = (
-                random.randint(0, max_x),
-                random.randint(0, max_y),
-                random.randint(0, max_z),
-            )
-            mat, rid, row = rows.find(pos=pos)
-            assert ROW.CONTAINS(row=row, pos=pos), f"pos={pos} not contained by found row (mat={mat}, rid={rid})"
+            mat, rid, row = rows.search(pos=pos)
+            assert ROW.CONTAINS(row=row, pos=pos), f"pos={pos} not contained (mat={mat}, rid={rid}) p0={ROW.P0(row=row)} p1={ROW.P1(row=row)}"
             succes += 1
-        except:
+        except Exception:
             fails += 1
-            pass
+            raise
 
-    print(" - All random CONTAINS checks passed.", f"Successes: {succes}, Fails: {fails} is a succes percentage of {100-fails/(succes+fails)*100:.2f}% adn per lookup {(succes+fails)/timer.delta[-1]:.2f} lookups/second")
-    timer.print(msg=" - Random CONTAINS checks completed in")
+    assert fails == 0, f"BVH/grid lookup failures in STEP 1: {fails} (success={succes})"
+    print(f" - STEP 1 lookup checks OK: {succes} successes, {fails} fails, {succes/timer.delta[-1]:.2f} lookups/sec")
+    timer.print(msg=" - STEP 1 lookups completed in")
 
-    print(" - Now deleting all rows...")
+    # delete some rows (stress BVH remove/swap)
+    print(" - Now deleting 10000 rows...")
     for i in range(10000):
-        row = rows.array[ MATERIALS.IDX["STONE"] ][n-1-i]
+        row = rows.array[MATERIALS.IDX["STONE"]][rows.nrows(mat="STONE") - 1]
         rows.remove(row=row)
-    timer.print(msg=" - All 10000 rows deleted in")
-    # and now test wiht a new set adn see if it still works
-    print("STEP 2 : Rebuilding rows after deletion...")
-    cell = 40          # double size
-    nx = 20            # half number of cells in X  -> world X size = nx*cell
-    ny = 20            # half number of cells in Y
-    nz = 20            # half number of cells in Z
-    n = nx * ny * nz   # total number of cells (1/8th number of previous)
+    timer.print(msg=" - Deleted 10000 rows in")
 
+    # STEP 2 grid (new scale) — rebuild from scratch for clean bounds
+    # delete remaining STONE rows
+    while rows.nrows(mat="STONE") > 0:
+        row = rows.array[MATERIALS.IDX["STONE"]][rows.nrows(mat="STONE") - 1]
+        rows.remove(row=row)
+
+    print("STEP 2 : Rebuilding rows after deletion...")
+    cell = 40
+    nx = 20
+    ny = 20
+    nz = 20
+    n2 = nx * ny * nz
+
+    timer.lap()
     for ix in range(nx):
         x0 = ix * cell
         x1 = x0 + cell
@@ -79,45 +92,71 @@ def test1() -> None:
                 z0 = iz * cell
                 z1 = z0 + cell
                 rows.insert(p0=(x0, y0, z0), p1=(x1, y1, z1), mat="STONE")
-                
+    timer.print(msg=" - STEP 2 grid partition built")
 
-    timer.print(msg=" - second time 3D grid partition built")
+    max_x = nx * cell - 1
+    max_y = ny * cell - 1
+    max_z = nz * cell - 1
+
     succes = 0
     fails = 0
     for _ in range(1000):
-        try:
-            pos = (random.randint(0, max_x), random.randint(0, max_y), random.randint(0, max_z))
-            mat, rid, row = rows.find(pos=pos)
-            assert ROW.CONTAINS(row=row, pos=pos), f"pos={pos} not contained by found row (mat={mat}, rid={rid})"
-            succes += 1
-        except:
-            fails += 1
-            pass
+        pos = (
+            random.randint(0, max_x),
+            random.randint(0, max_y),
+            random.randint(0, max_z),
+        )
+        mat, rid, row = rows.search(pos=pos)
+        assert ROW.CONTAINS(row=row, pos=pos), f"pos={pos} not contained (mat={mat}, rid={rid}) p0={ROW.P0(row=row)} p1={ROW.P1(row=row)}"
+        succes += 1
 
-    print(" - All random CONTAINS checks passed.", f"Successes: {succes}, Fails: {fails} is a succes percentage of {100-fails/(succes+fails)*100:.2f}% adn per lookup {(succes+fails)/timer.delta[-1]:.2f} lookups/second")
-    timer.print(msg=" - Second random CONTAINS checks completed in")
+    assert fails == 0, f"BVH/grid lookup failures in STEP 2: {fails} (success={succes})"
+    print(f" - STEP 2 lookup checks OK: {succes} successes, {fails} fails, {succes/timer.delta[-1]:.2f} lookups/sec")
+    timer.print(msg=" - STEP 2 lookups completed in")
+
 
 def test2() -> None:
-    rows = ROWS() # it has by default a large enough array to hold 10000 rows per material
-    print("WORLD VOLUME BEFORE: ", rows.volume())
+    """
+    test2:
+    Random single-point splits into AIR inside the default big STONE row.
+    Verifies:
+    - world volume invariant
+    - each split point becomes AIR
+    - merge() does not break invariants
+    """
+    rows = ROWS()
+    v0 = rows.volume()
+    print("WORLD VOLUME BEFORE:", v0)
 
-    # 1 row exists normally at tis point -> its created at init with STONE material
+    points: list[POS] = []
     for i in range(10):
         x = random.randint(a=1000, b=999000)
         y = random.randint(a=1000, b=999000)
         z = random.randint(a=1000, b=64000)
-        rows.split(pos=(x, y, z), mat="AIR")  # should raise error since no rows exist yet
+        pos = (x, y, z)
+        points.append(pos)
+        rows.split(pos=pos, mat="AIR")
         print(f" - SPLIT test {i+1}/10 passed.")
 
-    for i in range(len(rows.array)):
-        n = rows.nrows(mat=Materials.idx2name[i])
-        print(f"Material {Materials.idx2name[i]} has {n} rows after SPLIT tests.")
-    
-    print("WORLD VOLUME AFTER: ", rows.volume())
-    timer.print(msg="STARTING STEP 4 : Now testing MERGE functionality...")
+    v1 = rows.volume()
+    print("WORLD VOLUME AFTER:", v1)
+    assert v1 == v0, f"volume changed after splits: before={v0}, after={v1}"
+
+    for pos in points:
+        mat, rid, row = rows.search(pos=pos)
+        assert mat == "AIR", f"expected AIR at {pos}, got {mat}"
+
+    timer.print(msg="STARTING STEP : Now testing MERGE functionality...")
     rows.merge()
     timer.print(msg=" - MERGE completed in")
-    print("WORLD VOLUME AFTER MERGE: ", rows.volume())
+
+    v2 = rows.volume()
+    print("WORLD VOLUME AFTER MERGE:", v2)
+    assert v2 == v0, f"volume changed after merge: before={v0}, after={v2}"
+
+    for pos in points:
+        mat, rid, row = rows.search(pos=pos)
+        assert mat == "AIR", f"expected AIR at {pos} after merge, got {mat}"
 
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
@@ -125,28 +164,37 @@ def test2() -> None:
 
 
 def test3() -> None:
+    """
+    test3:
+    Create multiple 5x5x5 "mines" (AIR blocks) at random places and run merge attempts.
+    Verifies:
+    - world volume invariant
+    - all mine points remain AIR
+    """
     rows = ROWS()
-    mines = []
-    for i in range(10):
+    v0 = rows.volume()
+
+    mines: list[POS] = []
+    for _ in range(10):
         x = random.randint(a=1000, b=999000)
         y = random.randint(a=1000, b=999000)
         z = random.randint(a=1000, b=64000)
-        mines.append( (x,y,z) )
+        mines.append((x, y, z))
     print(len(mines), "mines to be created at random positions.")
 
+    mine_points: list[POS] = []
     for mine in mines:
         for dx in range(5):
             for dy in range(5):
                 for dz in range(5):
-                    x = mine[0] + dx
-                    y = mine[1] + dy
-                    z = mine[2] + dz
-                    pos = (x, y, z)
+                    pos = (mine[0] + dx, mine[1] + dy, mine[2] + dz)
+                    mine_points.append(pos)
                     rows.split(pos=pos, mat="AIR")
 
+    # merge attempts (like your original intent)
     rowsbefore = rows.nrows(mat="AIR")
     for i in range(10):
-        print("Performing MERGE to consolidate AIR rows... AIR rows before:", rows.nrows(mat="AIR"), "in merge iteration:", i+1)
+        print("Performing MERGE to consolidate AIR rows... AIR rows before:", rows.nrows(mat="AIR"), "in merge iteration:", i + 1)
         rows.merge()
         rowsafter = rows.nrows(mat="AIR")
         if rowsafter == rowsbefore:
@@ -154,65 +202,59 @@ def test3() -> None:
             break
         rowsbefore = rowsafter
 
+    v1 = rows.volume()
+    assert v1 == v0, f"volume changed: before={v0}, after={v1}"
+
+    # verify all mine points still AIR
+    for pos in random.sample(mine_points, k=min(2000, len(mine_points))):
+        mat, rid, row = rows.search(pos=pos)
+        assert mat == "AIR", f"expected AIR at {pos}, got {mat}"
 
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
         print(f"Material {Materials.idx2name[i]} has {n} rows after MERGE tests.")
-        if "AIR"==Materials.idx2name[i]:
+        if Materials.idx2name[i] == "AIR":
             for j in range(n):
                 row = rows.array[i][j]
-                p0 = ROW.P0(row=row)
-                p1 = ROW.P1(row=row)
-                print(f"  AIR row {j}: p0={p0}, p1={p1}")
-                
+                print(f"  AIR row {j}: p0={ROW.P0(row=row)}, p1={ROW.P1(row=row)}")
+
     print(f"air rows= {rows.nrows(mat='AIR')}", f"stone rows= {rows.nrows(mat='STONE')}")
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def test4() -> None:
     """
     test4:
-    Split off multiple *single-row-contained* regions (boxes fully inside one existing row),
-    then merge to consolidate and verify:
-    - total world volume stays constant
-    - AIR volume equals sum of carved boxes
-    - a bunch of random points inside carved boxes are AIR
-    - a bunch of random points outside carved boxes are NOT AIR
+    Split off multiple *single-row-contained* regions (disjoint by construction) inside default big STONE row.
+    Verifies:
+    - world volume invariant
+    - AIR volume equals sum of carved boxes (valid because we keep them disjoint)
+    - random points inside carved boxes are AIR
+    - random points far away are NOT AIR
     """
     rows = ROWS()
     v0 = rows.volume()
     print("WORLD VOLUME BEFORE:", v0)
 
-    # We'll carve boxes that are guaranteed to fit inside the initial STONE row.
-    # Keep them well away from borders and reasonably small.
     boxes: list[tuple[POS, POS]] = []
     total_air_vol = 0
 
+    # Make boxes disjoint by placing them on a coarse lattice
+    # Each "slot" is 64x64x64, and the carved box fits inside that slot.
+    slot = 64
     for i in range(50):
+        gx = random.randint(50, 2000) * slot
+        gy = random.randint(50, 2000) * slot
+        gz = random.randint(10, 900) * slot
+
         dx = random.randint(4, 48)
         dy = random.randint(4, 48)
         dz = random.randint(4, 32)
 
-        x0 = random.randint(2000, 900000)
-        y0 = random.randint(2000, 900000)
-        z0 = random.randint(2000, 60000)
-
+        x0 = gx + 1
+        y0 = gy + 1
+        z0 = gz + 1
         p0 = (x0, y0, z0)
         p1 = (x0 + dx, y0 + dy, z0 + dz)
-
-        # split2 expects p0/p1 in any order, but keep it clean
         p0, p1 = ROW.SORT(p0=p0, p1=p1)
 
         rows.split(pos=p0, pos1=p1, mat="AIR")
@@ -222,31 +264,24 @@ def test4() -> None:
         if (i + 1) % 10 == 0:
             print(f" - carved {i+1}/50 boxes")
 
-    # One last global merge to consolidate as much as possible
     rows.merge()
 
     v1 = rows.volume()
     print("WORLD VOLUME AFTER:", v1)
     assert v1 == v0, f"volume changed: before={v0}, after={v1}"
 
-    # Compute AIR volume by summing all AIR rows volumes
-    air_mid = Materials.name2idx["AIR"]
-    air_vol = 0
-    for rid in range(rows.n[air_mid]):
-        air_vol += ROW.VOLUME(row=rows.array[air_mid][rid])
+    air_vol = rows.volume(mat="AIR")
     print("AIR VOLUME:", air_vol, "EXPECTED (sum boxes):", total_air_vol)
     assert air_vol == total_air_vol, f"AIR volume mismatch: got={air_vol}, expected={total_air_vol}"
 
-    # Random containment checks inside boxes -> must be AIR
     for _ in range(500):
         p0, p1 = random.choice(boxes)
         x = random.randint(p0[0], p1[0] - 1)
         y = random.randint(p0[1], p1[1] - 1)
         z = random.randint(p0[2], p1[2] - 1)
         mat, rid, row = rows.search(pos=(x, y, z))
-        assert mat == "AIR", f"expected AIR at {(x,y,z)}, got {mat} rid={rid}"
+        assert mat == "AIR", f"expected AIR at {(x,y,z)}, got {mat}"
 
-    # Random checks outside boxes -> should NOT be AIR (probabilistic; pick points far away)
     for _ in range(500):
         x = random.randint(10, 900)
         y = random.randint(10, 900)
@@ -254,28 +289,23 @@ def test4() -> None:
         mat, rid, row = rows.search(pos=(x, y, z))
         assert mat != "AIR", f"unexpected AIR at {(x,y,z)}"
 
-    print("test4 OK:",
-          f"air_rows={rows.nrows(mat='AIR')}",
-          f"stone_rows={rows.nrows(mat='STONE')}")
+    print("test4 OK:", f"air_rows={rows.nrows(mat='AIR')}", f"stone_rows={rows.nrows(mat='STONE')}")
+
 
 def test5() -> None:
     """
     test5:
     Split off regions that span multiple rows (overlapping allowed).
-
     Verifies:
     - world volume invariant
     - AIR volume computed via rows.volume(mat="AIR")
     - random points inside carved regions are AIR
     """
-
     rows = ROWS()
 
-    # Remove the default giant STONE row
     row0 = rows.array[MATERIALS.IDX["STONE"]][0]
     rows.remove(row=row0)
 
-    # Build a regular grid
     cell = 64
     nx = 20
     ny = 20
@@ -292,7 +322,6 @@ def test5() -> None:
                 z1 = z0 + cell
                 rows.insert(p0=(x0, y0, z0), p1=(x1, y1, z1), mat="STONE")
 
-    # Consolidate (may collapse to 1 big STONE row, which is fine)
     rows.merge()
 
     max_x = nx * cell
@@ -301,13 +330,10 @@ def test5() -> None:
 
     v0 = rows.volume()
     print("WORLD VOLUME BEFORE:", v0)
-    print("Initial rows:",
-          f"stone_rows={rows.nrows(mat='STONE')}",
-          f"air_rows={rows.nrows(mat='AIR')}")
+    print("Initial rows:", f"stone_rows={rows.nrows(mat='STONE')}", f"air_rows={rows.nrows(mat='AIR')}")
 
     carved_boxes: list[tuple[POS, POS]] = []
 
-    # Carve overlapping AIR boxes that span multiple rows
     for i in range(30):
         dx = random.randint(cell + 5, cell * 3)
         dy = random.randint(cell + 5, cell * 3)
@@ -330,7 +356,6 @@ def test5() -> None:
         z1 = min(z0 + dz, max_z)
 
         p0, p1 = ROW.SORT(p0=(x0, y0, z0), p1=(x1, y1, z1))
-
         if p0[0] >= p1[0] or p0[1] >= p1[1] or p0[2] >= p1[2]:
             continue
 
@@ -349,25 +374,21 @@ def test5() -> None:
     air_vol = rows.volume(mat="AIR")
     print("AIR VOLUME:", air_vol)
 
-    # Random sampling: points inside carved boxes must be AIR
     for _ in range(1000):
         p0, p1 = random.choice(carved_boxes)
         x = random.randint(p0[0], p1[0] - 1)
         y = random.randint(p0[1], p1[1] - 1)
         z = random.randint(p0[2], p1[2] - 1)
-
         mat, rid, row = rows.search(pos=(x, y, z))
         assert mat == "AIR", f"expected AIR at {(x,y,z)}, got {mat}"
 
-    print(
-        "test5 OK:",
-        f"air_rows={rows.nrows(mat='AIR')}",
-        f"stone_rows={rows.nrows(mat='STONE')}"
-    )
+    print("test5 OK:", f"air_rows={rows.nrows(mat='AIR')}", f"stone_rows={rows.nrows(mat='STONE')}")
 
 
+def main(test: list[int] = None) -> None:
+    if test is None:
+        test = [1, 2, 3, 4, 5]
 
-def main(test=[]) -> None:
     timer.lap()
     with Bundle():
         try:
@@ -381,14 +402,12 @@ def main(test=[]) -> None:
                 test4()
             if 5 in test:
                 test5()
-
+            timer.print(msg="main.py: executed in")
         except Exception:
             traceback.print_exc()
-        finally:    
+        finally:
             pass
-
 
 
 if __name__ == "__main__":
     main(test=[1, 2, 3, 4, 5])
-    
