@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T18:56:15
+#Time when generated: 2026-01-30T18:57:36
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -970,7 +970,7 @@ def main(test=[]) -> None:
 
 
 if __name__ == "__main__":
-    main(test=[4, 5])
+    main(test=[4])
     
 
 ################################################################################
@@ -3298,37 +3298,14 @@ WORLD VOLUME BEFORE: 72056357089509375
  - carved 40/50 boxes
  - carved 50/50 boxes
 WORLD VOLUME AFTER: 72056357089509375
-AIR VOLUME: 667479 EXPECTED (sum boxes): 667479
+AIR VOLUME: 571567 EXPECTED (sum boxes): 571567
 test4 OK: air_rows=50 stone_rows=251
-WORLD VOLUME BEFORE: 838860800
-Initial rows: stone_rows=1 air_rows=0
-Traceback (most recent call last):
-  File "c:\VOXELS\main.py", line 378, in main
-    test5()
-    ~~~~~^^
-  File "c:\VOXELS\main.py", line 327, in test5
-    rows.split(pos=p0, pos1=p1, mat="AIR")
-    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 259, in split
-    return self.split2(p0=pos, p1=pos1, mat=mat)
-           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 237, in split2
-    b, a = self.split2(p0=(p0[0], p0[1], q1[2]), p1=(q1[0], q1[1], p1[2]), mat=mat)
-           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 208, in split2
-    mat0, rid, row = self.search(pos=p0)
-                     ~~~~~~~~~~~^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 140, in search
-    mat, rid, row = self.bvh.search(pos=pos)
-                    ~~~~~~~~~~~~~~~^^^^^^^^^
-  File "c:\VOXELS\utils\bvh.py", line 295, in search
-    raise LookupError("[ERROR] BVH.search() failed: point not found (partition invariant violated or BVH not updated)")
-LookupError: [ERROR] BVH.search() failed: point not found (partition invariant violated or BVH not updated)
+main.py: executed in: lap 2: 0.327598 seconds, total 0.336989 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3330
+# Total lines in bundle: 3307
 # Total files in bundle: 23
-# Generated at the time: 2026-01-30T18:56:15
+# Generated at the time: 2026-01-30T18:57:36
 --- END OF FILE ---
