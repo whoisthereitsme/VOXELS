@@ -410,4 +410,6 @@ def main(test: list[int] = None) -> None:
 
 
 if __name__ == "__main__":
+    timer.lap()
     main(test=[1, 2, 3, 4, 5])
+    timer.print(msg="main.py total execution time for all tests:")

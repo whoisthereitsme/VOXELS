@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T19:16:03
+#Time when generated: 2026-01-30T19:19:03
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -995,7 +995,9 @@ def main(test: list[int] = None) -> None:
 
 
 if __name__ == "__main__":
+    timer.lap()
     main(test=[1, 2, 3, 4, 5])
+    timer.print(msg="main.py total execution time for all tests:")
 
 ################################################################################
 # FILE 8/23: main.py (END)
@@ -3317,15 +3319,15 @@ class ROWS:
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 : 3D grid partition built: lap 3: 5.769172 seconds, total 5.78395 seconds
- - STEP 1 lookup checks OK: 1000 successes, 0 fails, 173.34 lookups/sec
- - STEP 1 lookups completed in: lap 4: 0.373522 seconds, total 6.157472 seconds
+STEP 1 : 3D grid partition built: lap 4: 5.846885 seconds, total 5.861509 seconds
+ - STEP 1 lookup checks OK: 1000 successes, 0 fails, 171.03 lookups/sec
+ - STEP 1 lookups completed in: lap 5: 0.435552 seconds, total 6.297061 seconds
  - Now deleting 10000 rows...
- - Deleted 10000 rows in: lap 5: 0.419566 seconds, total 6.577038 seconds
+ - Deleted 10000 rows in: lap 6: 0.400306 seconds, total 6.697367 seconds
 STEP 2 : Rebuilding rows after deletion...
- - STEP 2 grid partition built: lap 7: 0.520228 seconds, total 8.664217 seconds
- - STEP 2 lookup checks OK: 1000 successes, 0 fails, 1922.23 lookups/sec
- - STEP 2 lookups completed in: lap 8: 0.078261 seconds, total 8.742478 seconds
+ - STEP 2 grid partition built: lap 8: 0.505463 seconds, total 8.764119 seconds
+ - STEP 2 lookup checks OK: 1000 successes, 0 fails, 1978.38 lookups/sec
+ - STEP 2 lookups completed in: lap 9: 0.078046 seconds, total 8.842165 seconds
 WORLD VOLUME BEFORE: 72056357089509375
  - SPLIT test 1/10 passed.
  - SPLIT test 2/10 passed.
@@ -3338,8 +3340,8 @@ WORLD VOLUME BEFORE: 72056357089509375
  - SPLIT test 9/10 passed.
  - SPLIT test 10/10 passed.
 WORLD VOLUME AFTER: 72056357089509375
-STARTING STEP : Now testing MERGE functionality...: lap 9: 0.056314 seconds, total 8.798792 seconds
- - MERGE completed in: lap 10: 0.000573 seconds, total 8.799364 seconds
+STARTING STEP : Now testing MERGE functionality...: lap 10: 0.056492 seconds, total 8.898656 seconds
+ - MERGE completed in: lap 11: 0.000455 seconds, total 8.899111 seconds
 WORLD VOLUME AFTER MERGE: 72056357089509375
 Material AIR has 10 rows after MERGE tests.
 Material WATER has 0 rows after MERGE tests.
@@ -3352,16 +3354,16 @@ Material BEDROCK has 0 rows after MERGE tests.
 Performing MERGE to consolidate AIR rows... AIR rows before: 10 in merge iteration: 1
  No more AIR rows could be consolidated. Stopping MERGE.
 Material AIR has 10 rows after MERGE tests.
-  AIR row 0: p0=(850897, 373586, 16304), p1=(850902, 373591, 16309)
-  AIR row 1: p0=(787105, 456669, 63427), p1=(787110, 456674, 63432)
-  AIR row 2: p0=(222572, 81555, 54348), p1=(222577, 81560, 54353)
-  AIR row 3: p0=(315664, 133254, 47951), p1=(315669, 133259, 47956)
-  AIR row 4: p0=(638790, 954478, 46920), p1=(638795, 954483, 46925)
-  AIR row 5: p0=(457660, 154742, 25925), p1=(457665, 154747, 25930)
-  AIR row 6: p0=(527492, 472601, 34914), p1=(527497, 472606, 34919)
-  AIR row 7: p0=(143678, 923393, 1264), p1=(143683, 923398, 1269)
-  AIR row 8: p0=(488670, 531460, 22746), p1=(488675, 531465, 22751)
-  AIR row 9: p0=(612597, 22581, 58471), p1=(612602, 22586, 58476)
+  AIR row 0: p0=(191480, 188780, 54912), p1=(191485, 188785, 54917)
+  AIR row 1: p0=(983016, 943310, 3443), p1=(983021, 943315, 3448)
+  AIR row 2: p0=(239547, 885536, 60829), p1=(239552, 885541, 60834)
+  AIR row 3: p0=(970687, 386812, 31703), p1=(970692, 386817, 31708)
+  AIR row 4: p0=(167444, 316999, 5438), p1=(167449, 317004, 5443)
+  AIR row 5: p0=(412602, 119648, 15239), p1=(412607, 119653, 15244)
+  AIR row 6: p0=(365200, 167878, 45783), p1=(365205, 167883, 45788)
+  AIR row 7: p0=(499032, 740193, 44560), p1=(499037, 740198, 44565)
+  AIR row 8: p0=(384554, 685645, 59034), p1=(384559, 685650, 59039)
+  AIR row 9: p0=(3118, 374644, 56835), p1=(3123, 374649, 56840)
 Material WATER has 0 rows after MERGE tests.
 Material LAVA has 0 rows after MERGE tests.
 Material GLASS has 0 rows after MERGE tests.
@@ -3376,22 +3378,22 @@ WORLD VOLUME BEFORE: 72056357089509375
  - carved 40/50 boxes
  - carved 50/50 boxes
 WORLD VOLUME AFTER: 72056357089509375
-AIR VOLUME: 546238 EXPECTED (sum boxes): 546238
-test4 OK: air_rows=50 stone_rows=251
+AIR VOLUME: 580691 EXPECTED (sum boxes): 580691
+test4 OK: air_rows=50 stone_rows=250
 WORLD VOLUME BEFORE: 838860800
 Initial rows: stone_rows=1 air_rows=0
  - carved 10/30 boxes
  - carved 20/30 boxes
  - carved 30/30 boxes
 WORLD VOLUME AFTER: 838860800
-AIR VOLUME: 47243456
-test5 OK: air_rows=59 stone_rows=211
-main.py: executed in: lap 11: 4.408411 seconds, total 13.207776 seconds
+AIR VOLUME: 50213483
+test5 OK: air_rows=60 stone_rows=207
+main.py: executed in: lap 12: 4.407361 seconds, total 13.306472 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3393
+# Total lines in bundle: 3395
 # Total files in bundle: 23
-# Generated at the time: 2026-01-30T19:16:04
+# Generated at the time: 2026-01-30T19:19:03
 --- END OF FILE ---
