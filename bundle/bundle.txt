@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T14:52:34
+#Time when generated: 2026-01-30T14:58:42
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -727,7 +727,7 @@ def main() -> None:
                     pos = (x, y, z)
                     rows.split(pos=pos, mat="AIR")
 
-    for _ in range(2):
+    for _ in range(1):
         rows.sweep() # final sweep to clean up
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
@@ -2345,21 +2345,59 @@ class ROWS:
         mid = Materials.name2idx[mat]
         merges = 0
 
-        rid = 0
-        while rid < self.n[mid]:
-            partner = self.mdx.search(mid=mid, rid=rid, axis=axis)
-            if partner is None:
-                rid += 1
+        # Worklist of row IDs to try; start with all current rows.
+        extra: list[int] = list(range(self.n[mid] - 1, -1, -1))
+        # Note: we do NOT want a permanent "seen" that blocks revisits forever.
+        # We'll use it only to avoid pointless repeats *until something changes*.
+        seen: set[int] = set()
+
+        while extra:
+            rid = extra.pop()
+
+            if rid < 0 or rid >= self.n[mid]:
                 continue
 
-            _, rid2 = partner
-            if self.merge_pair(mat=mat, rid_a=rid, rid_b=rid2):
+            if rid in seen:
+                continue
+            seen.add(rid)
+
+            partner = self.mdx.find_partner(mid=mid, rid=rid, axis=axis)
+            if partner is None:
+                continue
+
+            pmid, prid = partner
+            if pmid != mid or prid < 0 or prid >= self.n[mid]:
+                continue
+
+            if self.merge_pair(mat=mat, rid_a=rid, rid_b=prid):
                 merges += 1
-            else:
-                rid += 1
+
+                # New merged row is appended at end.
+                new_rid = self.n[mid] - 1
+
+                # Critical: the merge changed neighborhood relationships.
+                # Re-check the new row AND its neighbors on this axis.
+                extra.append(new_rid)
+
+                if hasattr(self.mdx, "neighbors_of"):
+                    neigh = self.mdx.neighbors_of(mid=mid, rid=new_rid)
+                    for nm, nr in neigh:
+                        if nm != mid:
+                            continue
+                        # allow reprocessing: neighbor state might have changed
+                        if nr in seen:
+                            seen.remove(nr)
+                        extra.append(nr)
+
+                # Also allow rid itself to be reconsidered if it still exists
+                # (slot may now contain swapped-in row after deletions).
+                if rid < self.n[mid]:
+                    if rid in seen:
+                        seen.remove(rid)
+                    extra.append(rid)
 
         return merges
-    
+        
     def merge(self, mat:str=None) -> int:
         for ax in range(3):
             merged = self.merge_pass(mat=mat, axis=ax) > 0
@@ -2480,15 +2518,15 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 6.2657 seconds, total 6.28778 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 159.60 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.001487 seconds, total 6.289266 seconds
+STEP 1 :  3D grid partition built: lap 3: 5.576919 seconds, total 5.613654 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 179.31 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.001804 seconds, total 5.615459 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.44194 seconds, total 6.731206 seconds
+ - All 10000 rows deleted in: lap 5: 0.397321 seconds, total 6.012779 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.690678 seconds, total 7.421885 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1447.85 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.001698 seconds, total 7.423583 seconds
+ - second time 3D grid partition built: lap 6: 0.629405 seconds, total 6.642185 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1588.80 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.001651 seconds, total 6.643835 seconds
 WORLD VOLUME BEFORE:  72056357089509375
  - SPLIT test 1/10 passed.
  - SPLIT test 2/10 passed.
@@ -2508,40 +2546,29 @@ Material STONE has 51 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
 WORLD VOLUME AFTER:  72056357089509375
-STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.053467 seconds, total 7.47705 seconds
- - SWEEP completed in: lap 9: 0.000148 seconds, total 7.477197 seconds
-WORLD VOLUME AFTER SWEEP:  72056357089509375
-Material AIR has 10 rows after SWEEP tests.
-Material WATER has 0 rows after SWEEP tests.
-Material LAVA has 0 rows after SWEEP tests.
-Material GLASS has 0 rows after SWEEP tests.
-Material STONE has 51 rows after SWEEP tests.
-Material OBSIDIAN has 0 rows after SWEEP tests.
-Material BEDROCK has 0 rows after SWEEP tests.
-Material AIR has 10 rows after SWEEP tests.
-  AIR row 0: p0=(430326, 927726, 11550), p1=(430331, 927731, 11555)
-  AIR row 1: p0=(638465, 932061, 41723), p1=(638470, 932066, 41728)
-  AIR row 2: p0=(231272, 90022, 49562), p1=(231277, 90027, 49567)
-  AIR row 3: p0=(340803, 565349, 27568), p1=(340808, 565354, 27573)
-  AIR row 4: p0=(900168, 275648, 9962), p1=(900173, 275653, 9967)
-  AIR row 5: p0=(893085, 973649, 44808), p1=(893090, 973654, 44813)
-  AIR row 6: p0=(487135, 820599, 52987), p1=(487140, 820604, 52992)
-  AIR row 7: p0=(880691, 941298, 38934), p1=(880696, 941303, 38939)
-  AIR row 8: p0=(658262, 818890, 38771), p1=(658267, 818895, 38776)
-  AIR row 9: p0=(242861, 360239, 56172), p1=(242866, 360244, 56177)
-Material WATER has 0 rows after SWEEP tests.
-Material LAVA has 0 rows after SWEEP tests.
-Material GLASS has 0 rows after SWEEP tests.
-Material STONE has 51 rows after SWEEP tests.
-Material OBSIDIAN has 0 rows after SWEEP tests.
-Material BEDROCK has 0 rows after SWEEP tests.
-air rows= 10 stone rows= 51
-main.py: executed in: lap 10: 2.071849 seconds, total 9.549046 seconds
+STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.05086 seconds, total 6.694695 seconds
+Traceback (most recent call last):
+  File "c:\VOXELS\main.py", line 164, in <module>
+    main()
+    ~~~~^^
+  File "c:\VOXELS\main.py", line 117, in main
+    rows.sweep()
+    ~~~~~~~~~~^^
+  File "c:\VOXELS\world\rows.py", line 240, in sweep
+    self.merge(mat=mat)
+    ~~~~~~~~~~^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 231, in merge
+    merged = self.merge_pass(mat=mat, axis=ax) > 0
+             ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 192, in merge_pass
+    partner = self.mdx.find_partner(mid=mid, rid=rid, axis=axis)
+              ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'MDX' object has no attribute 'find_partner'
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2543
+# Total lines in bundle: 2570
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T14:52:34
+# Generated at the time: 2026-01-30T14:58:42
 --- END OF FILE ---

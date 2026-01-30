@@ -173,21 +173,59 @@ class ROWS:
         mid = Materials.name2idx[mat]
         merges = 0
 
-        rid = 0
-        while rid < self.n[mid]:
-            partner = self.mdx.search(mid=mid, rid=rid, axis=axis)
-            if partner is None:
-                rid += 1
+        # Worklist of row IDs to try; start with all current rows.
+        extra: list[int] = list(range(self.n[mid] - 1, -1, -1))
+        # Note: we do NOT want a permanent "seen" that blocks revisits forever.
+        # We'll use it only to avoid pointless repeats *until something changes*.
+        seen: set[int] = set()
+
+        while extra:
+            rid = extra.pop()
+
+            if rid < 0 or rid >= self.n[mid]:
                 continue
 
-            _, rid2 = partner
-            if self.merge_pair(mat=mat, rid_a=rid, rid_b=rid2):
+            if rid in seen:
+                continue
+            seen.add(rid)
+
+            partner = self.mdx.find_partner(mid=mid, rid=rid, axis=axis)
+            if partner is None:
+                continue
+
+            pmid, prid = partner
+            if pmid != mid or prid < 0 or prid >= self.n[mid]:
+                continue
+
+            if self.merge_pair(mat=mat, rid_a=rid, rid_b=prid):
                 merges += 1
-            else:
-                rid += 1
+
+                # New merged row is appended at end.
+                new_rid = self.n[mid] - 1
+
+                # Critical: the merge changed neighborhood relationships.
+                # Re-check the new row AND its neighbors on this axis.
+                extra.append(new_rid)
+
+                if hasattr(self.mdx, "neighbors_of"):
+                    neigh = self.mdx.neighbors_of(mid=mid, rid=new_rid)
+                    for nm, nr in neigh:
+                        if nm != mid:
+                            continue
+                        # allow reprocessing: neighbor state might have changed
+                        if nr in seen:
+                            seen.remove(nr)
+                        extra.append(nr)
+
+                # Also allow rid itself to be reconsidered if it still exists
+                # (slot may now contain swapped-in row after deletions).
+                if rid < self.n[mid]:
+                    if rid in seen:
+                        seen.remove(rid)
+                    extra.append(rid)
 
         return merges
-    
+        
     def merge(self, mat:str=None) -> int:
         for ax in range(3):
             merged = self.merge_pass(mat=mat, axis=ax) > 0

@@ -142,7 +142,7 @@ def main() -> None:
                     pos = (x, y, z)
                     rows.split(pos=pos, mat="AIR")
 
-    for _ in range(2):
+    for _ in range(1):
         rows.sweep() # final sweep to clean up
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
