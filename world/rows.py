@@ -212,8 +212,6 @@ class ROWS:
 
         merges = 0
         seen: set[tuple[int, int]] = set()
-
-        # local “new work” created by merges (chaining)
         extra: list[tuple[int, int]] = []
 
         # iterate the provided rows array and treat it like the initial stack
