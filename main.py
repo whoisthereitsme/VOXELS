@@ -123,8 +123,33 @@ def main() -> None:
         print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
 
 
+    rows = ROWS()
+    mines = []
+    for i in range(10):
+        x = random.randint(a=1000, b=999000)
+        y = random.randint(a=1000, b=999000)
+        z = random.randint(a=1000, b=64000)
+        mines.append( (x,y,z) )
 
+    for mine in mines:
+        # for each mine mine out a 5x5x5 cube of AIR
+        for dx in range(5):
+            for dy in range(5):
+                for dz in range(5):
+                    x = mine[0] + dx
+                    y = mine[1] + dy
+                    z = mine[2] + dz
+                    pos = (x, y, z)
+                    rows.split(pos=pos, mat="AIR")
 
+    rows.sweep() # final sweep to clean up
+    for i in range(len(rows.array)):
+        n = rows.nrows(mat=Materials.idx2name[i])
+        print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
+        # should yield the same as before since we mined AIR only in perfect cubes
+
+    assert rows.nrows(mat="AIR") == 10, "After mining 10 AIR cubes the AIR material should have 0 rows after SWEEP"
+    assert rows.nrows(mat="STONE") == 51, "After mining the 10 AIR cubes the STONE material should be fragmented into 51 rows"
 
 
 
@@ -140,3 +165,18 @@ if __name__ == "__main__":
             pass
 
 
+
+#layer1 (x is the splitoff)
+#132
+#152
+#142
+
+#layer2
+#132
+#1x2
+#142
+
+#layer3
+#132
+#162
+#142

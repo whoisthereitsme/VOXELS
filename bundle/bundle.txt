@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T14:31:01
+#Time when generated: 2026-01-30T14:45:00
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -708,8 +708,33 @@ def main() -> None:
         print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
 
 
+    rows = ROWS()
+    mines = []
+    for i in range(10):
+        x = random.randint(a=1000, b=999000)
+        y = random.randint(a=1000, b=999000)
+        z = random.randint(a=1000, b=64000)
+        mines.append( (x,y,z) )
 
+    for mine in mines:
+        # for each mine mine out a 5x5x5 cube of AIR
+        for dx in range(5):
+            for dy in range(5):
+                for dz in range(5):
+                    x = mine[0] + dx
+                    y = mine[1] + dy
+                    z = mine[2] + dz
+                    pos = (x, y, z)
+                    rows.split(pos=pos, mat="AIR")
 
+    rows.sweep() # final sweep to clean up
+    for i in range(len(rows.array)):
+        n = rows.nrows(mat=Materials.idx2name[i])
+        print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
+        # should yield the same as before since we mined AIR only in perfect cubes
+
+    assert rows.nrows(mat="AIR") == 10, "After mining 10 AIR cubes the AIR material should have 0 rows after SWEEP"
+    assert rows.nrows(mat="STONE") == 51, "After mining the 10 AIR cubes the STONE material should be fragmented into 51 rows"
 
 
 
@@ -725,6 +750,21 @@ if __name__ == "__main__":
             pass
 
 
+
+#layer1 (x is the splitoff)
+#132
+#152
+#142
+
+#layer2
+#132
+#1x2
+#142
+
+#layer3
+#132
+#162
+#142
 
 ################################################################################
 # FILE 8/22: main.py (END)
@@ -2436,15 +2476,15 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.72414 seconds, total 5.760995 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 174.70 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.001783 seconds, total 5.762779 seconds
+STEP 1 :  3D grid partition built: lap 3: 6.321155 seconds, total 6.341944 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 158.20 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.001555 seconds, total 6.343498 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.445783 seconds, total 6.208562 seconds
+ - All 10000 rows deleted in: lap 5: 0.466358 seconds, total 6.809857 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.653147 seconds, total 6.861709 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1531.05 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.001531 seconds, total 6.86324 seconds
+ - second time 3D grid partition built: lap 6: 0.677584 seconds, total 7.487441 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1475.83 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.001784 seconds, total 7.489225 seconds
 WORLD VOLUME BEFORE:  72056357089509375
  - SPLIT test 1/10 passed.
  - SPLIT test 2/10 passed.
@@ -2464,8 +2504,8 @@ Material STONE has 51 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
 WORLD VOLUME AFTER:  72056357089509375
-STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.049923 seconds, total 6.913164 seconds
- - SWEEP completed in: lap 9: 0.000167 seconds, total 6.91333 seconds
+STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.053712 seconds, total 7.542937 seconds
+ - SWEEP completed in: lap 9: 0.000173 seconds, total 7.54311 seconds
 WORLD VOLUME AFTER SWEEP:  72056357089509375
 Material AIR has 10 rows after SWEEP tests.
 Material WATER has 0 rows after SWEEP tests.
@@ -2474,12 +2514,26 @@ Material GLASS has 0 rows after SWEEP tests.
 Material STONE has 51 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
-main.py: executed in: lap 10: 0.000871 seconds, total 6.914202 seconds
+Material AIR has 11 rows after SWEEP tests.
+Material WATER has 0 rows after SWEEP tests.
+Material LAVA has 0 rows after SWEEP tests.
+Material GLASS has 0 rows after SWEEP tests.
+Material STONE has 51 rows after SWEEP tests.
+Material OBSIDIAN has 0 rows after SWEEP tests.
+Material BEDROCK has 0 rows after SWEEP tests.
+Traceback (most recent call last):
+  File "c:\VOXELS\main.py", line 160, in <module>
+    main()
+    ~~~~^^
+  File "c:\VOXELS\main.py", line 151, in main
+    assert rows.nrows(mat="AIR") == 10, "After mining 10 AIR cubes the AIR material should have 0 rows after SWEEP"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: After mining 10 AIR cubes the AIR material should have 0 rows after SWEEP
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2481
+# Total lines in bundle: 2535
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T14:31:01
+# Generated at the time: 2026-01-30T14:45:00
 --- END OF FILE ---
