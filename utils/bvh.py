@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
-    from world._rows import ROWS
+    from world.rows import ROWS
     from utils.types import POS
 
 from world.row import ROW
