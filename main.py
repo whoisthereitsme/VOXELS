@@ -390,5 +390,5 @@ def main(test=[]) -> None:
 
 
 if __name__ == "__main__":
-    main(test=[5])
+    main(test=[1, 2, 3, 4, 5])
     
