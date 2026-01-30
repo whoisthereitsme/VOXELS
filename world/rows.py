@@ -127,13 +127,15 @@ class ROWS:
         self.deln(mat=mat)
         return self
 
-    def volume(self) -> int:
+    def volume(self, mat:str=None) -> int:
         total = 0
-        for mid in range(MATERIALS.NUM):
-            n = self.n[mid]
-            for rid in range(n):
-                row = self.array[mid][rid]
-                total += ROW.VOLUME(row=row)
+        if mat is None:
+            for mid in range(MATERIALS.NUM):
+                total += self.volume(mat=Materials.idx2name[mid])   # add up all materials
+        else:
+            mid = Materials.name2idx[mat]
+            for rid in range(self.n[mid]):
+                total += ROW.VOLUME(row=self.array[mid][rid])
         return total
 
     def search(self, pos: POS = None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
