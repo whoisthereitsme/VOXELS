@@ -17,6 +17,28 @@ from utils.mdx import MDX
 
 
 class ROWS:
+    """
+    PUBLIC:
+    - self.split(pos:POS, mat:str)
+    - self.merge(rows:NDArray[ROW.DTYPE]=None)
+    - self.volume()
+    - self.get(mat:str, rid:int)
+
+    PRIVATE:
+    - self.newn(mat:str)
+    - self.deln(mat:str)
+    - self.insert(p0:POS, p1:POS, mat:str, dirty:bool=True, alive:bool=True)
+    - self.remove(index:int, mat:str, row:NDArray[ROW.DTYPE])
+    - self.search(pos:POS)
+    - self.nrows(mat:str)
+    - self.merge2(mat:str, rid0:int, rid1:int)
+    - self.mergeax(mat:str, axis:int)
+    - self.mergemat(mat:str)
+    - self.mergerows(rows:NDArray[ROW.DTYPE])
+    - self.mergeall()
+
+
+    """
     SIZE = 65536
     def __init__(self) -> None:
         self.mats = Materials()
@@ -89,6 +111,11 @@ class ROWS:
         return self
     
     def volume(self) -> int:
+        """
+        PUBLIC:
+        - a. arguments: none
+        - b. returns: total volume of all rows in all materials
+        """
         total = 0
         for mid in range(MATERIALS.NUM):
             n = self.n[mid]
@@ -98,6 +125,15 @@ class ROWS:
         return total
 
     def search(self, pos:POS=None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
+        """
+        PRIVATE:
+        - a. arguments:
+           - a.1: pos: position to search for
+        - b. returns: 
+            - b.1: material name
+            - b.2: row id within material
+            - b.3: the row array at the given position
+        """
         mat, rid, row = self.bvh.search(pos=pos)
         return (mat, rid, row)
     
@@ -108,6 +144,15 @@ class ROWS:
         return self.n[Materials.name2idx[mat]]
     
     def split(self, pos:POS=None, mat:str=None) -> tuple[NDArray[ROW.DTYPE], dict[int, int]]:
+        """
+        PUBLIC:
+        - a. arguments:
+            - a.1: pos: position to split at
+            - a.2: mat: material name for the new row at pos
+        - b. returns:
+            - b.1: array of new rows created by the split
+            - b.2: dictionary of number of new rows created per material id
+        """
         mat0, rid, row = self.search(pos=pos)
         p0 = ROW.P0(row=row)
         p1 = ROW.P1(row=row)
@@ -285,7 +330,13 @@ class ROWS:
         for mat in self.mats.name2idx.keys():
             self.mergemat(mat=mat)
         
-    def merge(self, rows:NDArray[ROW.DTYPE]=None) -> int:
+    def merge(self, rows:NDArray[ROW.DTYPE]=None) -> None:
+        """
+        PUBLIC:
+        - a. arguments:
+            - a.1: rows: array of rows to consider for merging; if None, all rows are considered
+        - b. returns: None
+        """
         if rows is None:
             self.mergeall()
         if rows is not None:
@@ -303,4 +354,3 @@ class ROWS:
 
 
 
-rows = ROWS()

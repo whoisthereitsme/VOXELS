@@ -1,4 +1,4 @@
-from .rows import ROWS, rows
+from .rows import ROWS
 from .row import ROW
 from .materials import MATERIALS, Materials, Material
 
@@ -12,5 +12,4 @@ __all__ = [
     "Material",
     "ROW",
     "ROWS",
-    "rows",
 ]

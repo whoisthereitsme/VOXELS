@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T16:26:51
+#Time when generated: 2026-01-30T16:43:46
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -1769,7 +1769,7 @@ __all__ = [
 # FILE 19/22: world/__init__.py (START)
 ################################################################################
 
-from .rows import ROWS, rows
+from .rows import ROWS
 from .row import ROW
 from .materials import MATERIALS, Materials, Material
 
@@ -1783,7 +1783,6 @@ __all__ = [
     "Material",
     "ROW",
     "ROWS",
-    "rows",
 ]
 
 ################################################################################
@@ -2170,6 +2169,28 @@ from utils.mdx import MDX
 
 
 class ROWS:
+    """
+    PUBLIC:
+    - self.split(pos:POS, mat:str)
+    - self.merge(rows:NDArray[ROW.DTYPE]=None)
+    - self.volume()
+    - self.get(mat:str, rid:int)
+
+    PRIVATE:
+    - self.newn(mat:str)
+    - self.deln(mat:str)
+    - self.insert(p0:POS, p1:POS, mat:str, dirty:bool=True, alive:bool=True)
+    - self.remove(index:int, mat:str, row:NDArray[ROW.DTYPE])
+    - self.search(pos:POS)
+    - self.nrows(mat:str)
+    - self.merge2(mat:str, rid0:int, rid1:int)
+    - self.mergeax(mat:str, axis:int)
+    - self.mergemat(mat:str)
+    - self.mergerows(rows:NDArray[ROW.DTYPE])
+    - self.mergeall()
+
+
+    """
     SIZE = 65536
     def __init__(self) -> None:
         self.mats = Materials()
@@ -2242,6 +2263,11 @@ class ROWS:
         return self
     
     def volume(self) -> int:
+        """
+        PUBLIC:
+        - a. arguments: none
+        - b. returns: total volume of all rows in all materials
+        """
         total = 0
         for mid in range(MATERIALS.NUM):
             n = self.n[mid]
@@ -2251,6 +2277,15 @@ class ROWS:
         return total
 
     def search(self, pos:POS=None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
+        """
+        PRIVATE:
+        - a. arguments:
+           - a.1: pos: position to search for
+        - b. returns: 
+            - b.1: material name
+            - b.2: row id within material
+            - b.3: the row array at the given position
+        """
         mat, rid, row = self.bvh.search(pos=pos)
         return (mat, rid, row)
     
@@ -2261,6 +2296,15 @@ class ROWS:
         return self.n[Materials.name2idx[mat]]
     
     def split(self, pos:POS=None, mat:str=None) -> tuple[NDArray[ROW.DTYPE], dict[int, int]]:
+        """
+        PUBLIC:
+        - a. arguments:
+            - a.1: pos: position to split at
+            - a.2: mat: material name for the new row at pos
+        - b. returns:
+            - b.1: array of new rows created by the split
+            - b.2: dictionary of number of new rows created per material id
+        """
         mat0, rid, row = self.search(pos=pos)
         p0 = ROW.P0(row=row)
         p1 = ROW.P1(row=row)
@@ -2438,7 +2482,13 @@ class ROWS:
         for mat in self.mats.name2idx.keys():
             self.mergemat(mat=mat)
         
-    def merge(self, rows:NDArray[ROW.DTYPE]=None) -> int:
+    def merge(self, rows:NDArray[ROW.DTYPE]=None) -> None:
+        """
+        PUBLIC:
+        - a. arguments:
+            - a.1: rows: array of rows to consider for merging; if None, all rows are considered
+        - b. returns: None
+        """
         if rows is None:
             self.mergeall()
         if rows is not None:
@@ -2456,7 +2506,6 @@ class ROWS:
 
 
 
-rows = ROWS()
 
 ################################################################################
 # FILE 22/22: world/rows.py (END)
@@ -2471,16 +2520,16 @@ rows = ROWS()
 Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 1
  No more AIR rows could be consolidated. Stopping SWEEP.
 Material AIR has 10 rows after SWEEP tests.
-  AIR row 0: p0=(871886, 241595, 12515), p1=(871891, 241600, 12520)
-  AIR row 1: p0=(260086, 72057, 45224), p1=(260091, 72062, 45229)
-  AIR row 2: p0=(747213, 126834, 42851), p1=(747218, 126839, 42856)
-  AIR row 3: p0=(312488, 904048, 1453), p1=(312493, 904053, 1458)
-  AIR row 4: p0=(925280, 195230, 61011), p1=(925285, 195235, 61016)
-  AIR row 5: p0=(179151, 168810, 41569), p1=(179156, 168815, 41574)
-  AIR row 6: p0=(628157, 145796, 9533), p1=(628162, 145801, 9538)
-  AIR row 7: p0=(851630, 385390, 61539), p1=(851635, 385395, 61544)
-  AIR row 8: p0=(289660, 376279, 28825), p1=(289665, 376284, 28830)
-  AIR row 9: p0=(646452, 752789, 31232), p1=(646457, 752794, 31237)
+  AIR row 0: p0=(735574, 991377, 56561), p1=(735579, 991382, 56566)
+  AIR row 1: p0=(548333, 674659, 50262), p1=(548338, 674664, 50267)
+  AIR row 2: p0=(224641, 162617, 36280), p1=(224646, 162622, 36285)
+  AIR row 3: p0=(216849, 356354, 48032), p1=(216854, 356359, 48037)
+  AIR row 4: p0=(609003, 159581, 58056), p1=(609008, 159586, 58061)
+  AIR row 5: p0=(306580, 933560, 26119), p1=(306585, 933565, 26124)
+  AIR row 6: p0=(647916, 393181, 60622), p1=(647921, 393186, 60627)
+  AIR row 7: p0=(891198, 731005, 49798), p1=(891203, 731010, 49803)
+  AIR row 8: p0=(140760, 325852, 39723), p1=(140765, 325857, 39728)
+  AIR row 9: p0=(671617, 187934, 9524), p1=(671622, 187939, 9529)
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
@@ -2488,12 +2537,12 @@ Material STONE has 51 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
 air rows= 10 stone rows= 51
-main.py: executed in: lap 2: 2.305605 seconds, total 2.335538 seconds
+main.py: executed in: lap 2: 2.37904 seconds, total 2.397859 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2495
+# Total lines in bundle: 2544
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T16:26:51
+# Generated at the time: 2026-01-30T16:43:46
 --- END OF FILE ---
