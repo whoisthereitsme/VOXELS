@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T15:54:13
+#Time when generated: 2026-01-30T15:58:04
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2385,21 +2385,11 @@ class ROWS:
         for mat in self.mats.name2idx.keys():
             self.merge(mat=mat)
 
-    def merges(self, rows: NDArray[ROW.DTYPE] = None) -> int:
-        """
-        Greedy merge driver for a *given* batch of rows (typically the 27-split output).
-        Strategy:
-        - Axis-first depletion (X then Y then Z)
-        - Within each axis, iterate until we reach a fixpoint (no more merges on that axis)
-        - Rebuild the worklist each pass from current self.n[mid] for correctness under swap-delete
-        """
+    def merges(self, rows:NDArray[ROW.DTYPE]=None) -> int:
         if rows is None:
             return 0
 
         merges = 0
-
-        # Which materials are present in the provided batch?
-        # (Keeps the rebuild worklist small instead of scanning all MATERIALS every time.)
         mids_present: set[int] = set()
         for mid in range(rows.shape[0]):
             for i in range(rows.shape[1]):
@@ -2409,17 +2399,12 @@ class ROWS:
                     break
 
         for ax in (self.mdx.AX_X, self.mdx.AX_Y, self.mdx.AX_Z):
-
-            # Repeat passes on this axis until no merges happen.
-            # This prevents "saw it too early" + seen starving later opportunities.
-            while True:
+            axmerged = True
+            while axmerged:
                 did_merge = False
-
-                # Fresh worklist from current state (swap-delete changes what lives at each rid).
                 extra: list[tuple[int, int]] = []
                 for mid in mids_present:
                     n = self.n[mid]
-                    # reverse order = stack-like popping
                     for rid in range(n - 1, -1, -1):
                         extra.append((mid, rid))
 
@@ -2427,8 +2412,6 @@ class ROWS:
 
                 while extra:
                     mid, rid = extra.pop()
-
-                    # rid may have become invalid due to swap-delete or prior merges
                     if rid < 0 or rid >= self.n[mid]:
                         continue
 
@@ -2450,22 +2433,17 @@ class ROWS:
                     if self.merge_pair(mat=mat, rid_a=rid, rid_b=prid):
                         merges += 1
                         did_merge = True
-
-                        # merged row is appended at end of this material
                         new_rid = self.n[mid] - 1
                         extra.append((mid, new_rid))
-
-                        # Re-check potentially affected neighbors (and allow revisits)
                         if hasattr(self.mdx, "neighbors_of"):
                             neigh = self.mdx.neighbors_of(mid=mid, rid=new_rid)
                             for nm, nr in neigh:
-                                # neighbor might be stale/out of range, but that’s fine; guards above handle it
                                 if (nm, nr) in seen:
                                     seen.remove((nm, nr))
                                 extra.append((nm, nr))
 
                 if not did_merge:
-                    break
+                    axmerged = False
 
         return merges
 
@@ -2514,16 +2492,16 @@ SWEEP completed. AIR rows after: 10
 Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 10
 SWEEP completed. AIR rows after: 10
 Material AIR has 10 rows after SWEEP tests.
-  AIR row 0: p0=(916321, 729838, 19330), p1=(916326, 729843, 19335)
-  AIR row 1: p0=(446614, 808798, 7665), p1=(446619, 808803, 7670)
-  AIR row 2: p0=(499443, 882118, 10614), p1=(499448, 882123, 10619)
-  AIR row 3: p0=(129472, 80468, 35002), p1=(129477, 80473, 35007)
-  AIR row 4: p0=(622032, 504494, 57440), p1=(622037, 504499, 57445)
-  AIR row 5: p0=(36644, 946546, 31916), p1=(36649, 946551, 31921)
-  AIR row 6: p0=(615777, 337455, 22740), p1=(615782, 337460, 22745)
-  AIR row 7: p0=(16041, 284213, 12205), p1=(16046, 284218, 12210)
-  AIR row 8: p0=(944772, 751574, 10287), p1=(944777, 751579, 10292)
-  AIR row 9: p0=(333149, 91386, 2980), p1=(333154, 91391, 2985)
+  AIR row 0: p0=(262896, 24625, 37766), p1=(262901, 24630, 37771)
+  AIR row 1: p0=(656662, 124261, 11293), p1=(656667, 124266, 11298)
+  AIR row 2: p0=(504364, 614015, 24395), p1=(504369, 614020, 24400)
+  AIR row 3: p0=(515586, 782322, 60002), p1=(515591, 782327, 60007)
+  AIR row 4: p0=(378050, 898536, 22182), p1=(378055, 898541, 22187)
+  AIR row 5: p0=(209687, 924932, 36946), p1=(209692, 924937, 36951)
+  AIR row 6: p0=(399541, 348467, 1897), p1=(399546, 348472, 1902)
+  AIR row 7: p0=(149801, 852314, 39226), p1=(149806, 852319, 39231)
+  AIR row 8: p0=(864892, 619148, 47515), p1=(864897, 619153, 47520)
+  AIR row 9: p0=(405142, 467922, 20865), p1=(405147, 467927, 20870)
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
@@ -2531,12 +2509,12 @@ Material STONE has 51 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
 air rows= 10 stone rows= 51
-main.py: executed in: lap 2: 2.138789 seconds, total 2.152826 seconds
+main.py: executed in: lap 2: 2.193495 seconds, total 2.223918 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2538
+# Total lines in bundle: 2516
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T15:54:13
+# Generated at the time: 2026-01-30T15:58:04
 --- END OF FILE ---

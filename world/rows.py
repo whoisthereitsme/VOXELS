@@ -239,21 +239,11 @@ class ROWS:
         for mat in self.mats.name2idx.keys():
             self.merge(mat=mat)
 
-    def merges(self, rows: NDArray[ROW.DTYPE] = None) -> int:
-        """
-        Greedy merge driver for a *given* batch of rows (typically the 27-split output).
-        Strategy:
-        - Axis-first depletion (X then Y then Z)
-        - Within each axis, iterate until we reach a fixpoint (no more merges on that axis)
-        - Rebuild the worklist each pass from current self.n[mid] for correctness under swap-delete
-        """
+    def merges(self, rows:NDArray[ROW.DTYPE]=None) -> int:
         if rows is None:
             return 0
 
         merges = 0
-
-        # Which materials are present in the provided batch?
-        # (Keeps the rebuild worklist small instead of scanning all MATERIALS every time.)
         mids_present: set[int] = set()
         for mid in range(rows.shape[0]):
             for i in range(rows.shape[1]):
@@ -263,17 +253,12 @@ class ROWS:
                     break
 
         for ax in (self.mdx.AX_X, self.mdx.AX_Y, self.mdx.AX_Z):
-
-            # Repeat passes on this axis until no merges happen.
-            # This prevents "saw it too early" + seen starving later opportunities.
-            while True:
+            axmerged = True
+            while axmerged:
                 did_merge = False
-
-                # Fresh worklist from current state (swap-delete changes what lives at each rid).
                 extra: list[tuple[int, int]] = []
                 for mid in mids_present:
                     n = self.n[mid]
-                    # reverse order = stack-like popping
                     for rid in range(n - 1, -1, -1):
                         extra.append((mid, rid))
 
@@ -281,8 +266,6 @@ class ROWS:
 
                 while extra:
                     mid, rid = extra.pop()
-
-                    # rid may have become invalid due to swap-delete or prior merges
                     if rid < 0 or rid >= self.n[mid]:
                         continue
 
@@ -304,22 +287,17 @@ class ROWS:
                     if self.merge_pair(mat=mat, rid_a=rid, rid_b=prid):
                         merges += 1
                         did_merge = True
-
-                        # merged row is appended at end of this material
                         new_rid = self.n[mid] - 1
                         extra.append((mid, new_rid))
-
-                        # Re-check potentially affected neighbors (and allow revisits)
                         if hasattr(self.mdx, "neighbors_of"):
                             neigh = self.mdx.neighbors_of(mid=mid, rid=new_rid)
                             for nm, nr in neigh:
-                                # neighbor might be stale/out of range, but that’s fine; guards above handle it
                                 if (nm, nr) in seen:
                                     seen.remove((nm, nr))
                                 extra.append((nm, nr))
 
                 if not did_merge:
-                    break
+                    axmerged = False
 
         return merges
 
