@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T16:19:43
+#Time when generated: 2026-01-30T16:26:51
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2376,67 +2376,71 @@ class ROWS:
         if rows is None:
             return 0
 
-        merges = 0
         mids_present: set[int] = set()
         for mid in range(rows.shape[0]):
             for i in range(rows.shape[1]):
-                row = rows[mid][i]
-                if row[*ROW.IDS_ID] != ROW.SENTINEL:
+                if rows[mid][i][*ROW.IDS_ID] != ROW.SENTINEL:
                     mids_present.add(mid)
                     break
 
-        tries = 3
-        while tries > 0:
-            tries -= 1
+        total_merges = 0
+
+        while True:
+            merged_this_round = 0
+
             for ax in (self.mdx.AX_X, self.mdx.AX_Y, self.mdx.AX_Z):
-                    did_merge = False
-                    extra: list[tuple[int, int]] = []
-                    for mid in mids_present:
-                        n = self.n[mid]
-                        for rid in range(n - 1, -1, -1):
+                extra: list[tuple[int, int]] = []
+                for mid in mids_present:
+                    for rid in range(self.n[mid] - 1, -1, -1):
+                        extra.append((mid, rid))
+
+                seen: set[tuple[int, int]] = set()
+
+                while extra:
+                    mid, rid = extra.pop()
+                    if rid < 0 or rid >= self.n[mid]:
+                        continue
+
+                    key = (mid, rid)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+
+                    partner = self.mdx.search(mid=mid, rid=rid, axis=ax)
+                    if partner is None:
+                        continue
+
+                    pmid, prid = partner
+                    if pmid != mid or prid < 0 or prid >= self.n[mid]:
+                        continue
+
+                    mat = self.mats.idx2name[mid]
+
+                    if self.merge2(mat=mat, rid0=rid, rid1=prid):
+                        merged_this_round += 1
+                        total_merges += 1
+
+                        new_rid = self.n[mid] - 1
+                        extra.append((mid, new_rid))
+
+                        # recheck the slot that got swapped-in
+                        if rid < self.n[mid]:
+                            seen.discard((mid, rid))
                             extra.append((mid, rid))
 
-                    seen: set[tuple[int, int]] = set()
+            if merged_this_round == 0:
+                break
 
-                    while extra:
-                        mid, rid = extra.pop()
-                        if rid < 0 or rid >= self.n[mid]:
-                            continue
+        return total_merges
 
-                        key = (mid, rid)
-                        if key in seen:
-                            continue
-                        seen.add(key)
-
-                        mat = self.mats.idx2name[mid]
-
-                        partner = self.mdx.search(mid=mid, rid=rid, axis=ax)
-                        if partner is None:
-                            continue
-
-                        pmid, prid = partner
-                        if pmid != mid or prid < 0 or prid >= self.n[mid]:
-                            continue
-
-                        if self.merge2(mat=mat, rid0=rid, rid1=prid):
-                            merges += 1
-                            did_merge = True
-                            new_rid = self.n[mid] - 1
-                            extra.append((mid, new_rid))
-                            if hasattr(self.mdx, "neighbors_of"):
-                                neigh = self.mdx.neighbors_of(mid=mid, rid=new_rid)
-                                for nm, nr in neigh:
-                                    if (nm, nr) in seen:
-                                        seen.remove((nm, nr))
-                                    extra.append((nm, nr))
-
-
-        return merges
+    
+    def mergeall(self) -> None:
+        for mat in self.mats.name2idx.keys():
+            self.mergemat(mat=mat)
         
     def merge(self, rows:NDArray[ROW.DTYPE]=None) -> int:
         if rows is None:
-            for mat in self.mats.name2idx.keys():
-                self.mergemat(mat=mat)
+            self.mergeall()
         if rows is not None:
             self.mergerows(rows=rows)
 
@@ -2467,16 +2471,16 @@ rows = ROWS()
 Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 1
  No more AIR rows could be consolidated. Stopping SWEEP.
 Material AIR has 10 rows after SWEEP tests.
-  AIR row 0: p0=(485368, 710897, 32342), p1=(485373, 710902, 32347)
-  AIR row 1: p0=(962391, 926638, 56391), p1=(962396, 926643, 56396)
-  AIR row 2: p0=(113751, 576138, 51296), p1=(113756, 576143, 51301)
-  AIR row 3: p0=(660369, 126101, 59761), p1=(660374, 126106, 59766)
-  AIR row 4: p0=(787455, 411924, 40633), p1=(787460, 411929, 40638)
-  AIR row 5: p0=(452244, 57352, 19853), p1=(452249, 57357, 19858)
-  AIR row 6: p0=(501373, 661067, 37446), p1=(501378, 661072, 37451)
-  AIR row 7: p0=(331447, 889454, 21413), p1=(331452, 889459, 21418)
-  AIR row 8: p0=(575112, 786453, 3257), p1=(575117, 786458, 3262)
-  AIR row 9: p0=(740842, 181867, 15908), p1=(740847, 181872, 15913)
+  AIR row 0: p0=(871886, 241595, 12515), p1=(871891, 241600, 12520)
+  AIR row 1: p0=(260086, 72057, 45224), p1=(260091, 72062, 45229)
+  AIR row 2: p0=(747213, 126834, 42851), p1=(747218, 126839, 42856)
+  AIR row 3: p0=(312488, 904048, 1453), p1=(312493, 904053, 1458)
+  AIR row 4: p0=(925280, 195230, 61011), p1=(925285, 195235, 61016)
+  AIR row 5: p0=(179151, 168810, 41569), p1=(179156, 168815, 41574)
+  AIR row 6: p0=(628157, 145796, 9533), p1=(628162, 145801, 9538)
+  AIR row 7: p0=(851630, 385390, 61539), p1=(851635, 385395, 61544)
+  AIR row 8: p0=(289660, 376279, 28825), p1=(289665, 376284, 28830)
+  AIR row 9: p0=(646452, 752789, 31232), p1=(646457, 752794, 31237)
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
@@ -2484,12 +2488,12 @@ Material STONE has 51 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
 air rows= 10 stone rows= 51
-main.py: executed in: lap 2: 2.440543 seconds, total 2.470495 seconds
+main.py: executed in: lap 2: 2.305605 seconds, total 2.335538 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2491
+# Total lines in bundle: 2495
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T16:19:43
+# Generated at the time: 2026-01-30T16:26:51
 --- END OF FILE ---

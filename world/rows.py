@@ -223,67 +223,71 @@ class ROWS:
         if rows is None:
             return 0
 
-        merges = 0
         mids_present: set[int] = set()
         for mid in range(rows.shape[0]):
             for i in range(rows.shape[1]):
-                row = rows[mid][i]
-                if row[*ROW.IDS_ID] != ROW.SENTINEL:
+                if rows[mid][i][*ROW.IDS_ID] != ROW.SENTINEL:
                     mids_present.add(mid)
                     break
 
-        tries = 3
-        while tries > 0:
-            tries -= 1
+        total_merges = 0
+
+        while True:
+            merged_this_round = 0
+
             for ax in (self.mdx.AX_X, self.mdx.AX_Y, self.mdx.AX_Z):
-                    did_merge = False
-                    extra: list[tuple[int, int]] = []
-                    for mid in mids_present:
-                        n = self.n[mid]
-                        for rid in range(n - 1, -1, -1):
+                extra: list[tuple[int, int]] = []
+                for mid in mids_present:
+                    for rid in range(self.n[mid] - 1, -1, -1):
+                        extra.append((mid, rid))
+
+                seen: set[tuple[int, int]] = set()
+
+                while extra:
+                    mid, rid = extra.pop()
+                    if rid < 0 or rid >= self.n[mid]:
+                        continue
+
+                    key = (mid, rid)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+
+                    partner = self.mdx.search(mid=mid, rid=rid, axis=ax)
+                    if partner is None:
+                        continue
+
+                    pmid, prid = partner
+                    if pmid != mid or prid < 0 or prid >= self.n[mid]:
+                        continue
+
+                    mat = self.mats.idx2name[mid]
+
+                    if self.merge2(mat=mat, rid0=rid, rid1=prid):
+                        merged_this_round += 1
+                        total_merges += 1
+
+                        new_rid = self.n[mid] - 1
+                        extra.append((mid, new_rid))
+
+                        # recheck the slot that got swapped-in
+                        if rid < self.n[mid]:
+                            seen.discard((mid, rid))
                             extra.append((mid, rid))
 
-                    seen: set[tuple[int, int]] = set()
+            if merged_this_round == 0:
+                break
 
-                    while extra:
-                        mid, rid = extra.pop()
-                        if rid < 0 or rid >= self.n[mid]:
-                            continue
+        return total_merges
 
-                        key = (mid, rid)
-                        if key in seen:
-                            continue
-                        seen.add(key)
-
-                        mat = self.mats.idx2name[mid]
-
-                        partner = self.mdx.search(mid=mid, rid=rid, axis=ax)
-                        if partner is None:
-                            continue
-
-                        pmid, prid = partner
-                        if pmid != mid or prid < 0 or prid >= self.n[mid]:
-                            continue
-
-                        if self.merge2(mat=mat, rid0=rid, rid1=prid):
-                            merges += 1
-                            did_merge = True
-                            new_rid = self.n[mid] - 1
-                            extra.append((mid, new_rid))
-                            if hasattr(self.mdx, "neighbors_of"):
-                                neigh = self.mdx.neighbors_of(mid=mid, rid=new_rid)
-                                for nm, nr in neigh:
-                                    if (nm, nr) in seen:
-                                        seen.remove((nm, nr))
-                                    extra.append((nm, nr))
-
-
-        return merges
+    
+    def mergeall(self) -> None:
+        for mat in self.mats.name2idx.keys():
+            self.mergemat(mat=mat)
         
     def merge(self, rows:NDArray[ROW.DTYPE]=None) -> int:
         if rows is None:
-            for mat in self.mats.name2idx.keys():
-                self.mergemat(mat=mat)
+            self.mergeall()
         if rows is not None:
             self.mergerows(rows=rows)
 
