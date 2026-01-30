@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T14:45:00
+#Time when generated: 2026-01-30T14:45:56
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -732,6 +732,8 @@ def main() -> None:
         n = rows.nrows(mat=Materials.idx2name[i])
         print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
         # should yield the same as before since we mined AIR only in perfect cubes
+
+    print(f"air rows= {rows.nrows(mat='AIR')}", f"stone rows= {rows.nrows(mat='STONE')}")
 
     assert rows.nrows(mat="AIR") == 10, "After mining 10 AIR cubes the AIR material should have 0 rows after SWEEP"
     assert rows.nrows(mat="STONE") == 51, "After mining the 10 AIR cubes the STONE material should be fragmented into 51 rows"
@@ -2476,15 +2478,15 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 6.321155 seconds, total 6.341944 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 158.20 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.001555 seconds, total 6.343498 seconds
+STEP 1 :  3D grid partition built: lap 3: 5.941294 seconds, total 5.963901 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 168.31 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.001677 seconds, total 5.965578 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.466358 seconds, total 6.809857 seconds
+ - All 10000 rows deleted in: lap 5: 0.45141 seconds, total 6.416987 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.677584 seconds, total 7.487441 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1475.83 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.001784 seconds, total 7.489225 seconds
+ - second time 3D grid partition built: lap 6: 0.662634 seconds, total 7.079621 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1509.13 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.001736 seconds, total 7.081357 seconds
 WORLD VOLUME BEFORE:  72056357089509375
  - SPLIT test 1/10 passed.
  - SPLIT test 2/10 passed.
@@ -2504,8 +2506,8 @@ Material STONE has 51 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
 WORLD VOLUME AFTER:  72056357089509375
-STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.053712 seconds, total 7.542937 seconds
- - SWEEP completed in: lap 9: 0.000173 seconds, total 7.54311 seconds
+STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.050335 seconds, total 7.131691 seconds
+ - SWEEP completed in: lap 9: 0.000228 seconds, total 7.131919 seconds
 WORLD VOLUME AFTER SWEEP:  72056357089509375
 Material AIR has 10 rows after SWEEP tests.
 Material WATER has 0 rows after SWEEP tests.
@@ -2521,11 +2523,12 @@ Material GLASS has 0 rows after SWEEP tests.
 Material STONE has 51 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
+air rows= 11 stone rows= 51
 Traceback (most recent call last):
-  File "c:\VOXELS\main.py", line 160, in <module>
+  File "c:\VOXELS\main.py", line 162, in <module>
     main()
     ~~~~^^
-  File "c:\VOXELS\main.py", line 151, in main
+  File "c:\VOXELS\main.py", line 153, in main
     assert rows.nrows(mat="AIR") == 10, "After mining 10 AIR cubes the AIR material should have 0 rows after SWEEP"
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError: After mining 10 AIR cubes the AIR material should have 0 rows after SWEEP
@@ -2533,7 +2536,7 @@ AssertionError: After mining 10 AIR cubes the AIR material should have 0 rows af
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2535
+# Total lines in bundle: 2538
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T14:45:00
+# Generated at the time: 2026-01-30T14:45:56
 --- END OF FILE ---

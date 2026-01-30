@@ -148,6 +148,8 @@ def main() -> None:
         print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
         # should yield the same as before since we mined AIR only in perfect cubes
 
+    print(f"air rows= {rows.nrows(mat='AIR')}", f"stone rows= {rows.nrows(mat='STONE')}")
+
     assert rows.nrows(mat="AIR") == 10, "After mining 10 AIR cubes the AIR material should have 0 rows after SWEEP"
     assert rows.nrows(mat="STONE") == 51, "After mining the 10 AIR cubes the STONE material should be fragmented into 51 rows"
 
