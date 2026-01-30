@@ -487,25 +487,15 @@ def test6() -> None:
 
 
 
-def main(test: list[int] = None) -> None:
-    if test is None:
-        test = [1, 2, 3, 4, 5, 6]
+def main(tests:list=None) -> None:
+    if tests is None:
+        tests = [test1, test2, test3, test4, test5, test6]
 
     timer.lap()
     with Bundle():
         try:
-            if 1 in test:
-                test1()
-            if 2 in test:
-                test2()
-            if 3 in test:
-                test3()
-            if 4 in test:
-                test4()
-            if 5 in test:
-                test5()
-            if 6 in test:
-                test6()
+            for t in tests:
+                t()
 
         except Exception:
             traceback.print_exc()
@@ -515,5 +505,5 @@ def main(test: list[int] = None) -> None:
 
 if __name__ == "__main__":
     timer.lap()
-    main(test=[6])
+    main(tests=[test1])
     
