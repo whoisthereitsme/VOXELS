@@ -189,7 +189,7 @@ class ROWS:
                 continue
             seen.add(rid)
 
-            partner = self.mdx.find_partner(mid=mid, rid=rid, axis=axis)
+            partner = self.mdx.search(mid=mid, rid=rid, axis=axis)
             if partner is None:
                 continue
 
