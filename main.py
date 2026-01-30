@@ -505,5 +505,5 @@ def main(tests:list=None) -> None:
 
 if __name__ == "__main__":
     timer.lap()
-    main(tests=[test1])
+    main(tests=[test6])
     
