@@ -97,8 +97,8 @@ class ROWS:
                 total += ROW.VOLUME(row=row)
         return total
 
-    def find(self, pos:POS=None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
-        mat, rid, row = self.bvh.find(pos=pos)
+    def search(self, pos:POS=None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
+        mat, rid, row = self.bvh.search(pos=pos)
         return (mat, rid, row)
     
     def get(self, mat:str=None, rid:int=None) -> NDArray[ROW.DTYPE]:
@@ -108,7 +108,7 @@ class ROWS:
         return self.n[Materials.name2idx[mat]]
     
     def split(self, pos:POS=None, mat:str=None) -> tuple[NDArray[ROW.DTYPE], dict[int, int]]:
-        mat0, rid, row = self.find(pos=pos)
+        mat0, rid, row = self.search(pos=pos)
         p0 = ROW.P0(row=row)
         p1 = ROW.P1(row=row)
         
@@ -175,7 +175,7 @@ class ROWS:
 
         rid = 0
         while rid < self.n[mid]:
-            partner = self.mdx.find_partner(mid=mid, rid=rid, axis=axis)
+            partner = self.mdx.search(mid=mid, rid=rid, axis=axis)
             if partner is None:
                 rid += 1
                 continue
@@ -237,7 +237,7 @@ class ROWS:
             mat = self.mats.idx2name[mid]
 
             for axis in (self.mdx.AX_X, self.mdx.AX_Y, self.mdx.AX_Z):
-                partner = self.mdx.find_partner(mid=mid, rid=rid, axis=axis)
+                partner = self.mdx.search(mid=mid, rid=rid, axis=axis)
                 if partner is None:
                     continue
 

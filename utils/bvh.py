@@ -251,12 +251,12 @@ class BVH:
             self._fix_upwards(grand)
 
     # ------------------------------------------------------------------
-    # find
+    # search
     # ------------------------------------------------------------------
 
-    def find(self, pos:POS=None) -> tuple[str, int, "NDArray[ROW.DTYPE]"]:
+    def search(self, pos:POS=None) -> tuple[str, int, "NDArray[ROW.DTYPE]"]:
         if self.root == -1:
-            raise LookupError("[ERROR] BVH.find() failed: empty BVH")
+            raise LookupError("[ERROR] BVH.search() failed: empty BVH")
 
         x, y, z = pos
         stack = [self.root]
@@ -292,7 +292,7 @@ class BVH:
             if r != -1 and (xminL[r] <= x < xmaxL[r] and yminL[r] <= y < ymaxL[r] and zminL[r] <= z < zmaxL[r]):
                 stack.append(r)
 
-        raise LookupError("[ERROR] BVH.find() failed: point not found (partition invariant violated or BVH not updated)")
+        raise LookupError("[ERROR] BVH.search() failed: point not found (partition invariant violated or BVH not updated)")
 
 
 

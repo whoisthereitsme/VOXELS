@@ -133,11 +133,7 @@ class MDX:
     # ---------------------------
     # partner query
     # ---------------------------
-    def find_partner(self, mid: int, rid: int, axis: int) -> Optional[Loc]:
-        """
-        Finds any merge partner for (mid,rid) along given axis.
-        Returns (mid, rid2) or None.
-        """
+    def search(self, mid:int=None, rid:int=None, axis:int=None) -> Optional[Loc]:
         loc = (mid, rid)
         faces = self._faces.get(loc)
         if faces is None:
