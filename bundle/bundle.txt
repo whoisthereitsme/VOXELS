@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T15:59:58
+#Time when generated: 2026-01-30T16:01:44
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -729,10 +729,17 @@ def test3() -> None:
                     pos = (x, y, z)
                     rows.split(pos=pos, mat="AIR")
 
+    rowsbefore = rows.nrows(mat="AIR")
     for i in range(10):
         print("Performing SWEEP to consolidate AIR rows... AIR rows before:", rows.nrows(mat="AIR"), "in sweep iteration:", i+1)
         rows.sweep()
-        print("SWEEP completed. AIR rows after:", rows.nrows(mat="AIR"))
+        rowsafter = rows.nrows(mat="AIR")
+        if rowsafter == rowsbefore:
+            print(" No more AIR rows could be consolidated. Stopping SWEEP.")
+            break
+        rowsbefore = rowsafter
+
+        
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
         print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
@@ -2473,36 +2480,20 @@ rows = ROWS()
 
 10 mines to be created at random positions.
 Performing SWEEP to consolidate AIR rows... AIR rows before: 12 in sweep iteration: 1
-SWEEP completed. AIR rows after: 11
 Performing SWEEP to consolidate AIR rows... AIR rows before: 11 in sweep iteration: 2
-SWEEP completed. AIR rows after: 10
 Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 3
-SWEEP completed. AIR rows after: 10
-Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 4
-SWEEP completed. AIR rows after: 10
-Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 5
-SWEEP completed. AIR rows after: 10
-Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 6
-SWEEP completed. AIR rows after: 10
-Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 7
-SWEEP completed. AIR rows after: 10
-Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 8
-SWEEP completed. AIR rows after: 10
-Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 9
-SWEEP completed. AIR rows after: 10
-Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 10
-SWEEP completed. AIR rows after: 10
+ No more AIR rows could be consolidated. Stopping SWEEP.
 Material AIR has 10 rows after SWEEP tests.
-  AIR row 0: p0=(329900, 875459, 24376), p1=(329905, 875464, 24381)
-  AIR row 1: p0=(112870, 34263, 62579), p1=(112875, 34268, 62584)
-  AIR row 2: p0=(690176, 191293, 4553), p1=(690181, 191298, 4558)
-  AIR row 3: p0=(330832, 758536, 7427), p1=(330837, 758541, 7432)
-  AIR row 4: p0=(387931, 912991, 54071), p1=(387936, 912996, 54076)
-  AIR row 5: p0=(749901, 581085, 41269), p1=(749906, 581090, 41274)
-  AIR row 6: p0=(617533, 253554, 52905), p1=(617538, 253559, 52910)
-  AIR row 7: p0=(605277, 635411, 61135), p1=(605282, 635416, 61140)
-  AIR row 8: p0=(754172, 648980, 59903), p1=(754177, 648985, 59908)
-  AIR row 9: p0=(46138, 659610, 13027), p1=(46143, 659615, 13032)
+  AIR row 0: p0=(288617, 614739, 22882), p1=(288622, 614744, 22887)
+  AIR row 1: p0=(619431, 154658, 19612), p1=(619436, 154663, 19617)
+  AIR row 2: p0=(975069, 415758, 54830), p1=(975074, 415763, 54835)
+  AIR row 3: p0=(233627, 576588, 54505), p1=(233632, 576593, 54510)
+  AIR row 4: p0=(360594, 609780, 59906), p1=(360599, 609785, 59911)
+  AIR row 5: p0=(671830, 761995, 25785), p1=(671835, 762000, 25790)
+  AIR row 6: p0=(260522, 231986, 60631), p1=(260527, 231991, 60636)
+  AIR row 7: p0=(192215, 404884, 26167), p1=(192220, 404889, 26172)
+  AIR row 8: p0=(715740, 896793, 46214), p1=(715745, 896798, 46219)
+  AIR row 9: p0=(159727, 565812, 9577), p1=(159732, 565817, 9582)
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
@@ -2510,12 +2501,12 @@ Material STONE has 51 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
 air rows= 10 stone rows= 51
-main.py: executed in: lap 2: 2.38376 seconds, total 2.416289 seconds
+main.py: executed in: lap 2: 2.342707 seconds, total 2.357845 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2517
+# Total lines in bundle: 2508
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T15:59:58
+# Generated at the time: 2026-01-30T16:01:44
 --- END OF FILE ---
