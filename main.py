@@ -262,16 +262,16 @@ def test4() -> None:
 def test5() -> None:
     """
     test5:
-    Split off regions that *span multiple rows*.
+    Split off regions that span multiple rows.
 
-    Build a grid of STONE rows (like in test1 but smaller), then carve AIR boxes that
-    cross row boundaries, and verify:
+    Build a grid of STONE rows, then carve AIR boxes that cross row boundaries, and verify:
     - volume stays constant
     - AIR volume equals sum of carved boxes
     - random points inside carved boxes are AIR
     """
     rows = ROWS()
-    # Remove the default large STONE row, then build a grid of smaller STONE rows
+
+    # Remove the default large STONE row
     row0 = rows.array[MATERIALS.IDX["STONE"]][0]
     rows.remove(row=row0)
 
@@ -279,6 +279,8 @@ def test5() -> None:
     nx = 20
     ny = 20
     nz = 8
+
+    # Build grid
     for ix in range(nx):
         x0 = ix * cell
         x1 = x0 + cell
@@ -290,39 +292,58 @@ def test5() -> None:
                 z1 = z0 + cell
                 rows.insert(p0=(x0, y0, z0), p1=(x1, y1, z1), mat="STONE")
 
-    rows.merge()  # optional: consolidate if anything adjacent was inserted
-    v0 = rows.volume()
-    print("WORLD VOLUME BEFORE:", v0)
-    print("Initial rows:",
-          f"stone_rows={rows.nrows(mat='STONE')}",
-          f"air_rows={rows.nrows(mat='AIR')}")
+    # Optional consolidation (may collapse to 1 big STONE row; that's fine)
+    rows.merge()
 
-    # Now carve boxes that intentionally cross boundaries:
-    # choose p0 not aligned to cell boundaries and sizes > cell to span multiple cells.
-    boxes: list[tuple[POS, POS]] = []
-    total_air_vol = 0
-
+    # World bounds of the grid (half-open): x in [0, max_x), etc.
     max_x = nx * cell
     max_y = ny * cell
     max_z = nz * cell
 
+    v0 = rows.volume()
+    print("WORLD VOLUME BEFORE:", v0)
+    print("Initial rows:", f"stone_rows={rows.nrows(mat='STONE')}", f"air_rows={rows.nrows(mat='AIR')}")
+
+    boxes: list[tuple[POS, POS]] = []
+    total_air_vol = 0
+
     for i in range(30):
+        # sizes big enough to span multiple cells
         dx = random.randint(cell + 5, cell * 3)
         dy = random.randint(cell + 5, cell * 3)
         dz = random.randint(cell + 5, cell * 2)
 
-        x0 = random.randint(5, max_x - dx - 5)
-        y0 = random.randint(5, max_y - dy - 5)
-        z0 = random.randint(5, max_z - dz - 5)
+        # unaligned start offset, but keep it SAFE
+        ox = random.randint(1, cell - 2)
+        oy = random.randint(1, cell - 2)
+        oz = random.randint(1, cell - 2)
 
-        # offset to avoid perfectly aligned starts
-        x0 += random.randint(1, cell - 2)
-        y0 += random.randint(1, cell - 2)
-        z0 += random.randint(1, cell - 2)
+        # choose base so that base+offset+size stays inside bounds
+        x0_base = random.randint(0, max_x - dx - ox)
+        y0_base = random.randint(0, max_y - dy - oy)
+        z0_base = random.randint(0, max_z - dz - oz)
+
+        x0 = x0_base + ox
+        y0 = y0_base + oy
+        z0 = z0_base + oz
+
+        # p1 is allowed to equal max_* (half-open world)
+        x1 = x0 + dx
+        y1 = y0 + dy
+        z1 = z0 + dz
+
+        # defensive clamp (should already be in range)
+        x1 = min(x1, max_x)
+        y1 = min(y1, max_y)
+        z1 = min(z1, max_z)
 
         p0 = (x0, y0, z0)
-        p1 = (x0 + dx, y0 + dy, z0 + dz)
+        p1 = (x1, y1, z1)
         p0, p1 = ROW.SORT(p0=p0, p1=p1)
+
+        # must be non-empty
+        if p0[0] >= p1[0] or p0[1] >= p1[1] or p0[2] >= p1[2]:
+            continue
 
         rows.split(pos=p0, pos1=p1, mat="AIR")
         boxes.append((p0, p1))
@@ -342,10 +363,11 @@ def test5() -> None:
     air_vol = 0
     for rid in range(rows.n[air_mid]):
         air_vol += ROW.VOLUME(row=rows.array[air_mid][rid])
+
     print("AIR VOLUME:", air_vol, "EXPECTED (sum boxes):", total_air_vol)
     assert air_vol == total_air_vol, f"AIR volume mismatch: got={air_vol}, expected={total_air_vol}"
 
-    # Random containment checks inside carved boxes -> must be AIR
+    # Random containment checks inside boxes -> must be AIR
     for _ in range(1000):
         p0, p1 = random.choice(boxes)
         x = random.randint(p0[0], p1[0] - 1)
@@ -354,10 +376,7 @@ def test5() -> None:
         mat, rid, row = rows.search(pos=(x, y, z))
         assert mat == "AIR", f"expected AIR at {(x,y,z)}, got {mat} rid={rid}"
 
-    print("test5 OK:",
-          f"air_rows={rows.nrows(mat='AIR')}",
-          f"stone_rows={rows.nrows(mat='STONE')}")
-
+    print("test5 OK:", f"air_rows={rows.nrows(mat='AIR')}", f"stone_rows={rows.nrows(mat='STONE')}")
 
 
 
@@ -376,7 +395,7 @@ def main(test=[]) -> None:
                 test4()
             if 5 in test:
                 test5()
-            timer.print(msg="main.py: executed in")
+
         except Exception:
             traceback.print_exc()
         finally:    
@@ -385,5 +404,5 @@ def main(test=[]) -> None:
 
 
 if __name__ == "__main__":
-    main(test=[4])
+    main(test=[5])
     
