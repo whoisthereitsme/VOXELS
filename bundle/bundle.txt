@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T14:11:25
+#Time when generated: 2026-01-30T14:16:57
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2321,15 +2321,13 @@ class ROWS:
         return merges
     
     def merge(self, mat:str=None) -> int:
-        total = 0
-        while True:
-            total2 = 0
-            for ax in range(3):
-                total2 += self.merge_pass(mat=mat, axis=ax) 
-            total += total2
-            if total2 == 0:
-                return total
-
+        for ax in range(3):
+            merged = self.merge_pass(mat=mat, axis=ax) > 0
+            while merged == True:
+                merged = self.merge_pass(mat=mat, axis=ax) > 0
+            
+        # this cycles a axis fisrt and then the next axis until no more merges are possible
+        # instead of cycling all axes once and repeating the whole process
             
     def sweep(self) -> int:
         for mat in self.mats.name2idx.keys():
@@ -2418,15 +2416,15 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.668496 seconds, total 5.704653 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 176.41 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.38467 seconds, total 6.089323 seconds
+STEP 1 :  3D grid partition built: lap 3: 5.703521 seconds, total 5.741043 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 175.33 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.374336 seconds, total 6.115379 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.390455 seconds, total 6.479778 seconds
+ - All 10000 rows deleted in: lap 5: 0.39527 seconds, total 6.510649 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.634857 seconds, total 7.114635 seconds
- - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1575.16 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.180806 seconds, total 7.29544 seconds
+ - second time 3D grid partition built: lap 6: 0.606814 seconds, total 7.117463 seconds
+ - All random CONTAINS checks passed. Successes: 1000, Fails: 0 is a succes percentage of 100.00% adn per lookup 1647.95 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.169297 seconds, total 7.28676 seconds
 WORLD VOLUME BEFORE:  72056357089509375
  - SPLIT test 1/10 passed.
  - SPLIT test 2/10 passed.
@@ -2446,22 +2444,22 @@ Material STONE has 91 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
 WORLD VOLUME AFTER:  72056357089509375
-STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.047282 seconds, total 7.342722 seconds
- - SWEEP completed in: lap 9: 0.004803 seconds, total 7.347525 seconds
+STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.046292 seconds, total 7.333053 seconds
+ - SWEEP completed in: lap 9: 0.00553 seconds, total 7.338583 seconds
 WORLD VOLUME AFTER SWEEP:  72056357089509375
 Material AIR has 10 rows after SWEEP tests.
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
-Material STONE has 56 rows after SWEEP tests.
+Material STONE has 54 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
-main.py: executed in: lap 10: 0.001007 seconds, total 7.348532 seconds
+main.py: executed in: lap 10: 0.000887 seconds, total 7.33947 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2463
+# Total lines in bundle: 2461
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T14:11:25
+# Generated at the time: 2026-01-30T14:16:57
 --- END OF FILE ---

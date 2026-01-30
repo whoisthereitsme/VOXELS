@@ -189,15 +189,13 @@ class ROWS:
         return merges
     
     def merge(self, mat:str=None) -> int:
-        total = 0
-        while True:
-            total2 = 0
-            for ax in range(3):
-                total2 += self.merge_pass(mat=mat, axis=ax) 
-            total += total2
-            if total2 == 0:
-                return total
-
+        for ax in range(3):
+            merged = self.merge_pass(mat=mat, axis=ax) > 0
+            while merged == True:
+                merged = self.merge_pass(mat=mat, axis=ax) > 0
+            
+        # this cycles a axis fisrt and then the next axis until no more merges are possible
+        # instead of cycling all axes once and repeating the whole process
             
     def sweep(self) -> int:
         for mat in self.mats.name2idx.keys():
