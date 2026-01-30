@@ -147,14 +147,14 @@ def test3() -> None:
     rowsbefore = rows.nrows(mat="AIR")
     for i in range(10):
         print("Performing SWEEP to consolidate AIR rows... AIR rows before:", rows.nrows(mat="AIR"), "in sweep iteration:", i+1)
-        rows.sweep()
+        rows.merge()
         rowsafter = rows.nrows(mat="AIR")
         if rowsafter == rowsbefore:
             print(" No more AIR rows could be consolidated. Stopping SWEEP.")
             break
         rowsbefore = rowsafter
 
-        
+
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
         print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")

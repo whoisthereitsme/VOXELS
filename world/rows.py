@@ -59,8 +59,8 @@ class ROWS:
         mid: int = Materials.name2idx[mat]
         rid: int = self.newn(mat=mat)
         row = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
-        self.array[mid][rid] = row  # added rid=n so that bvh can use it when i provide a row as argument
-        self.bvh.insert(row=row)  # insert into bvh index
+        self.array[mid][rid] = row
+        self.bvh.insert(row=row)
         self.mdx.insert(row=row)
         return row
     
@@ -140,43 +140,37 @@ class ROWS:
                             arids[mid0] += 1
 
         self.remove(row=row) 
-        self.merges(rows=array)
+        self.merge(rows=array)  # this gives rows so calls  self.mergerows() and not self.mergemat() so only the new rows created here are considered for merging
 
 
 
-    def merge_pair(self, mat: str, rid_a: int, rid_b: int) -> bool:
+    def merge2(self, mat:str=None, rid0:int=None, rid1:int=None) -> bool:
         mid = Materials.name2idx[mat]
         n = self.n[mid]
-        if rid_a < 0 or rid_a >= n or rid_b < 0 or rid_b >= n or rid_a == rid_b:
+        if rid0 < 0 or rid0 >= n or rid1 < 0 or rid1 >= n or rid0 == rid1:
             return False
 
-        row_a = self.array[mid][rid_a]
-        row_b = self.array[mid][rid_b]
+        row0 = self.array[mid][rid0]
+        row1 = self.array[mid][rid1]
 
-        touch = ROW.MERGE(row0=row_a, row1=row_b)
+        touch = ROW.MERGE(row0=row0, row1=row1)
         if touch == (False, False, False):
             return False
 
-        # merged bounds
-        p0 = ROW.SORT(p0=ROW.P0(row=row_a), p1=ROW.P0(row=row_b))[0]
-        p1 = ROW.SORT(p0=ROW.P1(row=row_a), p1=ROW.P1(row=row_b))[1]
+        p0 = ROW.SORT(p0=ROW.P0(row=row0), p1=ROW.P0(row=row1))[0]
+        p1 = ROW.SORT(p0=ROW.P1(row=row0), p1=ROW.P1(row=row1))[1]
 
-        # remove higher rid first (because remove() swap-deletes)
-        hi = rid_a if rid_a > rid_b else rid_b
-        lo = rid_b if hi == rid_a else rid_a
+        hi = rid0 if rid0 > rid1 else rid1
+        lo = rid1 if hi == rid0 else rid0
         self.remove(mat=mat, index=hi)
         self.remove(mat=mat, index=lo)
         self.insert(p0=p0, p1=p1, mat=mat)
         return True
 
-    def merge_pass(self, mat:str=None, axis:int=None) -> int:
+    def mergeax(self, mat:str=None, axis:int=None) -> int:
         mid = Materials.name2idx[mat]
         merges = 0
-
-        # Worklist of row IDs to try; start with all current rows.
         extra: list[int] = list(range(self.n[mid] - 1, -1, -1))
-        # Note: we do NOT want a permanent "seen" that blocks revisits forever.
-        # We'll use it only to avoid pointless repeats *until something changes*.
         seen: set[int] = set()
 
         while extra:
@@ -197,14 +191,9 @@ class ROWS:
             if pmid != mid or prid < 0 or prid >= self.n[mid]:
                 continue
 
-            if self.merge_pair(mat=mat, rid_a=rid, rid_b=prid):
+            if self.merge2(mat=mat, rid0=rid, rid1=prid):
                 merges += 1
-
-                # New merged row is appended at end.
                 new_rid = self.n[mid] - 1
-
-                # Critical: the merge changed neighborhood relationships.
-                # Re-check the new row AND its neighbors on this axis.
                 extra.append(new_rid)
 
                 if hasattr(self.mdx, "neighbors_of"):
@@ -212,13 +201,11 @@ class ROWS:
                     for nm, nr in neigh:
                         if nm != mid:
                             continue
-                        # allow reprocessing: neighbor state might have changed
+
                         if nr in seen:
                             seen.remove(nr)
                         extra.append(nr)
 
-                # Also allow rid itself to be reconsidered if it still exists
-                # (slot may now contain swapped-in row after deletions).
                 if rid < self.n[mid]:
                     if rid in seen:
                         seen.remove(rid)
@@ -226,20 +213,13 @@ class ROWS:
 
         return merges
         
-    def merge(self, mat:str=None) -> int:
+    def mergemat(self, mat:str=None) -> int:
         for ax in range(3):
-            merged = self.merge_pass(mat=mat, axis=ax) > 0
+            merged = self.mergeax(mat=mat, axis=ax) > 0
             while merged == True:
-                merged = self.merge_pass(mat=mat, axis=ax) > 0
-            
-        # this cycles a axis fisrt and then the next axis until no more merges are possible
-        # instead of cycling all axes once and repeating the whole process
-            
-    def sweep(self) -> int:
-        for mat in self.mats.name2idx.keys():
-            self.merge(mat=mat)
-
-    def merges(self, rows:NDArray[ROW.DTYPE]=None) -> int:
+                merged = self.mergeax(mat=mat, axis=ax) > 0
+             
+    def mergerows(self, rows:NDArray[ROW.DTYPE]=None) -> int:
         if rows is None:
             return 0
 
@@ -285,7 +265,7 @@ class ROWS:
                     if pmid != mid or prid < 0 or prid >= self.n[mid]:
                         continue
 
-                    if self.merge_pair(mat=mat, rid_a=rid, rid_b=prid):
+                    if self.merge2(mat=mat, rid_a=rid, rid_b=prid):
                         merges += 1
                         did_merge = True
                         new_rid = self.n[mid] - 1
@@ -301,6 +281,13 @@ class ROWS:
                     counter -= 1
 
         return merges
+    
+    def merge(self, rows:NDArray[ROW.DTYPE]=None) -> int:
+        if rows is None:
+            for mat in self.mats.name2idx.keys():
+                self.mergemat(mat=mat)
+        if rows is not None:
+            self.mergerows(rows=rows)
 
 
     def __repr__(self) -> str:
