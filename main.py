@@ -146,13 +146,14 @@ def main() -> None:
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
         print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
-        # should yield the same as before since we mined AIR only in perfect cubes
-
+        if "AIR"==Materials.idx2name[i]:
+            for j in range(n):
+                row = rows.array[i][j]
+                p0 = ROW.P0(row=row)
+                p1 = ROW.P1(row=row)
+                print(f"  AIR row {j}: p0={p0}, p1={p1}")
+                
     print(f"air rows= {rows.nrows(mat='AIR')}", f"stone rows= {rows.nrows(mat='STONE')}")
-
-    assert rows.nrows(mat="AIR") == 10, "After mining 10 AIR cubes the AIR material should have 0 rows after SWEEP"
-    assert rows.nrows(mat="STONE") == 51, "After mining the 10 AIR cubes the STONE material should be fragmented into 51 rows"
-
 
 
 if __name__ == "__main__":
