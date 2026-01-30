@@ -142,7 +142,8 @@ def main() -> None:
                     pos = (x, y, z)
                     rows.split(pos=pos, mat="AIR")
 
-    rows.sweep() # final sweep to clean up
+    for _ in range(2):
+        rows.sweep() # final sweep to clean up
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
         print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")

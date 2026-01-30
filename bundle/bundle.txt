@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T14:49:33
+#Time when generated: 2026-01-30T14:52:34
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -727,7 +727,8 @@ def main() -> None:
                     pos = (x, y, z)
                     rows.split(pos=pos, mat="AIR")
 
-    rows.sweep() # final sweep to clean up
+    for _ in range(2):
+        rows.sweep() # final sweep to clean up
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
         print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
@@ -2479,15 +2480,15 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 6.052253 seconds, total 6.076203 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 165.23 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.001782 seconds, total 6.077984 seconds
+STEP 1 :  3D grid partition built: lap 3: 6.2657 seconds, total 6.28778 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 159.60 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.001487 seconds, total 6.289266 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.416522 seconds, total 6.494507 seconds
+ - All 10000 rows deleted in: lap 5: 0.44194 seconds, total 6.731206 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.650388 seconds, total 7.144894 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1537.54 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.001634 seconds, total 7.146528 seconds
+ - second time 3D grid partition built: lap 6: 0.690678 seconds, total 7.421885 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1447.85 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.001698 seconds, total 7.423583 seconds
 WORLD VOLUME BEFORE:  72056357089509375
  - SPLIT test 1/10 passed.
  - SPLIT test 2/10 passed.
@@ -2507,8 +2508,8 @@ Material STONE has 51 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
 WORLD VOLUME AFTER:  72056357089509375
-STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.050859 seconds, total 7.197387 seconds
- - SWEEP completed in: lap 9: 0.000221 seconds, total 7.197608 seconds
+STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.053467 seconds, total 7.47705 seconds
+ - SWEEP completed in: lap 9: 0.000148 seconds, total 7.477197 seconds
 WORLD VOLUME AFTER SWEEP:  72056357089509375
 Material AIR has 10 rows after SWEEP tests.
 Material WATER has 0 rows after SWEEP tests.
@@ -2517,31 +2518,30 @@ Material GLASS has 0 rows after SWEEP tests.
 Material STONE has 51 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
-Material AIR has 11 rows after SWEEP tests.
-  AIR row 0: p0=(608586, 173046, 51701), p1=(608591, 173051, 51706)
-  AIR row 1: p0=(129779, 337213, 4769), p1=(129784, 337218, 4774)
-  AIR row 2: p0=(972592, 299224, 11107), p1=(972597, 299229, 11112)
-  AIR row 3: p0=(206451, 508139, 46431), p1=(206456, 508144, 46436)
-  AIR row 4: p0=(774703, 818810, 21088), p1=(774708, 818815, 21093)
-  AIR row 5: p0=(513907, 966070, 5014), p1=(513912, 966075, 5019)
-  AIR row 6: p0=(226635, 898620, 39142), p1=(226640, 898625, 39147)
-  AIR row 7: p0=(491639, 302513, 13687), p1=(491644, 302518, 13692)
-  AIR row 8: p0=(427072, 880615, 18215), p1=(427077, 880620, 18220)
-  AIR row 9: p0=(566170, 73657, 36864), p1=(566174, 73662, 36869)
-  AIR row 10: p0=(566174, 73657, 36864), p1=(566175, 73662, 36869)
+Material AIR has 10 rows after SWEEP tests.
+  AIR row 0: p0=(430326, 927726, 11550), p1=(430331, 927731, 11555)
+  AIR row 1: p0=(638465, 932061, 41723), p1=(638470, 932066, 41728)
+  AIR row 2: p0=(231272, 90022, 49562), p1=(231277, 90027, 49567)
+  AIR row 3: p0=(340803, 565349, 27568), p1=(340808, 565354, 27573)
+  AIR row 4: p0=(900168, 275648, 9962), p1=(900173, 275653, 9967)
+  AIR row 5: p0=(893085, 973649, 44808), p1=(893090, 973654, 44813)
+  AIR row 6: p0=(487135, 820599, 52987), p1=(487140, 820604, 52992)
+  AIR row 7: p0=(880691, 941298, 38934), p1=(880696, 941303, 38939)
+  AIR row 8: p0=(658262, 818890, 38771), p1=(658267, 818895, 38776)
+  AIR row 9: p0=(242861, 360239, 56172), p1=(242866, 360244, 56177)
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
 Material STONE has 51 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
-air rows= 11 stone rows= 51
-main.py: executed in: lap 10: 1.912477 seconds, total 9.110085 seconds
+air rows= 10 stone rows= 51
+main.py: executed in: lap 10: 2.071849 seconds, total 9.549046 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
 # Total lines in bundle: 2543
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T14:49:33
+# Generated at the time: 2026-01-30T14:52:34
 --- END OF FILE ---
