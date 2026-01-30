@@ -252,9 +252,10 @@ class ROWS:
                     mids_present.add(mid)
                     break
 
+        
         for ax in (self.mdx.AX_X, self.mdx.AX_Y, self.mdx.AX_Z):
-            axmerged = True
-            while axmerged:
+            counter = 2 
+            while counter > 0:
                 did_merge = False
                 extra: list[tuple[int, int]] = []
                 for mid in mids_present:
@@ -297,7 +298,7 @@ class ROWS:
                                 extra.append((nm, nr))
 
                 if not did_merge:
-                    axmerged = False
+                    counter -= 1
 
         return merges
 

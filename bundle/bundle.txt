@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T15:58:04
+#Time when generated: 2026-01-30T15:59:58
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2398,9 +2398,10 @@ class ROWS:
                     mids_present.add(mid)
                     break
 
+        
         for ax in (self.mdx.AX_X, self.mdx.AX_Y, self.mdx.AX_Z):
-            axmerged = True
-            while axmerged:
+            counter = 2 
+            while counter > 0:
                 did_merge = False
                 extra: list[tuple[int, int]] = []
                 for mid in mids_present:
@@ -2443,7 +2444,7 @@ class ROWS:
                                 extra.append((nm, nr))
 
                 if not did_merge:
-                    axmerged = False
+                    counter -= 1
 
         return merges
 
@@ -2492,16 +2493,16 @@ SWEEP completed. AIR rows after: 10
 Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 10
 SWEEP completed. AIR rows after: 10
 Material AIR has 10 rows after SWEEP tests.
-  AIR row 0: p0=(262896, 24625, 37766), p1=(262901, 24630, 37771)
-  AIR row 1: p0=(656662, 124261, 11293), p1=(656667, 124266, 11298)
-  AIR row 2: p0=(504364, 614015, 24395), p1=(504369, 614020, 24400)
-  AIR row 3: p0=(515586, 782322, 60002), p1=(515591, 782327, 60007)
-  AIR row 4: p0=(378050, 898536, 22182), p1=(378055, 898541, 22187)
-  AIR row 5: p0=(209687, 924932, 36946), p1=(209692, 924937, 36951)
-  AIR row 6: p0=(399541, 348467, 1897), p1=(399546, 348472, 1902)
-  AIR row 7: p0=(149801, 852314, 39226), p1=(149806, 852319, 39231)
-  AIR row 8: p0=(864892, 619148, 47515), p1=(864897, 619153, 47520)
-  AIR row 9: p0=(405142, 467922, 20865), p1=(405147, 467927, 20870)
+  AIR row 0: p0=(329900, 875459, 24376), p1=(329905, 875464, 24381)
+  AIR row 1: p0=(112870, 34263, 62579), p1=(112875, 34268, 62584)
+  AIR row 2: p0=(690176, 191293, 4553), p1=(690181, 191298, 4558)
+  AIR row 3: p0=(330832, 758536, 7427), p1=(330837, 758541, 7432)
+  AIR row 4: p0=(387931, 912991, 54071), p1=(387936, 912996, 54076)
+  AIR row 5: p0=(749901, 581085, 41269), p1=(749906, 581090, 41274)
+  AIR row 6: p0=(617533, 253554, 52905), p1=(617538, 253559, 52910)
+  AIR row 7: p0=(605277, 635411, 61135), p1=(605282, 635416, 61140)
+  AIR row 8: p0=(754172, 648980, 59903), p1=(754177, 648985, 59908)
+  AIR row 9: p0=(46138, 659610, 13027), p1=(46143, 659615, 13032)
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
@@ -2509,12 +2510,12 @@ Material STONE has 51 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
 air rows= 10 stone rows= 51
-main.py: executed in: lap 2: 2.193495 seconds, total 2.223918 seconds
+main.py: executed in: lap 2: 2.38376 seconds, total 2.416289 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2516
+# Total lines in bundle: 2517
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T15:58:04
+# Generated at the time: 2026-01-30T15:59:58
 --- END OF FILE ---
