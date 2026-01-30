@@ -7,7 +7,7 @@ from bundle import *
 
 
 
-def main() -> None:
+def test1() -> None:
     rows = ROWS()
     row = rows.array[ MATERIALS.IDX["STONE"] ][0]
     rows.remove(row=row)
@@ -97,6 +97,7 @@ def main() -> None:
     print(" - All random CONTAINS checks passed.", f"Successes: {succes}, Fails: {fails} is a succes percentage of {100-fails/(succes+fails)*100:.2f}% adn per lookup {(succes+fails)/timer.delta[-1]:.2f} lookups/second")
     timer.print(msg=" - Second random CONTAINS checks completed in")
 
+def test2() -> None:
     rows = ROWS() # it has by default a large enough array to hold 10000 rows per material
     print("WORLD VOLUME BEFORE: ", rows.volume())
 
@@ -123,6 +124,7 @@ def main() -> None:
         print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
 
 
+def test3() -> None:
     rows = ROWS()
     mines = []
     for i in range(10):
@@ -157,17 +159,27 @@ def main() -> None:
     print(f"air rows= {rows.nrows(mat='AIR')}", f"stone rows= {rows.nrows(mat='STONE')}")
 
 
-if __name__ == "__main__":
+def main(test1=False, test2=False, test3=False) -> None:
     timer.lap()
     with Bundle():
         try:
-            main()
+            if test1:
+                test1()
+            if test2:
+                test2()
+            if test3:
+                test3()
             timer.print(msg="main.py: executed in")
         except Exception:
             traceback.print_exc()
         finally:    
             pass
 
+
+
+if __name__ == "__main__":
+    main(test1=False, test2=False, test3=True)
+    
 
 
 #layer1 (x is the splitoff)

@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T15:48:24
+#Time when generated: 2026-01-30T15:50:35
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -592,7 +592,7 @@ from bundle import *
 
 
 
-def main() -> None:
+def test1() -> None:
     rows = ROWS()
     row = rows.array[ MATERIALS.IDX["STONE"] ][0]
     rows.remove(row=row)
@@ -682,6 +682,7 @@ def main() -> None:
     print(" - All random CONTAINS checks passed.", f"Successes: {succes}, Fails: {fails} is a succes percentage of {100-fails/(succes+fails)*100:.2f}% adn per lookup {(succes+fails)/timer.delta[-1]:.2f} lookups/second")
     timer.print(msg=" - Second random CONTAINS checks completed in")
 
+def test2() -> None:
     rows = ROWS() # it has by default a large enough array to hold 10000 rows per material
     print("WORLD VOLUME BEFORE: ", rows.volume())
 
@@ -708,6 +709,7 @@ def main() -> None:
         print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
 
 
+def test3() -> None:
     rows = ROWS()
     mines = []
     for i in range(10):
@@ -742,17 +744,27 @@ def main() -> None:
     print(f"air rows= {rows.nrows(mat='AIR')}", f"stone rows= {rows.nrows(mat='STONE')}")
 
 
-if __name__ == "__main__":
+def main(test1=False, test2=False, test3=False) -> None:
     timer.lap()
     with Bundle():
         try:
-            main()
+            if test1:
+                test1()
+            if test2:
+                test2()
+            if test3:
+                test3()
             timer.print(msg="main.py: executed in")
         except Exception:
             traceback.print_exc()
         finally:    
             pass
 
+
+
+if __name__ == "__main__":
+    main(test1=False, test2=False, test3=True)
+    
 
 
 #layer1 (x is the splitoff)
@@ -2494,69 +2506,16 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.955787 seconds, total 5.991011 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 167.90 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.001804 seconds, total 5.992815 seconds
- - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.474379 seconds, total 6.467194 seconds
-STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.664422 seconds, total 7.131616 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1505.07 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.001652 seconds, total 7.133268 seconds
-WORLD VOLUME BEFORE:  72056357089509375
- - SPLIT test 1/10 passed.
- - SPLIT test 2/10 passed.
- - SPLIT test 3/10 passed.
- - SPLIT test 4/10 passed.
- - SPLIT test 5/10 passed.
- - SPLIT test 6/10 passed.
- - SPLIT test 7/10 passed.
- - SPLIT test 8/10 passed.
- - SPLIT test 9/10 passed.
- - SPLIT test 10/10 passed.
-Material AIR has 10 rows after SPLIT tests.
-Material WATER has 0 rows after SPLIT tests.
-Material LAVA has 0 rows after SPLIT tests.
-Material GLASS has 0 rows after SPLIT tests.
-Material STONE has 51 rows after SPLIT tests.
-Material OBSIDIAN has 0 rows after SPLIT tests.
-Material BEDROCK has 0 rows after SPLIT tests.
-WORLD VOLUME AFTER:  72056357089509375
-STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.055309 seconds, total 7.188577 seconds
- - SWEEP completed in: lap 9: 0.000551 seconds, total 7.189128 seconds
-WORLD VOLUME AFTER SWEEP:  72056357089509375
-Material AIR has 10 rows after SWEEP tests.
-Material WATER has 0 rows after SWEEP tests.
-Material LAVA has 0 rows after SWEEP tests.
-Material GLASS has 0 rows after SWEEP tests.
-Material STONE has 51 rows after SWEEP tests.
-Material OBSIDIAN has 0 rows after SWEEP tests.
-Material BEDROCK has 0 rows after SWEEP tests.
-Material AIR has 11 rows after SWEEP tests.
-  AIR row 0: p0=(344999, 417078, 18670), p1=(345004, 417083, 18675)
-  AIR row 1: p0=(977583, 410782, 43225), p1=(977588, 410787, 43230)
-  AIR row 2: p0=(486177, 385911, 30813), p1=(486182, 385916, 30818)
-  AIR row 3: p0=(310365, 656260, 6885), p1=(310370, 656265, 6890)
-  AIR row 4: p0=(221559, 943213, 3116), p1=(221564, 943218, 3121)
-  AIR row 5: p0=(46687, 948501, 53240), p1=(46692, 948506, 53245)
-  AIR row 6: p0=(699561, 694852, 4815), p1=(699566, 694857, 4820)
-  AIR row 7: p0=(249711, 568522, 28522), p1=(249716, 568527, 28527)
-  AIR row 8: p0=(953139, 55064, 33642), p1=(953144, 55069, 33647)
-  AIR row 9: p0=(434388, 794894, 21987), p1=(434392, 794899, 21992)
-  AIR row 10: p0=(434392, 794894, 21987), p1=(434393, 794899, 21992)
-Material WATER has 0 rows after SWEEP tests.
-Material LAVA has 0 rows after SWEEP tests.
-Material GLASS has 0 rows after SWEEP tests.
-Material STONE has 51 rows after SWEEP tests.
-Material OBSIDIAN has 0 rows after SWEEP tests.
-Material BEDROCK has 0 rows after SWEEP tests.
-air rows= 11 stone rows= 51
-main.py: executed in: lap 10: 2.239181 seconds, total 9.428308 seconds
+Traceback (most recent call last):
+  File "c:\VOXELS\main.py", line 171, in main
+    test3()
+    ~~~~~^^
+TypeError: 'bool' object is not callable
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2558
+# Total lines in bundle: 2517
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T15:48:24
+# Generated at the time: 2026-01-30T15:50:35
 --- END OF FILE ---
