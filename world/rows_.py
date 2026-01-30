@@ -14,9 +14,7 @@ from utils.types import POS, SIZE
 from utils.mdx import MDX
 
 
-
-ARRAY_ARIDS = tuple[NDArray[ROW.DTYPE], dict[int,int]]
-
+ARRAY_ARIDS = tuple[NDArray[ROW.DTYPE], dict[int, int]]
 
 
 class ROWS:
@@ -39,38 +37,44 @@ class ROWS:
     - self.mergemat(mat:str)
     - self.mergerows(rows:NDArray[ROW.DTYPE])
     - self.mergeall()
-
-
     """
     SIZE = 65536
+
     def __init__(self) -> None:
         self.mats = Materials()
         self.bvh = BVH(rows=self)
         self.mdx = MDX(rows=self)
-        self.n:dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}  # number of valid rows per material
+        self.n: dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}  # number of valid rows per material
         self.m = 0  # for the total number of rows used
 
-        
-        self.array: NDArray[ROW.DTYPE] = np.full((MATERIALS.NUM, ROWS.SIZE, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
+        self.array: NDArray[ROW.DTYPE] = np.full(
+            (MATERIALS.NUM, ROWS.SIZE, *ROW.SHAPE),
+            fill_value=ROW.SENTINEL,
+            dtype=ROW.DTYPE,
+        )
         self.shape = self.array.shape
         self.nbytes = self.array.nbytes
         self.gbytes = self.nbytes / (1024**3)
 
         mat = "STONE"
-        self.insert(p0=(ROW.XMIN, ROW.YMIN, ROW.ZMIN), p1=(ROW.XMAX, ROW.YMAX, ROW.ZMAX), mat=mat)  # alive and dirty by default are true so no need to specify : easier to use now!!!
-        self.size = ROW.XMAX - ROW.XMIN, ROW.YMAX - ROW.YMIN, ROW.ZMAX - ROW.ZMIN
+        self.insert(
+            p0=(ROW.XMIN, ROW.YMIN, ROW.ZMIN),
+            p1=(ROW.XMAX, ROW.YMAX, ROW.ZMAX),
+            mat=mat,
+        )
+        self.size = (ROW.XMAX - ROW.XMIN, ROW.YMAX - ROW.YMIN, ROW.ZMAX - ROW.ZMIN)
 
         self._merge = 16
         self.__merge = 0
 
-    def newn(self, mat:str=None) -> int:
+    def newn(self, mat: str = None) -> int:
         mid: int = Materials.name2idx[mat]
         n: int = self.n[mid]
         self.n[mid] += 1
         self.m += 1
         return n
-    
-    def deln(self, mat: str=None) -> int:
+
+    def deln(self, mat: str = None) -> int:
         if mat is None:
             raise ValueError("material must be specified")
         mid = Materials.name2idx[mat]
@@ -80,12 +84,16 @@ class ROWS:
         self.m -= 1
         return self.n[mid]
 
-    def requirements(self, n:int=None) -> tuple[NDArray[ROW.DTYPE], dict[int, int]]:
-        array = np.full((MATERIALS.NUM, n, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
+    def requirements(self, n: int = None) -> ARRAY_ARIDS:
+        array = np.full(
+            (MATERIALS.NUM, n, *ROW.SHAPE),
+            fill_value=ROW.SENTINEL,
+            dtype=ROW.DTYPE,
+        )
         arids: dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}
         return (array, arids)
-            
-    def insert(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -> NDArray[ROW.DTYPE]:
+
+    def insert(self, p0: POS = None, p1: POS = None, mat: str = None, dirty: bool = True, alive: bool = True) -> NDArray[ROW.DTYPE]:
         mid: int = Materials.name2idx[mat]
         rid: int = self.newn(mat=mat)
         row = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
@@ -93,8 +101,8 @@ class ROWS:
         self.bvh.insert(row=row)
         self.mdx.insert(row=row)
         return row
-    
-    def remove(self, index:int=None, mat:str=None, row:NDArray[ROW.DTYPE]=None) -> NDArray[ROW.DTYPE]:
+
+    def remove(self, index: int = None, mat: str = None, row: NDArray[ROW.DTYPE] = None) -> NDArray[ROW.DTYPE]:
         if row is not None and index is None and mat is None:
             mat = ROW.MAT(row=row)
             index = ROW.RID(row=row)
@@ -117,13 +125,8 @@ class ROWS:
         self.array[mid][last] = ROW.ARRAY
         self.deln(mat=mat)
         return self
-    
+
     def volume(self) -> int:
-        """
-        PUBLIC:
-        - a. arguments: none
-        - b. returns: total volume of all rows in all materials
-        """
         total = 0
         for mid in range(MATERIALS.NUM):
             n = self.n[mid]
@@ -132,26 +135,17 @@ class ROWS:
                 total += ROW.VOLUME(row=row)
         return total
 
-    def search(self, pos:POS=None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
-        """
-        PRIVATE:
-        - a. arguments:
-           - a.1: pos: position to search for
-        - b. returns: 
-            - b.1: material name
-            - b.2: row id within material
-            - b.3: the row array at the given position
-        """
+    def search(self, pos: POS = None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
         mat, rid, row = self.bvh.search(pos=pos)
         return (mat, rid, row)
-    
-    def get(self, mat:str=None, rid:int=None) -> NDArray[ROW.DTYPE]:
+
+    def get(self, mat: str = None, rid: int = None) -> NDArray[ROW.DTYPE]:
         return self.array[Materials.name2idx[mat]][rid]
 
-    def nrows(self, mat:str=None) -> int:
+    def nrows(self, mat: str = None) -> int:
         return self.n[Materials.name2idx[mat]]
 
-    def splitrow(self, pos:POS=None, p2:POS=None, mat:str=None) -> ARRAY_ARIDS:
+    def splitrow(self, pos: POS = None, p2: POS = None, mat: str = None) -> ARRAY_ARIDS:
         mat0, rid, row = self.search(pos=pos)
         r0 = ROW.P0(row=row)
         r1 = ROW.P1(row=row)
@@ -161,7 +155,6 @@ class ROWS:
         x1, y1, z1 = pos
         x2, y2, z2 = p2
 
-        # (defensive) clamp to row bounds
         x1 = max(x0, min(x1, x3)); x2 = max(x0, min(x2, x3))
         y1 = max(y0, min(y1, y3)); y2 = max(y0, min(y2, y3))
         z1 = max(z0, min(z1, z3)); z2 = max(z0, min(z2, z3))
@@ -187,99 +180,98 @@ class ROWS:
 
         self.remove(row=row)
         return array, arids
-    
-
-
 
     def split1(self, pos: POS = None, mat: str = None) -> ARRAY_ARIDS:
         p2 = (pos[0] + 1, pos[1] + 1, pos[2] + 1)
         batch, arids = self.splitrow(pos=pos, p2=p2, mat=mat)
         batch, arids = self.merge(rows=batch)
         return batch, arids
-    
+
     def split2(self, p0: POS = None, p1: POS = None, mat: str = None) -> ARRAY_ARIDS:
-        def intersect(a0, a1, b0, b1):
+        def intersect(a0: POS = None, a1: POS = None, b0: POS = None, b1: POS = None) -> tuple[POS, POS] | None:
             q0 = (max(a0[0], b0[0]), max(a0[1], b0[1]), max(a0[2], b0[2]))
             q1 = (min(a1[0], b1[0]), min(a1[1], b1[1]), min(a1[2], b1[2]))
             if q0[0] >= q1[0] or q0[1] >= q1[1] or q0[2] >= q1[2]:
                 return None
             return q0, q1
-        
+
         if p0 is None or p1 is None or mat is None:
             raise ValueError("p0, p1, mat must be provided")
 
         p0, p1 = ROW.SORT(p0=p0, p1=p1)
         if p0[0] >= p1[0] or p0[1] >= p1[1] or p0[2] >= p1[2]:
-            return  # empty box
+            return self.requirements(n=0)
 
-        # Find the row containing the start point
+        acc: list[list[NDArray[ROW.DTYPE]]] = [[] for _ in range(MATERIALS.NUM)]
+
         mat0, rid, row = self.search(pos=p0)
         r0 = ROW.P0(row=row)
         r1 = ROW.P1(row=row)
 
-        hit = intersect(p0, p1, r0, r1)
+        hit = intersect(a0=p0, a1=p1, b0=r0, b1=r1)
         if hit is None:
-            return  # shouldn't happen if partition invariant holds
+            return self.requirements(n=0)
 
-        q0, q1 = hit  # portion of the requested box that lies inside THIS row
+        q0, q1 = hit
 
-        # Carve q0..q1 in this row (generalized split1; implement as helper)
         batch, _ = self.splitrow(pos=q0, p2=q1, mat=mat)
-        self.merge(rows=batch)
-
-        # Now recurse on the leftovers by splitting along boundaries that stopped q1.
-        # If q1.x < p1.x, then there is remaining region on the "right" side in X.
-        # Similar for Y and Z. We recurse on up to 3 remainder boxes.
+        merged, marids = self.merge(rows=batch)
+        for mid in range(MATERIALS.NUM):
+            for i in range(marids[mid]):
+                acc[mid].append(merged[mid][i])
 
         if q1[0] < p1[0]:
-            # right remainder: [ (q1.x, p0.y, p0.z) , p1 )
-            self.split2(p0=(q1[0], p0[1], p0[2]), p1=p1, mat=mat)
+            b, a = self.split2(p0=(q1[0], p0[1], p0[2]), p1=p1, mat=mat)
+            for mid in range(MATERIALS.NUM):
+                for i in range(a[mid]):
+                    acc[mid].append(b[mid][i])
 
         if q1[1] < p1[1]:
-            # top remainder in Y within the already-consumed X-range
-            self.split2(p0=(p0[0], q1[1], p0[2]), p1=(q1[0], p1[1], p1[2]), mat=mat)
+            b, a = self.split2(p0=(p0[0], q1[1], p0[2]), p1=(q1[0], p1[1], p1[2]), mat=mat)
+            for mid in range(MATERIALS.NUM):
+                for i in range(a[mid]):
+                    acc[mid].append(b[mid][i])
 
         if q1[2] < p1[2]:
-            # front remainder in Z within already-consumed X,Y range
-            self.split2(p0=(p0[0], p0[1], q1[2]), p1=(q1[0], q1[1], p1[2]), mat=mat)
+            b, a = self.split2(p0=(p0[0], p0[1], q1[2]), p1=(q1[0], q1[1], p1[2]), mat=mat)
+            for mid in range(MATERIALS.NUM):
+                for i in range(a[mid]):
+                    acc[mid].append(b[mid][i])
 
-    
-    def split(self, pos:POS=None, pos1:POS=None, mat:str=None) -> ARRAY_ARIDS:
-        """
-        PUBLIC:
-        - a. arguments:
-            - a.1: pos: position to split at (single point split)
-            - a.2: pos1: opposite corner position to split to (box split) (optional)
-            - a.3: mat: material to assign to the new split rows
-        - b. returns:
-            - b.1: batch: array of newly created rows
-        """
+        arids: dict[int, int] = {mid: len(acc[mid]) for mid in range(MATERIALS.NUM)}
+        n = max(arids.values()) if arids else 0
+        array, out_arids = self.requirements(n=n)
+        for mid in range(MATERIALS.NUM):
+            out_arids[mid] = arids[mid]
+            for i, r in enumerate(acc[mid]):
+                array[mid][i] = r
+
+        return array, out_arids
+
+    def split(self, pos: POS = None, pos1: POS = None, mat: str = None) -> ARRAY_ARIDS:
         if mat is None:
             raise ValueError("material must be specified")
         if pos is None and pos1 is None:
             raise ValueError("either pos or pos1 must be provided")
+
         if pos1 is not None and pos is not None:
-            array = self.split2(p0=pos, p1=pos1, mat=mat)
+            return self.split2(p0=pos, p1=pos1, mat=mat)
         if pos1 is None and pos is not None:
-            array = self.split1(pos=pos, mat=mat)
-        if pos is None and pos1 is not None:
-            array = self.split1(pos=pos1, mat=mat)
-         
-        return self.merge(rows=array)
+            return self.split1(pos=pos, mat=mat)
+        return self.split1(pos=pos1, mat=mat)
 
-
-    def merge2(self, mat:str=None, rid0:int=None, rid1:int=None) -> ARRAY_ARIDS:
+    def merge2(self, mat: str = None, rid0: int = None, rid1: int = None) -> ARRAY_ARIDS:
         mid = Materials.name2idx[mat]
         n = self.n[mid]
         if rid0 < 0 or rid0 >= n or rid1 < 0 or rid1 >= n or rid0 == rid1:
-            return False
+            return self.requirements(n=0)
 
         row0 = self.array[mid][rid0]
         row1 = self.array[mid][rid1]
 
         touch = ROW.MERGE(row0=row0, row1=row1)
         if touch == (False, False, False):
-            return False
+            return self.requirements(n=0)
 
         p0 = ROW.SORT(p0=ROW.P0(row=row0), p1=ROW.P0(row=row1))[0]
         p1 = ROW.SORT(p0=ROW.P1(row=row0), p1=ROW.P1(row=row1))[1]
@@ -288,12 +280,18 @@ class ROWS:
         lo = rid1 if hi == rid0 else rid0
         self.remove(mat=mat, index=hi)
         self.remove(mat=mat, index=lo)
-        self.insert(p0=p0, p1=p1, mat=mat)
-        return True
+        newrow = self.insert(p0=p0, p1=p1, mat=mat)
 
-    def mergeax(self, mat:str=None, axis:int=None) -> ARRAY_ARIDS:
+        array, arids = self.requirements(n=1)
+        array[mid][0] = newrow
+        arids[mid] = 1
+        return array, arids
+
+    def mergeax(self, mat: str = None, axis: int = None) -> ARRAY_ARIDS:
         mid = Materials.name2idx[mat]
-        merges = 0
+        start_n = self.n[mid]
+        array, arids = self.requirements(n=start_n)
+
         extra: list[int] = list(range(self.n[mid] - 1, -1, -1))
         seen: set[int] = set()
 
@@ -302,7 +300,6 @@ class ROWS:
 
             if rid < 0 or rid >= self.n[mid]:
                 continue
-
             if rid in seen:
                 continue
             seen.add(rid)
@@ -315,8 +312,11 @@ class ROWS:
             if pmid != mid or prid < 0 or prid >= self.n[mid]:
                 continue
 
-            if self.merge2(mat=mat, rid0=rid, rid1=prid):
-                merges += 1
+            created, carids = self.merge2(mat=mat, rid0=rid, rid1=prid)
+            if carids[mid] > 0:
+                array[mid][arids[mid]] = created[mid][0]
+                arids[mid] += 1
+
                 new_rid = self.n[mid] - 1
                 extra.append(new_rid)
 
@@ -325,7 +325,6 @@ class ROWS:
                     for nm, nr in neigh:
                         if nm != mid:
                             continue
-
                         if nr in seen:
                             seen.remove(nr)
                         extra.append(nr)
@@ -335,17 +334,27 @@ class ROWS:
                         seen.remove(rid)
                     extra.append(rid)
 
-        return merges
-        
-    def mergemat(self, mat:str=None) -> ARRAY_ARIDS:
+        return array, arids
+
+    def mergemat(self, mat: str = None) -> ARRAY_ARIDS:
+        mid = Materials.name2idx[mat]
+        start_n = self.n[mid]
+        array, arids = self.requirements(n=start_n)
+
         for ax in range(3):
-            merged = self.mergeax(mat=mat, axis=ax) > 0
-            while merged == True:
-                merged = self.mergeax(mat=mat, axis=ax) > 0
-             
-    def mergerows(self, rows:NDArray[ROW.DTYPE]=None) -> int:
+            while True:
+                created, carids = self.mergeax(mat=mat, axis=ax)
+                if carids[mid] <= 0:
+                    break
+                for i in range(carids[mid]):
+                    array[mid][arids[mid]] = created[mid][i]
+                    arids[mid] += 1
+
+        return array, arids
+
+    def mergerows(self, rows: NDArray[ROW.DTYPE] = None) -> ARRAY_ARIDS:
         if rows is None:
-            return 0
+            return self.requirements(n=0)
 
         mids_present: set[int] = set()
         for mid in range(rows.shape[0]):
@@ -354,7 +363,12 @@ class ROWS:
                     mids_present.add(mid)
                     break
 
-        total_merges = 0
+        # worst-case: you will never create more merged rows than currently exist in those mats combined
+        worst = 0
+        for mid in mids_present:
+            worst += self.n[mid]
+
+        array, arids = self.requirements(n=worst)
 
         while True:
             merged_this_round = 0
@@ -386,15 +400,15 @@ class ROWS:
                         continue
 
                     mat = self.mats.idx2name[mid]
-
-                    if self.merge2(mat=mat, rid0=rid, rid1=prid):
+                    created, carids = self.merge2(mat=mat, rid0=rid, rid1=prid)
+                    if carids[mid] > 0:
+                        array[mid][arids[mid]] = created[mid][0]
+                        arids[mid] += 1
                         merged_this_round += 1
-                        total_merges += 1
 
                         new_rid = self.n[mid] - 1
                         extra.append((mid, new_rid))
 
-                        # recheck the slot that got swapped-in
                         if rid < self.n[mid]:
                             seen.discard((mid, rid))
                             extra.append((mid, rid))
@@ -402,25 +416,25 @@ class ROWS:
             if merged_this_round == 0:
                 break
 
-        return total_merges
+        return array, arids
 
-    
     def mergeall(self) -> ARRAY_ARIDS:
-        for mat in self.mats.name2idx.keys():
-            self.mergemat(mat=mat)
-        
-    def merge(self, rows:NDArray[ROW.DTYPE]=None) -> ARRAY_ARIDS:
-        """
-        PUBLIC:
-        - a. arguments:
-            - a.1: rows: array of rows to consider for merging; if None, all rows are considered
-        - b. returns: None
-        """
-        if rows is None:
-            self.mergeall()
-        if rows is not None:
-            self.mergerows(rows=rows)
+        start_m = self.m
+        array, arids = self.requirements(n=start_m)
 
+        for mat in self.mats.name2idx.keys():
+            created, carids = self.mergemat(mat=mat)
+            for mid in range(MATERIALS.NUM):
+                for i in range(carids[mid]):
+                    array[mid][arids[mid]] = created[mid][i]
+                    arids[mid] += 1
+
+        return array, arids
+
+    def merge(self, rows: NDArray[ROW.DTYPE] = None) -> ARRAY_ARIDS:
+        if rows is None:
+            return self.mergeall()
+        return self.mergerows(rows=rows)
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -431,44 +445,4 @@ class ROWS:
 
 
 
-# INSTRUCTIONS:
-# make merge() and all its derivates return -> a array ( array: NDArray[ROW.DTYPE] = np.full((MATERIALS.NUM, nrowsgenerated, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE) )
-# make split() and all its derivates return -> a array ( array: NDArray[ROW.DTYPE] = np.full((MATERIALS.NUM, nrowsgenerated, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE) )
 
-# call merge(rows=rows) after split1 operations to consolidate newly created rows ( the merged ones are returned by split() )
-# call merge(rows=rows) after split2 operations to consolidate newly created rows ( the merged ones are returned by split() )
-# the merge in split2 ensures not all rows that are result of split2 are accumulated but only the merged ones are accumulated
-
-# this ensures the split2 also keeps the nrows at any point as low as possible!!!
-# in the end of split2 we merge(rows=rows) again for all the merged ones that where result of the split2 operations befroe
-
-# this ensures at any point the nrows is kept as low as possible!!! and makes everything compatible with eachother 
-
-# ps keep a arids dict next to the batch array in splitrow to track how many rows where created per material in that batch
-# so that we can keep trak of how many rows where created per material in that split or merge operation
-
-# allready changed the signatures of split() and merge() and all their derivates to return the array of created rows
-# now need to propagate that through all the calls and ensure the calls to split() and merge() are updated accordingly
-
-# keep the remove and insert as they are no need to change them becouse they ensure the internal state is always correct
-
-# also added a requirements(n:int) -> tuple[NDArray[ROW.DTYPE], dict[int, int]] helper to create the batch array and arids dict together
-# and added a shortname for tuple[NDArray[ROW.DTYPE], dict[int, int]] as ARRAY_ARIDS for better readability
-
-# so no need to change anything else just propagate the new return types and ensure the calls are updated accordingly
-# respond with the full code so leave not even a single function or method out of it
-# do not add methods that are not there already its not required at all
-
-# formatting rules:
-# use arg:argtype=None for all arguments (eg. def func(arg1:argtype1=None, arg2:argtype2=None) -> returntype: )
-# use a space between arg1:argtype1=None and arg2:argtype2=None (eg. def func(arg1:argtype1=None, arg2:argtype2=None) -> returntype: )
-# wrong: def func(arg1:argtype1=None,arg2:argtype2=None)->returntype:
-# wrong : def func( arg1 : argtype1 = None , arg2 : argtype2 = None ) -> returntype :
-# right: def func(arg1:argtype1=None, arg2:argtype2=None) -> returntype:
-
-# if you have more questions or assumtions do not respond with full code yet but ask first
-# if you have no questions anymore respond with the full code only
-# use methods that are avaible as much as possible!!! to avoid redoing work that is already done!!!
-# do not change the logic of any method unless required for the new return types!!!
-
-# use also the methods in ROW as much as possible to avoid redoing work that is already done there!!!
