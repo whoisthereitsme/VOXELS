@@ -159,15 +159,15 @@ def test3() -> None:
     print(f"air rows= {rows.nrows(mat='AIR')}", f"stone rows= {rows.nrows(mat='STONE')}")
 
 
-def main(test1=False, test2=False, test3=False) -> None:
+def main(test=[]) -> None:
     timer.lap()
     with Bundle():
         try:
-            if test1:
+            if 1 in test:
                 test1()
-            if test2:
+            if 2 in test:
                 test2()
-            if test3:
+            if 3 in test:
                 test3()
             timer.print(msg="main.py: executed in")
         except Exception:
@@ -178,21 +178,5 @@ def main(test1=False, test2=False, test3=False) -> None:
 
 
 if __name__ == "__main__":
-    main(test1=False, test2=False, test3=True)
+    main(test=[3])
     
-
-
-#layer1 (x is the splitoff)
-#132
-#152
-#142
-
-#layer2
-#132
-#1x2
-#142
-
-#layer3
-#132
-#162
-#142
