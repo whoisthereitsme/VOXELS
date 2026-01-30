@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T19:19:03
+#Time when generated: 2026-01-30T19:24:06
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -970,9 +970,136 @@ def test5() -> None:
     print("test5 OK:", f"air_rows={rows.nrows(mat='AIR')}", f"stone_rows={rows.nrows(mat='STONE')}")
 
 
+
+
+
+
+
+
+def test6() -> None:
+    """
+    test6:
+    Timing benchmark for core operations.
+
+    Measures (10x each):
+    - bulk insert (grid build)
+    - random BVH search
+    - split1 (single-point split)
+    - split2 (region split spanning rows)
+    - merge
+    - remove
+    """
+
+    print("=== TEST6: TIMING BENCHMARK ===")
+
+    # -----------------------------
+    # 1) BULK INSERT (grid build)
+    # -----------------------------
+    timer.lap()
+    for _ in range(10):
+        rows = ROWS()
+        row0 = rows.array[MATERIALS.IDX["STONE"]][0]
+        rows.remove(row=row0)
+
+        cell = 32
+        nx, ny, nz = 20, 20, 8
+        for ix in range(nx):
+            for iy in range(ny):
+                for iz in range(nz):
+                    x0 = ix * cell
+                    y0 = iy * cell
+                    z0 = iz * cell
+                    rows.insert(
+                        p0=(x0, y0, z0),
+                        p1=(x0 + cell, y0 + cell, z0 + cell),
+                        mat="STONE",
+                    )
+    timer.print(msg="test6: bulk insert (grid build) x10")
+
+    # -----------------------------
+    # 2) RANDOM SEARCH (BVH)
+    # -----------------------------
+    timer.lap()
+    max_x = nx * cell - 1
+    max_y = ny * cell - 1
+    max_z = nz * cell - 1
+
+    for _ in range(10):
+        pos = (
+            random.randint(0, max_x),
+            random.randint(0, max_y),
+            random.randint(0, max_z),
+        )
+        rows.search(pos=pos)
+    timer.print(msg="test6: BVH search (1000 lookups ×10)")
+
+    # -----------------------------
+    # 3) SPLIT1 (single-point)
+    # -----------------------------
+    timer.lap()
+    for _ in range(10):
+        pos = (
+            random.randint(10, max_x - 10),
+            random.randint(10, max_y - 10),
+            random.randint(10, max_z - 10),
+        )
+        rows.split(pos=pos, mat="AIR")
+    timer.print(msg="test6: split1 (single-point)")
+
+    # -----------------------------
+    # 4) SPLIT2 (region / box)
+    # -----------------------------
+    timer.lap()
+    for _ in range(10):
+            dx = random.randint(cell, cell * 3)
+            dy = random.randint(cell, cell * 3)
+            dz = random.randint(cell, cell * 2)
+
+            x0 = random.randint(0, max_x - dx)
+            y0 = random.randint(0, max_y - dy)
+            z0 = random.randint(0, max_z - dz)
+
+            p0, p1 = ROW.SORT(
+                p0=(x0, y0, z0),
+                p1=(x0 + dx, y0 + dy, z0 + dz),
+            )
+            rows.split(pos=p0, pos1=p1, mat="AIR")
+    timer.print(msg="test6: split2 (region split)")
+
+    # -----------------------------
+    # 5) MERGE
+    # -----------------------------
+    timer.lap()
+    for _ in range(10):
+        rows.merge()
+    timer.print(msg="test6: merge()")
+
+    # -----------------------------
+    # 6) REMOVE (random rows)
+    # -----------------------------
+    timer.lap()
+    for _ in range(10):
+        mid = MATERIALS.IDX["STONE"]
+        n = rows.nrows(mat="STONE")
+        remove_count = min(500, n)
+        for i in range(remove_count):
+            row = rows.array[mid][n - 1 - i]
+            rows.remove(row=row)
+    timer.print(msg="test6: remove()")
+
+    print("=== TEST6 DONE ===")
+
+
+
+
+
+
+
+
+
 def main(test: list[int] = None) -> None:
     if test is None:
-        test = [1, 2, 3, 4, 5]
+        test = [1, 2, 3, 4, 5, 6]
 
     timer.lap()
     with Bundle():
@@ -987,7 +1114,9 @@ def main(test: list[int] = None) -> None:
                 test4()
             if 5 in test:
                 test5()
-            timer.print(msg="main.py: executed in")
+            if 6 in test:
+                test6()
+
         except Exception:
             traceback.print_exc()
         finally:
@@ -996,8 +1125,8 @@ def main(test: list[int] = None) -> None:
 
 if __name__ == "__main__":
     timer.lap()
-    main(test=[1, 2, 3, 4, 5])
-    timer.print(msg="main.py total execution time for all tests:")
+    main(test=[6])
+    
 
 ################################################################################
 # FILE 8/23: main.py (END)
@@ -3319,81 +3448,19 @@ class ROWS:
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 : 3D grid partition built: lap 4: 5.846885 seconds, total 5.861509 seconds
- - STEP 1 lookup checks OK: 1000 successes, 0 fails, 171.03 lookups/sec
- - STEP 1 lookups completed in: lap 5: 0.435552 seconds, total 6.297061 seconds
- - Now deleting 10000 rows...
- - Deleted 10000 rows in: lap 6: 0.400306 seconds, total 6.697367 seconds
-STEP 2 : Rebuilding rows after deletion...
- - STEP 2 grid partition built: lap 8: 0.505463 seconds, total 8.764119 seconds
- - STEP 2 lookup checks OK: 1000 successes, 0 fails, 1978.38 lookups/sec
- - STEP 2 lookups completed in: lap 9: 0.078046 seconds, total 8.842165 seconds
-WORLD VOLUME BEFORE: 72056357089509375
- - SPLIT test 1/10 passed.
- - SPLIT test 2/10 passed.
- - SPLIT test 3/10 passed.
- - SPLIT test 4/10 passed.
- - SPLIT test 5/10 passed.
- - SPLIT test 6/10 passed.
- - SPLIT test 7/10 passed.
- - SPLIT test 8/10 passed.
- - SPLIT test 9/10 passed.
- - SPLIT test 10/10 passed.
-WORLD VOLUME AFTER: 72056357089509375
-STARTING STEP : Now testing MERGE functionality...: lap 10: 0.056492 seconds, total 8.898656 seconds
- - MERGE completed in: lap 11: 0.000455 seconds, total 8.899111 seconds
-WORLD VOLUME AFTER MERGE: 72056357089509375
-Material AIR has 10 rows after MERGE tests.
-Material WATER has 0 rows after MERGE tests.
-Material LAVA has 0 rows after MERGE tests.
-Material GLASS has 0 rows after MERGE tests.
-Material STONE has 51 rows after MERGE tests.
-Material OBSIDIAN has 0 rows after MERGE tests.
-Material BEDROCK has 0 rows after MERGE tests.
-10 mines to be created at random positions.
-Performing MERGE to consolidate AIR rows... AIR rows before: 10 in merge iteration: 1
- No more AIR rows could be consolidated. Stopping MERGE.
-Material AIR has 10 rows after MERGE tests.
-  AIR row 0: p0=(191480, 188780, 54912), p1=(191485, 188785, 54917)
-  AIR row 1: p0=(983016, 943310, 3443), p1=(983021, 943315, 3448)
-  AIR row 2: p0=(239547, 885536, 60829), p1=(239552, 885541, 60834)
-  AIR row 3: p0=(970687, 386812, 31703), p1=(970692, 386817, 31708)
-  AIR row 4: p0=(167444, 316999, 5438), p1=(167449, 317004, 5443)
-  AIR row 5: p0=(412602, 119648, 15239), p1=(412607, 119653, 15244)
-  AIR row 6: p0=(365200, 167878, 45783), p1=(365205, 167883, 45788)
-  AIR row 7: p0=(499032, 740193, 44560), p1=(499037, 740198, 44565)
-  AIR row 8: p0=(384554, 685645, 59034), p1=(384559, 685650, 59039)
-  AIR row 9: p0=(3118, 374644, 56835), p1=(3123, 374649, 56840)
-Material WATER has 0 rows after MERGE tests.
-Material LAVA has 0 rows after MERGE tests.
-Material GLASS has 0 rows after MERGE tests.
-Material STONE has 51 rows after MERGE tests.
-Material OBSIDIAN has 0 rows after MERGE tests.
-Material BEDROCK has 0 rows after MERGE tests.
-air rows= 10 stone rows= 51
-WORLD VOLUME BEFORE: 72056357089509375
- - carved 10/50 boxes
- - carved 20/50 boxes
- - carved 30/50 boxes
- - carved 40/50 boxes
- - carved 50/50 boxes
-WORLD VOLUME AFTER: 72056357089509375
-AIR VOLUME: 580691 EXPECTED (sum boxes): 580691
-test4 OK: air_rows=50 stone_rows=250
-WORLD VOLUME BEFORE: 838860800
-Initial rows: stone_rows=1 air_rows=0
- - carved 10/30 boxes
- - carved 20/30 boxes
- - carved 30/30 boxes
-WORLD VOLUME AFTER: 838860800
-AIR VOLUME: 50213483
-test5 OK: air_rows=60 stone_rows=207
-main.py: executed in: lap 12: 4.407361 seconds, total 13.306472 seconds
+=== TEST6: TIMING BENCHMARK ===
+test6: bulk insert (grid build) x10: lap 4: 2.034957 seconds, total 2.042939 seconds
+test6: BVH search (1000 lookups ×10): lap 6: 0.000456 seconds, total 2.043576 seconds
+test6: split1 (single-point): lap 8: 0.626961 seconds, total 2.670629 seconds
+test6: split2 (region split): lap 10: 0.244863 seconds, total 2.91563 seconds
+test6: merge(): lap 12: 0.006389 seconds, total 2.92232 seconds
+test6: remove(): lap 14: 0.001366 seconds, total 2.924268 seconds
+=== TEST6 DONE ===
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3395
+# Total lines in bundle: 3462
 # Total files in bundle: 23
-# Generated at the time: 2026-01-30T19:19:03
+# Generated at the time: 2026-01-30T19:24:06
 --- END OF FILE ---

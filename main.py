@@ -385,9 +385,136 @@ def test5() -> None:
     print("test5 OK:", f"air_rows={rows.nrows(mat='AIR')}", f"stone_rows={rows.nrows(mat='STONE')}")
 
 
+
+
+
+
+
+
+def test6() -> None:
+    """
+    test6:
+    Timing benchmark for core operations.
+
+    Measures (10x each):
+    - bulk insert (grid build)
+    - random BVH search
+    - split1 (single-point split)
+    - split2 (region split spanning rows)
+    - merge
+    - remove
+    """
+
+    print("=== TEST6: TIMING BENCHMARK ===")
+
+    # -----------------------------
+    # 1) BULK INSERT (grid build)
+    # -----------------------------
+    timer.lap()
+    for _ in range(10):
+        rows = ROWS()
+        row0 = rows.array[MATERIALS.IDX["STONE"]][0]
+        rows.remove(row=row0)
+
+        cell = 32
+        nx, ny, nz = 20, 20, 8
+        for ix in range(nx):
+            for iy in range(ny):
+                for iz in range(nz):
+                    x0 = ix * cell
+                    y0 = iy * cell
+                    z0 = iz * cell
+                    rows.insert(
+                        p0=(x0, y0, z0),
+                        p1=(x0 + cell, y0 + cell, z0 + cell),
+                        mat="STONE",
+                    )
+    timer.print(msg="test6: bulk insert (grid build) x10")
+
+    # -----------------------------
+    # 2) RANDOM SEARCH (BVH)
+    # -----------------------------
+    timer.lap()
+    max_x = nx * cell - 1
+    max_y = ny * cell - 1
+    max_z = nz * cell - 1
+
+    for _ in range(10):
+        pos = (
+            random.randint(0, max_x),
+            random.randint(0, max_y),
+            random.randint(0, max_z),
+        )
+        rows.search(pos=pos)
+    timer.print(msg="test6: BVH search (1000 lookups ×10)")
+
+    # -----------------------------
+    # 3) SPLIT1 (single-point)
+    # -----------------------------
+    timer.lap()
+    for _ in range(10):
+        pos = (
+            random.randint(10, max_x - 10),
+            random.randint(10, max_y - 10),
+            random.randint(10, max_z - 10),
+        )
+        rows.split(pos=pos, mat="AIR")
+    timer.print(msg="test6: split1 (single-point)")
+
+    # -----------------------------
+    # 4) SPLIT2 (region / box)
+    # -----------------------------
+    timer.lap()
+    for _ in range(10):
+            dx = random.randint(cell, cell * 3)
+            dy = random.randint(cell, cell * 3)
+            dz = random.randint(cell, cell * 2)
+
+            x0 = random.randint(0, max_x - dx)
+            y0 = random.randint(0, max_y - dy)
+            z0 = random.randint(0, max_z - dz)
+
+            p0, p1 = ROW.SORT(
+                p0=(x0, y0, z0),
+                p1=(x0 + dx, y0 + dy, z0 + dz),
+            )
+            rows.split(pos=p0, pos1=p1, mat="AIR")
+    timer.print(msg="test6: split2 (region split)")
+
+    # -----------------------------
+    # 5) MERGE
+    # -----------------------------
+    timer.lap()
+    for _ in range(10):
+        rows.merge()
+    timer.print(msg="test6: merge()")
+
+    # -----------------------------
+    # 6) REMOVE (random rows)
+    # -----------------------------
+    timer.lap()
+    for _ in range(10):
+        mid = MATERIALS.IDX["STONE"]
+        n = rows.nrows(mat="STONE")
+        remove_count = min(500, n)
+        for i in range(remove_count):
+            row = rows.array[mid][n - 1 - i]
+            rows.remove(row=row)
+    timer.print(msg="test6: remove()")
+
+    print("=== TEST6 DONE ===")
+
+
+
+
+
+
+
+
+
 def main(test: list[int] = None) -> None:
     if test is None:
-        test = [1, 2, 3, 4, 5]
+        test = [1, 2, 3, 4, 5, 6]
 
     timer.lap()
     with Bundle():
@@ -402,7 +529,9 @@ def main(test: list[int] = None) -> None:
                 test4()
             if 5 in test:
                 test5()
-            timer.print(msg="main.py: executed in")
+            if 6 in test:
+                test6()
+
         except Exception:
             traceback.print_exc()
         finally:
@@ -411,5 +540,5 @@ def main(test: list[int] = None) -> None:
 
 if __name__ == "__main__":
     timer.lap()
-    main(test=[1, 2, 3, 4, 5])
-    timer.print(msg="main.py total execution time for all tests:")
+    main(test=[6])
+    
