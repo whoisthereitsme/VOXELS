@@ -129,14 +129,14 @@ class ROWS:
                     size = (X1 - X0) * (Y1 - Y0) * (Z1 - Z0)
                     if size > 0:
                         if i == 1 and j == 1 and k == 1:    # the center cube should get the new material (its the one containing pos)
-                            row = self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use new the material given for the new row
-                            mid0 = self.mats.id2idx[ROW.MID(row=row)]
-                            array[mid0][arids[mid0]] = row
+                            row0 = self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat) # use new the material given for the new row
+                            mid0 = self.mats.id2idx[ROW.MID(row=row0)]
+                            array[mid0][arids[mid0]] = row0
                             arids[mid0] += 1
                         else:
-                            row = self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
-                            mid0 = self.mats.id2idx[ROW.MID(row=row)]
-                            array[mid0][arids[mid0]] = row
+                            row0 = self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=mat0) # use the old material for the other rows
+                            mid0 = self.mats.id2idx[ROW.MID(row=row0)]
+                            array[mid0][arids[mid0]] = row0
                             arids[mid0] += 1
 
         self.remove(row=row) 
