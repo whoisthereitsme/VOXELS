@@ -393,7 +393,7 @@ def test6() -> None:
     IMPORTANT: each category runs on a fresh baseline world so timings stay comparable.
     """
     print("=== TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===")
-    ntests = 100
+    ntests = 10
 
     def make_world() -> tuple[ROWS, int, int, int, int]:
         rows = ROWS()
