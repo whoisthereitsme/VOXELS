@@ -114,7 +114,7 @@ class ROWS:
         
         x0, y0, z0 = p0
         x1, y1, z1 = pos
-        x2, y2, z2 =x1+1, y1+1, z1+1
+        x2, y2, z2 = x1+1, y1+1, z1+1
         x3, y3, z3 = p1
 
         xs = [[x0, x1], [x1, x2], [x2, x3]]
@@ -209,8 +209,6 @@ class ROWS:
         seen: set[tuple[int, int]] = set()
         extra: list[tuple[int, int]] = []
 
-        # iterate the provided rows array and treat it like the initial stack
-        # (reverse order makes it “pop-like” without modifying rows)
         for mid in range(rows.shape[0]):
             for i in range(rows.shape[1] - 1, -1, -1):
                 row = rows[mid][i]
@@ -223,21 +221,21 @@ class ROWS:
 
                 extra.append((mid, rid))
 
-        while extra:
-            mid, rid = extra.pop()
+        for ax in range(3):
+            while extra:
+                mid, rid = extra.pop()
 
-            if rid < 0 or rid >= self.n[mid]:
-                continue
+                if rid < 0 or rid >= self.n[mid]:
+                    continue
 
-            key = (mid, rid)
-            if key in seen:
-                continue
-            seen.add(key)
+                key = (mid, rid)
+                if key in seen:
+                    continue
+                seen.add(key)
 
-            mat = self.mats.idx2name[mid]
+                mat = self.mats.idx2name[mid]
 
-            for axis in (self.mdx.AX_X, self.mdx.AX_Y, self.mdx.AX_Z):
-                partner = self.mdx.search(mid=mid, rid=rid, axis=axis)
+                partner = self.mdx.search(mid=mid, rid=rid, axis=ax)
                 if partner is None:
                     continue
 

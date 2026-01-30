@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T14:20:56
+#Time when generated: 2026-01-30T14:24:30
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2242,7 +2242,7 @@ class ROWS:
         
         x0, y0, z0 = p0
         x1, y1, z1 = pos
-        x2, y2, z2 =x1+1, y1+1, z1+1
+        x2, y2, z2 = x1+1, y1+1, z1+1
         x3, y3, z3 = p1
 
         xs = [[x0, x1], [x1, x2], [x2, x3]]
@@ -2337,8 +2337,6 @@ class ROWS:
         seen: set[tuple[int, int]] = set()
         extra: list[tuple[int, int]] = []
 
-        # iterate the provided rows array and treat it like the initial stack
-        # (reverse order makes it “pop-like” without modifying rows)
         for mid in range(rows.shape[0]):
             for i in range(rows.shape[1] - 1, -1, -1):
                 row = rows[mid][i]
@@ -2351,21 +2349,21 @@ class ROWS:
 
                 extra.append((mid, rid))
 
-        while extra:
-            mid, rid = extra.pop()
+        for ax in range(3):
+            while extra:
+                mid, rid = extra.pop()
 
-            if rid < 0 or rid >= self.n[mid]:
-                continue
+                if rid < 0 or rid >= self.n[mid]:
+                    continue
 
-            key = (mid, rid)
-            if key in seen:
-                continue
-            seen.add(key)
+                key = (mid, rid)
+                if key in seen:
+                    continue
+                seen.add(key)
 
-            mat = self.mats.idx2name[mid]
+                mat = self.mats.idx2name[mid]
 
-            for axis in (self.mdx.AX_X, self.mdx.AX_Y, self.mdx.AX_Z):
-                partner = self.mdx.search(mid=mid, rid=rid, axis=axis)
+                partner = self.mdx.search(mid=mid, rid=rid, axis=ax)
                 if partner is None:
                     continue
 
@@ -2412,15 +2410,15 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.832953 seconds, total 5.896038 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 171.44 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.002169 seconds, total 5.898206 seconds
+STEP 1 :  3D grid partition built: lap 3: 5.751272 seconds, total 5.787291 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 173.87 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.002083 seconds, total 5.789373 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.403346 seconds, total 6.301552 seconds
+ - All 10000 rows deleted in: lap 5: 0.396384 seconds, total 6.185758 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.611533 seconds, total 6.913085 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1635.23 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.001502 seconds, total 6.914587 seconds
+ - second time 3D grid partition built: lap 6: 0.626271 seconds, total 6.812028 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1596.75 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.00216 seconds, total 6.814188 seconds
 WORLD VOLUME BEFORE:  72056357089509375
  - SPLIT test 1/10 passed.
  - SPLIT test 2/10 passed.
@@ -2436,26 +2434,26 @@ Material AIR has 10 rows after SPLIT tests.
 Material WATER has 0 rows after SPLIT tests.
 Material LAVA has 0 rows after SPLIT tests.
 Material GLASS has 0 rows after SPLIT tests.
-Material STONE has 91 rows after SPLIT tests.
+Material STONE has 221 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
 WORLD VOLUME AFTER:  72056357089509375
-STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.062917 seconds, total 6.977504 seconds
- - SWEEP completed in: lap 9: 0.005887 seconds, total 6.983392 seconds
+STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.032915 seconds, total 6.847103 seconds
+ - SWEEP completed in: lap 9: 0.022499 seconds, total 6.869603 seconds
 WORLD VOLUME AFTER SWEEP:  72056357089509375
 Material AIR has 10 rows after SWEEP tests.
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
-Material STONE has 54 rows after SWEEP tests.
+Material STONE has 74 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
-main.py: executed in: lap 10: 0.001023 seconds, total 6.984415 seconds
+main.py: executed in: lap 10: 0.000875 seconds, total 6.870478 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2457
+# Total lines in bundle: 2455
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T14:20:56
+# Generated at the time: 2026-01-30T14:24:30
 --- END OF FILE ---
