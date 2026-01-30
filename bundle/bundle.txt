@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T15:51:29
+#Time when generated: 2026-01-30T15:52:29
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -717,9 +717,9 @@ def test3() -> None:
         y = random.randint(a=1000, b=999000)
         z = random.randint(a=1000, b=64000)
         mines.append( (x,y,z) )
+    print(len(mines), "mines to be created at random positions.")
 
     for mine in mines:
-        # for each mine mine out a 5x5x5 cube of AIR
         for dx in range(5):
             for dy in range(5):
                 for dz in range(5):
@@ -730,7 +730,7 @@ def test3() -> None:
                     rows.split(pos=pos, mat="AIR")
 
     for _ in range(1):
-        rows.sweep() # final sweep to clean up
+        rows.sweep()
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
         print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
@@ -2490,18 +2490,19 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
+10 mines to be created at random positions.
 Material AIR has 11 rows after SWEEP tests.
-  AIR row 0: p0=(16828, 540655, 51793), p1=(16833, 540660, 51798)
-  AIR row 1: p0=(165313, 556166, 21495), p1=(165318, 556171, 21500)
-  AIR row 2: p0=(659711, 426942, 39004), p1=(659716, 426947, 39009)
-  AIR row 3: p0=(635812, 863246, 37871), p1=(635817, 863251, 37876)
-  AIR row 4: p0=(788170, 767082, 51726), p1=(788175, 767087, 51731)
-  AIR row 5: p0=(279891, 919092, 8085), p1=(279896, 919097, 8090)
-  AIR row 6: p0=(845822, 24465, 19935), p1=(845827, 24470, 19940)
-  AIR row 7: p0=(415972, 437215, 40782), p1=(415977, 437220, 40787)
-  AIR row 8: p0=(558567, 468348, 21912), p1=(558572, 468353, 21917)
-  AIR row 9: p0=(858492, 887404, 2219), p1=(858496, 887409, 2224)
-  AIR row 10: p0=(858496, 887404, 2219), p1=(858497, 887409, 2224)
+  AIR row 0: p0=(587456, 865518, 21024), p1=(587461, 865523, 21029)
+  AIR row 1: p0=(500070, 132485, 10998), p1=(500075, 132490, 11003)
+  AIR row 2: p0=(8947, 560008, 32865), p1=(8952, 560013, 32870)
+  AIR row 3: p0=(620493, 350530, 42591), p1=(620498, 350535, 42596)
+  AIR row 4: p0=(746430, 971371, 27206), p1=(746435, 971376, 27211)
+  AIR row 5: p0=(5558, 665931, 35180), p1=(5563, 665936, 35185)
+  AIR row 6: p0=(630828, 373963, 3402), p1=(630833, 373968, 3407)
+  AIR row 7: p0=(687047, 532188, 31244), p1=(687052, 532193, 31249)
+  AIR row 8: p0=(224520, 452996, 1099), p1=(224525, 453001, 1104)
+  AIR row 9: p0=(609293, 593601, 20975), p1=(609297, 593606, 20980)
+  AIR row 10: p0=(609297, 593601, 20975), p1=(609298, 593606, 20980)
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
@@ -2509,12 +2510,12 @@ Material STONE has 51 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
 air rows= 11 stone rows= 51
-main.py: executed in: lap 2: 2.163328 seconds, total 2.176461 seconds
+main.py: executed in: lap 2: 2.224442 seconds, total 2.2377 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2516
+# Total lines in bundle: 2517
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T15:51:29
+# Generated at the time: 2026-01-30T15:52:29
 --- END OF FILE ---

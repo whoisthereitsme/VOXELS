@@ -132,9 +132,9 @@ def test3() -> None:
         y = random.randint(a=1000, b=999000)
         z = random.randint(a=1000, b=64000)
         mines.append( (x,y,z) )
+    print(len(mines), "mines to be created at random positions.")
 
     for mine in mines:
-        # for each mine mine out a 5x5x5 cube of AIR
         for dx in range(5):
             for dy in range(5):
                 for dz in range(5):
@@ -145,7 +145,7 @@ def test3() -> None:
                     rows.split(pos=pos, mat="AIR")
 
     for _ in range(1):
-        rows.sweep() # final sweep to clean up
+        rows.sweep()
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
         print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
