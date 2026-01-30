@@ -68,14 +68,14 @@ class ROWS:
         self._merge = 16
         self.__merge = 0
 
-    def newn(self, mat: str = None) -> int:
+    def newn(self, mat:str=None) -> int:
         mid: int = Materials.name2idx[mat]
         n: int = self.n[mid]
         self.n[mid] += 1
         self.m += 1
         return n
 
-    def deln(self, mat: str = None) -> int:
+    def deln(self, mat:str=None) -> int:
         if mat is None:
             raise ValueError("material must be specified")
         mid = Materials.name2idx[mat]
@@ -85,7 +85,7 @@ class ROWS:
         self.m -= 1
         return self.n[mid]
 
-    def requirements(self, n: int = None) -> ARRAY_ARIDS:
+    def requirements(self, n:int=None) -> ARRAY_ARIDS:
         array = np.full(
             (MATERIALS.NUM, n, *ROW.SHAPE),
             fill_value=ROW.SENTINEL,
@@ -94,7 +94,7 @@ class ROWS:
         arids: dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}
         return (array, arids)
 
-    def insert(self, p0: POS = None, p1: POS = None, mat: str = None, dirty: bool = True, alive: bool = True) -> NDArray[ROW.DTYPE]:
+    def insert(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -> NDArray[ROW.DTYPE]:
         mid: int = Materials.name2idx[mat]
         rid: int = self.newn(mat=mat)
         row = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
@@ -103,7 +103,7 @@ class ROWS:
         self.mdx.insert(row=row)
         return row
 
-    def remove(self, index: int = None, mat: str = None, row: NDArray[ROW.DTYPE] = None) -> NDArray[ROW.DTYPE]:
+    def remove(self, index:int=None, mat:str=None, row:NDArray[ROW.DTYPE]=None) -> NDArray[ROW.DTYPE]:
         if row is not None and index is None and mat is None:
             mat = ROW.MAT(row=row)
             index = ROW.RID(row=row)
@@ -138,17 +138,17 @@ class ROWS:
                 total += ROW.VOLUME(row=self.array[mid][rid])
         return total
 
-    def search(self, pos: POS = None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
+    def search(self, pos:POS=None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
         mat, rid, row = self.bvh.search(pos=pos)
         return (mat, rid, row)
 
-    def get(self, mat: str = None, rid: int = None) -> NDArray[ROW.DTYPE]:
+    def get(self, mat:str=None, rid:int=None) -> NDArray[ROW.DTYPE]:
         return self.array[Materials.name2idx[mat]][rid]
 
-    def nrows(self, mat: str = None) -> int:
+    def nrows(self, mat:str=None) -> int:
         return self.n[Materials.name2idx[mat]]
 
-    def splitrow(self, pos: POS = None, p2: POS = None, mat: str = None) -> ARRAY_ARIDS:
+    def splitrow(self, pos:POS=None, p2:POS=None, mat:str=None) -> ARRAY_ARIDS:
         mat0, rid, row = self.search(pos=pos)
         r0 = ROW.P0(row=row)
         r1 = ROW.P1(row=row)
@@ -184,13 +184,13 @@ class ROWS:
         self.remove(row=row)
         return array, arids
 
-    def split1(self, pos: POS = None, mat: str = None) -> ARRAY_ARIDS:
+    def split1(self, pos:POS=None, mat:str=None) -> ARRAY_ARIDS:
         p2 = (pos[0] + 1, pos[1] + 1, pos[2] + 1)
         batch, arids = self.splitrow(pos=pos, p2=p2, mat=mat)
         batch, arids = self.merge(rows=batch)
         return batch, arids
 
-    def split2(self, p0: POS = None, p1: POS = None, mat: str = None) -> ARRAY_ARIDS:
+    def split2(self, p0:POS=None, p1:POS=None, mat:str=None) -> ARRAY_ARIDS:
         def intersect(a0: POS = None, a1: POS = None, b0: POS = None, b1: POS = None) -> tuple[POS, POS] | None:
             q0 = (max(a0[0], b0[0]), max(a0[1], b0[1]), max(a0[2], b0[2]))
             q1 = (min(a1[0], b1[0]), min(a1[1], b1[1]), min(a1[2], b1[2]))
@@ -251,7 +251,7 @@ class ROWS:
 
         return array, out_arids
 
-    def split(self, pos: POS = None, pos1: POS = None, mat: str = None) -> ARRAY_ARIDS:
+    def split(self, pos:POS=None, pos1:POS=None, mat:str=None) -> ARRAY_ARIDS:
         if mat is None:
             raise ValueError("material must be specified")
         if pos is None and pos1 is None:
@@ -263,7 +263,7 @@ class ROWS:
             return self.split1(pos=pos, mat=mat)
         return self.split1(pos=pos1, mat=mat)
 
-    def merge2(self, mat: str = None, rid0: int = None, rid1: int = None) -> ARRAY_ARIDS:
+    def merge2(self, mat:str=None, rid0:int=None, rid1:int=None) -> ARRAY_ARIDS:
         mid = Materials.name2idx[mat]
         n = self.n[mid]
         if rid0 < 0 or rid0 >= n or rid1 < 0 or rid1 >= n or rid0 == rid1:
@@ -290,7 +290,7 @@ class ROWS:
         arids[mid] = 1
         return array, arids
 
-    def mergeax(self, mat: str = None, axis: int = None) -> ARRAY_ARIDS:
+    def mergeax(self, mat:str=None, axis:int=None) -> ARRAY_ARIDS:
         mid = Materials.name2idx[mat]
         start_n = self.n[mid]
         array, arids = self.requirements(n=start_n)
@@ -339,7 +339,7 @@ class ROWS:
 
         return array, arids
 
-    def mergemat(self, mat: str = None) -> ARRAY_ARIDS:
+    def mergemat(self, mat:str=None) -> ARRAY_ARIDS:
         mid = Materials.name2idx[mat]
         start_n = self.n[mid]
         array, arids = self.requirements(n=start_n)
@@ -355,7 +355,7 @@ class ROWS:
 
         return array, arids
 
-    def mergerows(self, rows: NDArray[ROW.DTYPE] = None) -> ARRAY_ARIDS:
+    def mergerows(self, rows:NDArray[ROW.DTYPE]=None) -> ARRAY_ARIDS:
         if rows is None:
             return self.requirements(n=0)
 
@@ -434,7 +434,7 @@ class ROWS:
 
         return array, arids
 
-    def merge(self, rows: NDArray[ROW.DTYPE] = None) -> ARRAY_ARIDS:
+    def merge(self, rows:NDArray[ROW.DTYPE]=None) -> ARRAY_ARIDS:
         if rows is None:
             return self.mergeall()
         return self.mergerows(rows=rows)

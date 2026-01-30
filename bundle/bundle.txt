@@ -1,12 +1,12 @@
-#Time when generated: 2026-01-30T19:59:24
+#Time when generated: 2026-01-30T20:06:43
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
-Files included: 22
+Files included: 24
 
 
 ################################################################################
-# FILE 1/22: __init__.py (START)
+# FILE 1/24: __init__.py (START)
 ################################################################################
 
 import utils
@@ -17,12 +17,12 @@ __all__ = world.__all__ + utils.__all__ + bundle.__all__
 
 
 ################################################################################
-# FILE 1/22: __init__.py (END)
+# FILE 1/24: __init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 2/22: __main__.py (START)
+# FILE 2/24: __main__.py (START)
 ################################################################################
 
 from main import main
@@ -31,12 +31,12 @@ if __name__ == "__main__":
     main()
 
 ################################################################################
-# FILE 2/22: __main__.py (END)
+# FILE 2/24: __main__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 3/22: bundle/__init__.py (START)
+# FILE 3/24: bundle/__init__.py (START)
 ################################################################################
 
 from .bundle import *
@@ -48,12 +48,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 3/22: bundle/__init__.py (END)
+# FILE 3/24: bundle/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 4/22: bundle/bundle.py (START)
+# FILE 4/24: bundle/bundle.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -316,12 +316,12 @@ class Bundle:
 
 
 ################################################################################
-# FILE 4/22: bundle/bundle.py (END)
+# FILE 4/24: bundle/bundle.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 5/22: bundle/github.py (START)
+# FILE 5/24: bundle/github.py (START)
 ################################################################################
 
 import base64
@@ -534,12 +534,12 @@ class GitHub:
 
 
 ################################################################################
-# FILE 5/22: bundle/github.py (END)
+# FILE 5/24: bundle/github.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 6/22: credentials/__init__.py (START)
+# FILE 6/24: credentials/__init__.py (START)
 ################################################################################
 
 from .environ import Environ
@@ -549,12 +549,12 @@ __all__ = [
 ]   
 
 ################################################################################
-# FILE 6/22: credentials/__init__.py (END)
+# FILE 6/24: credentials/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 7/22: credentials/environ.py (START)
+# FILE 7/24: credentials/environ.py (START)
 ################################################################################
 
 
@@ -575,12 +575,12 @@ class Environ:
 
 
 ################################################################################
-# FILE 7/22: credentials/environ.py (END)
+# FILE 7/24: credentials/environ.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 8/22: main.py (START)
+# FILE 8/24: main.py (START)
 ################################################################################
 
 from utils import *
@@ -1104,35 +1104,33 @@ if __name__ == "__main__":
     
 
 ################################################################################
-# FILE 8/22: main.py (END)
+# FILE 8/24: main.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 9/22: TODO.md (START)
+# FILE 9/24: TODO.md (START)
 ################################################################################
 
 
 
 
 # ! ROWS
-# TODO: ROWS.SPLIT(pos:POS=None)
-# TODO: ROWS.MERGE(row0:NDARRAY=None, row1:NDARRAY=None)
-# TODO: 
+# TODO:
 
 # ! UTILS
 # TODO: 
 
 # ! BUNDLE
-# TODO: CLEANUP!!!
+# TODO: 
 
 ################################################################################
-# FILE 9/22: TODO.md (END)
+# FILE 9/24: TODO.md (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 10/22: utils/__init__.py (START)
+# FILE 10/24: utils/__init__.py (START)
 ################################################################################
 
 from .request import Request
@@ -1143,12 +1141,12 @@ __all__ = [
 ] + inc
 
 ################################################################################
-# FILE 10/22: utils/__init__.py (END)
+# FILE 10/24: utils/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 11/22: utils/bvh.py (START)
+# FILE 11/24: utils/bvh.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1463,12 +1461,12 @@ class BVH:
 
 
 ################################################################################
-# FILE 11/22: utils/bvh.py (END)
+# FILE 11/24: utils/bvh.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 12/22: utils/event.py (START)
+# FILE 12/24: utils/event.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1501,12 +1499,12 @@ class Handler:
 
 
 ################################################################################
-# FILE 12/22: utils/event.py (END)
+# FILE 12/24: utils/event.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 13/22: utils/includes.py (START)
+# FILE 13/24: utils/includes.py (START)
 ################################################################################
 
 from __future__ import annotations  # MUST BE FIRST
@@ -1596,12 +1594,12 @@ timer.print(msg=f"utils/includes.py: {len(__all__)} modules loaded in")
 timer.reset()
 
 ################################################################################
-# FILE 13/22: utils/includes.py (END)
+# FILE 13/24: utils/includes.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 14/22: utils/mdx.py (START)
+# FILE 14/24: utils/mdx.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1744,12 +1742,12 @@ class MDX:
         return search(faces=faces, bucks=bucks)
 
 ################################################################################
-# FILE 14/22: utils/mdx.py (END)
+# FILE 14/24: utils/mdx.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 15/22: utils/request.py (START)
+# FILE 15/24: utils/request.py (START)
 ################################################################################
 
 import time
@@ -1806,12 +1804,12 @@ class Request:
             raise RuntimeError(f"[ERROR] unexpected error for {self.url}\n{e!r}") from e
 
 ################################################################################
-# FILE 15/22: utils/request.py (END)
+# FILE 15/24: utils/request.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 16/22: utils/schedule.py (START)
+# FILE 16/24: utils/schedule.py (START)
 ################################################################################
 
 import threading
@@ -1975,12 +1973,12 @@ if __name__ == "__main__":
     sched.stop()
 
 ################################################################################
-# FILE 16/22: utils/schedule.py (END)
+# FILE 16/24: utils/schedule.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 17/22: utils/timer.py (START)
+# FILE 17/24: utils/timer.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -2071,12 +2069,12 @@ class Timer:
 now = Timer.now # now: now() returns the current time in nanoseconds
 
 ################################################################################
-# FILE 17/22: utils/timer.py (END)
+# FILE 17/24: utils/timer.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 18/22: utils/types.py (START)
+# FILE 18/24: utils/types.py (START)
 ################################################################################
 
 from typing import TypeAlias
@@ -2089,12 +2087,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 18/22: utils/types.py (END)
+# FILE 18/24: utils/types.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 19/22: world/__init__.py (START)
+# FILE 19/24: world/__init__.py (START)
 ################################################################################
 
 from .rows import ROWS
@@ -2114,12 +2112,48 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 19/22: world/__init__.py (END)
+# FILE 19/24: world/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 20/22: world/materials.py (START)
+# FILE 20/24: world/buildings/__init__.py (START)
+################################################################################
+
+
+################################################################################
+# FILE 20/24: world/buildings/__init__.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 21/24: world/buildings/miner.py (START)
+################################################################################
+
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from world.rows import ROWS
+
+
+
+
+
+
+
+
+
+class Miner:
+    def __init__(self, rows:ROWS=None) -> None:
+        self.rows: ROWS = rows
+
+################################################################################
+# FILE 21/24: world/buildings/miner.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 22/24: world/materials.py (START)
 ################################################################################
 
 
@@ -2217,12 +2251,12 @@ class Materials:
 
 
 ################################################################################
-# FILE 20/22: world/materials.py (END)
+# FILE 22/24: world/materials.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 21/22: world/row.py (START)
+# FILE 23/24: world/row.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -2470,12 +2504,12 @@ class ROW:
     
 
 ################################################################################
-# FILE 21/22: world/row.py (END)
+# FILE 23/24: world/row.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 22/22: world/rows.py (START)
+# FILE 24/24: world/rows.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -2548,14 +2582,14 @@ class ROWS:
         self._merge = 16
         self.__merge = 0
 
-    def newn(self, mat: str = None) -> int:
+    def newn(self, mat:str=None) -> int:
         mid: int = Materials.name2idx[mat]
         n: int = self.n[mid]
         self.n[mid] += 1
         self.m += 1
         return n
 
-    def deln(self, mat: str = None) -> int:
+    def deln(self, mat:str=None) -> int:
         if mat is None:
             raise ValueError("material must be specified")
         mid = Materials.name2idx[mat]
@@ -2565,7 +2599,7 @@ class ROWS:
         self.m -= 1
         return self.n[mid]
 
-    def requirements(self, n: int = None) -> ARRAY_ARIDS:
+    def requirements(self, n:int=None) -> ARRAY_ARIDS:
         array = np.full(
             (MATERIALS.NUM, n, *ROW.SHAPE),
             fill_value=ROW.SENTINEL,
@@ -2574,7 +2608,7 @@ class ROWS:
         arids: dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}
         return (array, arids)
 
-    def insert(self, p0: POS = None, p1: POS = None, mat: str = None, dirty: bool = True, alive: bool = True) -> NDArray[ROW.DTYPE]:
+    def insert(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -> NDArray[ROW.DTYPE]:
         mid: int = Materials.name2idx[mat]
         rid: int = self.newn(mat=mat)
         row = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
@@ -2583,7 +2617,7 @@ class ROWS:
         self.mdx.insert(row=row)
         return row
 
-    def remove(self, index: int = None, mat: str = None, row: NDArray[ROW.DTYPE] = None) -> NDArray[ROW.DTYPE]:
+    def remove(self, index:int=None, mat:str=None, row:NDArray[ROW.DTYPE]=None) -> NDArray[ROW.DTYPE]:
         if row is not None and index is None and mat is None:
             mat = ROW.MAT(row=row)
             index = ROW.RID(row=row)
@@ -2618,17 +2652,17 @@ class ROWS:
                 total += ROW.VOLUME(row=self.array[mid][rid])
         return total
 
-    def search(self, pos: POS = None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
+    def search(self, pos:POS=None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
         mat, rid, row = self.bvh.search(pos=pos)
         return (mat, rid, row)
 
-    def get(self, mat: str = None, rid: int = None) -> NDArray[ROW.DTYPE]:
+    def get(self, mat:str=None, rid:int=None) -> NDArray[ROW.DTYPE]:
         return self.array[Materials.name2idx[mat]][rid]
 
-    def nrows(self, mat: str = None) -> int:
+    def nrows(self, mat:str=None) -> int:
         return self.n[Materials.name2idx[mat]]
 
-    def splitrow(self, pos: POS = None, p2: POS = None, mat: str = None) -> ARRAY_ARIDS:
+    def splitrow(self, pos:POS=None, p2:POS=None, mat:str=None) -> ARRAY_ARIDS:
         mat0, rid, row = self.search(pos=pos)
         r0 = ROW.P0(row=row)
         r1 = ROW.P1(row=row)
@@ -2664,13 +2698,13 @@ class ROWS:
         self.remove(row=row)
         return array, arids
 
-    def split1(self, pos: POS = None, mat: str = None) -> ARRAY_ARIDS:
+    def split1(self, pos:POS=None, mat:str=None) -> ARRAY_ARIDS:
         p2 = (pos[0] + 1, pos[1] + 1, pos[2] + 1)
         batch, arids = self.splitrow(pos=pos, p2=p2, mat=mat)
         batch, arids = self.merge(rows=batch)
         return batch, arids
 
-    def split2(self, p0: POS = None, p1: POS = None, mat: str = None) -> ARRAY_ARIDS:
+    def split2(self, p0:POS=None, p1:POS=None, mat:str=None) -> ARRAY_ARIDS:
         def intersect(a0: POS = None, a1: POS = None, b0: POS = None, b1: POS = None) -> tuple[POS, POS] | None:
             q0 = (max(a0[0], b0[0]), max(a0[1], b0[1]), max(a0[2], b0[2]))
             q1 = (min(a1[0], b1[0]), min(a1[1], b1[1]), min(a1[2], b1[2]))
@@ -2731,7 +2765,7 @@ class ROWS:
 
         return array, out_arids
 
-    def split(self, pos: POS = None, pos1: POS = None, mat: str = None) -> ARRAY_ARIDS:
+    def split(self, pos:POS=None, pos1:POS=None, mat:str=None) -> ARRAY_ARIDS:
         if mat is None:
             raise ValueError("material must be specified")
         if pos is None and pos1 is None:
@@ -2743,7 +2777,7 @@ class ROWS:
             return self.split1(pos=pos, mat=mat)
         return self.split1(pos=pos1, mat=mat)
 
-    def merge2(self, mat: str = None, rid0: int = None, rid1: int = None) -> ARRAY_ARIDS:
+    def merge2(self, mat:str=None, rid0:int=None, rid1:int=None) -> ARRAY_ARIDS:
         mid = Materials.name2idx[mat]
         n = self.n[mid]
         if rid0 < 0 or rid0 >= n or rid1 < 0 or rid1 >= n or rid0 == rid1:
@@ -2770,7 +2804,7 @@ class ROWS:
         arids[mid] = 1
         return array, arids
 
-    def mergeax(self, mat: str = None, axis: int = None) -> ARRAY_ARIDS:
+    def mergeax(self, mat:str=None, axis:int=None) -> ARRAY_ARIDS:
         mid = Materials.name2idx[mat]
         start_n = self.n[mid]
         array, arids = self.requirements(n=start_n)
@@ -2819,7 +2853,7 @@ class ROWS:
 
         return array, arids
 
-    def mergemat(self, mat: str = None) -> ARRAY_ARIDS:
+    def mergemat(self, mat:str=None) -> ARRAY_ARIDS:
         mid = Materials.name2idx[mat]
         start_n = self.n[mid]
         array, arids = self.requirements(n=start_n)
@@ -2835,7 +2869,7 @@ class ROWS:
 
         return array, arids
 
-    def mergerows(self, rows: NDArray[ROW.DTYPE] = None) -> ARRAY_ARIDS:
+    def mergerows(self, rows:NDArray[ROW.DTYPE]=None) -> ARRAY_ARIDS:
         if rows is None:
             return self.requirements(n=0)
 
@@ -2914,7 +2948,7 @@ class ROWS:
 
         return array, arids
 
-    def merge(self, rows: NDArray[ROW.DTYPE] = None) -> ARRAY_ARIDS:
+    def merge(self, rows:NDArray[ROW.DTYPE]=None) -> ARRAY_ARIDS:
         if rows is None:
             return self.mergeall()
         return self.mergerows(rows=rows)
@@ -2931,7 +2965,7 @@ class ROWS:
 
 
 ################################################################################
-# FILE 22/22: world/rows.py (END)
+# FILE 24/24: world/rows.py (END)
 ################################################################################
 
 
@@ -2940,18 +2974,18 @@ class ROWS:
 ################################################################################
 
 === TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
-test6: search() [tests=10]: lap 4: 9.2e-05 seconds
-test6: split1 (point split) [tests=10]: lap 6: 0.039728 seconds
-test6: split2 (region split) [tests=10]: lap 8: 0.063034 seconds
-test6: merge() [tests=10]: lap 10: 0.044896 seconds
-test6: remove() [tests=10]: lap 12: 5.2e-05 seconds
-test6: insert() [tests=10]: lap 14: 0.000427 seconds
+test6: search() [tests=10]: lap 4: 9.5e-05 seconds
+test6: split1 (point split) [tests=10]: lap 6: 0.039864 seconds
+test6: split2 (region split) [tests=10]: lap 8: 0.067076 seconds
+test6: merge() [tests=10]: lap 10: 0.042047 seconds
+test6: remove() [tests=10]: lap 12: 3.1e-05 seconds
+test6: insert() [tests=10]: lap 14: 0.000416 seconds
 === TEST6 DONE ===
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2953
-# Total files in bundle: 22
-# Generated at the time: 2026-01-30T19:59:24
+# Total lines in bundle: 2987
+# Total files in bundle: 24
+# Generated at the time: 2026-01-30T20:06:43
 --- END OF FILE ---
