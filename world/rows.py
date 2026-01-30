@@ -201,57 +201,87 @@ class ROWS:
         for mat in self.mats.name2idx.keys():
             self.merge(mat=mat)
 
-    def merges(self, rows=None) -> int:
+    def merges(self, rows: NDArray[ROW.DTYPE] = None) -> int:
+        """
+        Greedy merge driver for a *given* batch of rows (typically the 27-split output).
+        Strategy:
+        - Axis-first depletion (X then Y then Z)
+        - Within each axis, iterate until we reach a fixpoint (no more merges on that axis)
+        - Rebuild the worklist each pass from current self.n[mid] for correctness under swap-delete
+        """
         if rows is None:
             return 0
 
         merges = 0
 
-        # build a base seed list once
-        seed: list[tuple[int,int]] = []
+        # Which materials are present in the provided batch?
+        # (Keeps the rebuild worklist small instead of scanning all MATERIALS every time.)
+        mids_present: set[int] = set()
         for mid in range(rows.shape[0]):
-            for i in range(rows.shape[1] - 1, -1, -1):
+            for i in range(rows.shape[1]):
                 row = rows[mid][i]
-                if row[*ROW.IDS_ID] == ROW.SENTINEL:
-                    continue
-                rid = int(row[*ROW.IDS_ID])
-                if 0 <= rid < self.n[mid]:
-                    seed.append((mid, rid))
+                if row[*ROW.IDS_ID] != ROW.SENTINEL:
+                    mids_present.add(mid)
+                    break
 
-        for ax in range(3):
-            extra = seed[:]          # fresh worklist for this axis
-            seen: set[tuple[int,int]] = set()
+        for ax in (self.mdx.AX_X, self.mdx.AX_Y, self.mdx.AX_Z):
 
-            while extra:
-                mid, rid = extra.pop()
-                if not (0 <= rid < self.n[mid]):
-                    continue
+            # Repeat passes on this axis until no merges happen.
+            # This prevents "saw it too early" + seen starving later opportunities.
+            while True:
+                did_merge = False
 
-                key = (mid, rid)
-                if key in seen:
-                    continue
-                seen.add(key)
+                # Fresh worklist from current state (swap-delete changes what lives at each rid).
+                extra: list[tuple[int, int]] = []
+                for mid in mids_present:
+                    n = self.n[mid]
+                    # reverse order = stack-like popping
+                    for rid in range(n - 1, -1, -1):
+                        extra.append((mid, rid))
 
-                mat = self.mats.idx2name[mid]
+                seen: set[tuple[int, int]] = set()
 
-                partner = self.mdx.search(mid=mid, rid=rid, axis=ax)
-                if partner is None:
-                    continue
+                while extra:
+                    mid, rid = extra.pop()
 
-                pmid, prid = partner
-                if pmid != mid or not (0 <= prid < self.n[mid]):
-                    continue
+                    # rid may have become invalid due to swap-delete or prior merges
+                    if rid < 0 or rid >= self.n[mid]:
+                        continue
 
-                if self.merge_pair(mat=mat, rid_a=rid, rid_b=prid):
-                    merges += 1
-                    new_rid = self.n[mid] - 1
+                    key = (mid, rid)
+                    if key in seen:
+                        continue
+                    seen.add(key)
 
-                    # keep working on THIS axis until it can't merge further
-                    extra.append((mid, new_rid))
+                    mat = self.mats.idx2name[mid]
 
-                    # optional neighbor push
-                    if hasattr(self.mdx, "neighbors_of"):
-                        extra.extend(self.mdx.neighbors_of(mid=mid, rid=new_rid))
+                    partner = self.mdx.search(mid=mid, rid=rid, axis=ax)
+                    if partner is None:
+                        continue
+
+                    pmid, prid = partner
+                    if pmid != mid or prid < 0 or prid >= self.n[mid]:
+                        continue
+
+                    if self.merge_pair(mat=mat, rid_a=rid, rid_b=prid):
+                        merges += 1
+                        did_merge = True
+
+                        # merged row is appended at end of this material
+                        new_rid = self.n[mid] - 1
+                        extra.append((mid, new_rid))
+
+                        # Re-check potentially affected neighbors (and allow revisits)
+                        if hasattr(self.mdx, "neighbors_of"):
+                            neigh = self.mdx.neighbors_of(mid=mid, rid=new_rid)
+                            for nm, nr in neigh:
+                                # neighbor might be stale/out of range, but that’s fine; guards above handle it
+                                if (nm, nr) in seen:
+                                    seen.remove((nm, nr))
+                                extra.append((nm, nr))
+
+                if not did_merge:
+                    break
 
         return merges
 
