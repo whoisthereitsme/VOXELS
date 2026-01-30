@@ -144,8 +144,10 @@ def test3() -> None:
                     pos = (x, y, z)
                     rows.split(pos=pos, mat="AIR")
 
-    for _ in range(1):
+    for i in range(1):
+        print("Performing SWEEP to consolidate AIR rows... AIR rows before:", rows.nrows(mat="AIR"), "in sweep iteration:", i+1)
         rows.sweep()
+        print("SWEEP completed. AIR rows after:", rows.nrows(mat="AIR"))
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
         print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
