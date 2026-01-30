@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T14:59:35
+#Time when generated: 2026-01-30T15:48:24
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -1275,90 +1275,83 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from world.rows import ROWS
-
+    
 
 
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import DefaultDict, Dict, Optional, Set, Tuple
 
-from world.row import ROW
+from world.row import ROW, NDArray
 
-# rid locator
 Loc = Tuple[int, int]  # (mid, rid)
-
-# Face keys:
-# We include mid (material index) so we can merge per-material quickly.
-# The spans must match exactly on the other two axes.
-FaceKey = Tuple[int, int, int, int, int, int]  # (mid, a0, a1, b0, b1, face_coord)
-
+FACE = Tuple[int, int, int, int, int, int]  # (mid, a0, a1, b0, b1, face_coord)
+BUCK = DefaultDict[FACE, Set[Loc]]  # face_key -> set of (mid, rid)
+FACES = Tuple[FACE, FACE]  # (max_face, min_face)  # our faces, in search order
+BUCKS = Tuple[BUCK, BUCK]  # (neg_bucket, pos_bucket)
 
 @dataclass
-class _RowFaces:
-    # store the 6 keys so we can unregister quickly without recomputing
-    x0: FaceKey
-    x1: FaceKey
-    y0: FaceKey
-    y1: FaceKey
-    z0: FaceKey
-    z1: FaceKey
+class ROWFACES:
+    x0: FACE
+    x1: FACE
+    y0: FACE
+    y1: FACE
+    z0: FACE
+    z1: FACE
+
+    @property
+    def xfaces(self) -> FACES:
+        return (self.x1, self.x0)
+
+    @property
+    def yfaces(self) -> FACES:
+        return (self.y1, self.y0)
+
+    @property
+    def zfaces(self) -> FACES:
+        return (self.z1, self.z0)
+
+    def faces(self, ax:int=None) -> FACES:
+        if ax not in [0, 1, 2]:
+            raise ValueError("[VALUE ERROR] ROWFACES.faces() ax must be 0,1,2. provided axis:", ax)
+        return (self.xfaces, self.yfaces, self.zfaces)[ax]
 
 
 class MDX:
-    """
-    Tracks adjacency candidates for merges using face hashing.
-
-    For each axis we maintain:
-      neg[axis][key] -> set of (mid,rid) with face at MIN along that axis
-      pos[axis][key] -> set of (mid,rid) with face at MAX along that axis
-
-    A merge along X exists when:
-      pos[X][(mid, y0,y1,z0,z1, x)] intersects neg[X][(mid, y0,y1,z0,z1, x)]
-    """
-
     AX_X = 0
     AX_Y = 1
     AX_Z = 2
+    ALLAXIS = (AX_X, AX_Y, AX_Z)
 
     def __init__(self, rows:ROWS=None) -> None:
         self.rows = rows
-        # axis -> key -> set(loc)
-        self.neg: Tuple[DefaultDict[FaceKey, Set[Loc]], ...] = (
-            defaultdict(set), defaultdict(set), defaultdict(set)
-        )
-        self.pos: Tuple[DefaultDict[FaceKey, Set[Loc]], ...] = (
-            defaultdict(set), defaultdict(set), defaultdict(set)
-        )
+        self.init()
 
-        # (mid,rid) -> stored face keys (for O(1) unregister)
-        self._faces: Dict[Loc, _RowFaces] = {}
+    def init(self) -> None:
+        self.neg: Tuple[BUCK, ...] = (defaultdict(set), defaultdict(set), defaultdict(set))
+        self.pos: Tuple[BUCK, ...] = (defaultdict(set), defaultdict(set), defaultdict(set))
+        self._faces: Dict[Loc, ROWFACES] = {}
 
-    # ---------------------------
-    # key construction
-    # ---------------------------
-    @staticmethod
-    def _faces_for(mid: int, row) -> _RowFaces:
+
+    def faces(self, mid:int=None, row:NDArray[ROW.DTYPE]=None) -> ROWFACES:
         x0, y0, z0 = ROW.P0(row=row)
         x1, y1, z1 = ROW.P1(row=row)
         # axis X: spans are (y0,y1,z0,z1), face coord is x0 or x1
-        kx0: FaceKey = (mid, y0, y1, z0, z1, x0)
-        kx1: FaceKey = (mid, y0, y1, z0, z1, x1)
+        kx0: FACE = (mid, y0, y1, z0, z1, x0)
+        kx1: FACE = (mid, y0, y1, z0, z1, x1)
         # axis Y: spans are (x0,x1,z0,z1), face coord is y0 or y1
-        ky0: FaceKey = (mid, x0, x1, z0, z1, y0)
-        ky1: FaceKey = (mid, x0, x1, z0, z1, y1)
+        ky0: FACE = (mid, x0, x1, z0, z1, y0)
+        ky1: FACE = (mid, x0, x1, z0, z1, y1)
         # axis Z: spans are (x0,x1,y0,y1), face coord is z0 or z1
-        kz0: FaceKey = (mid, x0, x1, y0, y1, z0)
-        kz1: FaceKey = (mid, x0, x1, y0, y1, z1)
-        return _RowFaces(x0=kx0, x1=kx1, y0=ky0, y1=ky1, z0=kz0, z1=kz1)
+        kz0: FACE = (mid, x0, x1, y0, y1, z0)
+        kz1: FACE = (mid, x0, x1, y0, y1, z1)
+        return ROWFACES(x0=kx0, x1=kx1, y0=ky0, y1=ky1, z0=kz0, z1=kz1)
 
-    # ---------------------------
-    # register / unregister
-    # ---------------------------
-    def insert(self, row=None) -> None:
+    def insert(self, row:NDArray[ROW.DTYPE]=None) -> None:
         mid = self.rows.mats.name2idx[ROW.MAT(row=row)]
         rid = ROW.RID(row=row)
         loc = (mid, rid)
-        faces = self._faces_for(mid, row)
+        faces = self.faces(mid, row)
         self._faces[loc] = faces
 
         self.neg[self.AX_X][faces.x0].add(loc)
@@ -1377,62 +1370,45 @@ class MDX:
         if faces is None:
             return
 
-        self._discard(self.neg[self.AX_X], faces.x0, loc)
-        self._discard(self.pos[self.AX_X], faces.x1, loc)
+        self.discard(m=self.neg[self.AX_X], key=faces.x0, loc=loc)
+        self.discard(m=self.pos[self.AX_X], key=faces.x1, loc=loc)
+        self.discard(m=self.neg[self.AX_Y], key=faces.y0, loc=loc)
+        self.discard(m=self.pos[self.AX_Y], key=faces.y1, loc=loc)
+        self.discard(m=self.neg[self.AX_Z], key=faces.z0, loc=loc)
+        self.discard(m=self.pos[self.AX_Z], key=faces.z1, loc=loc)
 
-        self._discard(self.neg[self.AX_Y], faces.y0, loc)
-        self._discard(self.pos[self.AX_Y], faces.y1, loc)
-
-        self._discard(self.neg[self.AX_Z], faces.z0, loc)
-        self._discard(self.pos[self.AX_Z], faces.z1, loc)
-
-    @staticmethod
-    def _discard(m: DefaultDict[FaceKey, Set[Loc]], key: FaceKey, loc: Loc) -> None:
+    def discard(self, m:BUCK=None, key:FACE=None, loc:Loc=None) -> None:
         s = m.get(key)
         if not s:
             return
         s.discard(loc)
         if not s:
-            # keep dict small
             del m[key]
 
-    # ---------------------------
-    # rid move helper (swap-delete)
-    # ---------------------------
-    def move_rid(self, mid: int, old_rid: int, new_rid: int, row) -> None:
-        self.remove(mat=self.rows.mats.idx2name[mid], rid=old_rid)
-        self.insert(row=row)
-
-    # ---------------------------
-    # partner query
-    # ---------------------------
     def search(self, mid:int=None, rid:int=None, axis:int=None) -> Optional[Loc]:
+        if mid is None or rid is None or axis is None:
+            raise ValueError("mid, rid, and axis must be provided")
         loc = (mid, rid)
-        faces = self._faces.get(loc)
-        if faces is None:
+        rowfaces: ROWFACES = self._faces.get(loc)
+        if rowfaces is None:
             return None
 
-        if axis == self.AX_X:
-            # partner has x0 == our x1, same yz span
-            key = faces.x1
-            candidates = self.neg[self.AX_X].get(key)
-        elif axis == self.AX_Y:
-            key = faces.y1
-            candidates = self.neg[self.AX_Y].get(key)
-        elif axis == self.AX_Z:
-            key = faces.z1
-            candidates = self.neg[self.AX_Z].get(key)
-        else:
-            raise ValueError("axis must be 0,1,2")
-
-        if not candidates:
+        def search(faces:FACES=None, bucks:BUCKS=None) -> Optional[Loc]:
+            for face, buck in zip(faces, bucks):
+                buck: BUCK = buck
+                face: FACE = face
+                candidates = buck.get(face)
+                if not candidates:
+                    continue
+                for c in candidates:
+                    if c != loc:
+                        return c
             return None
 
-        # return any candidate that isn't self
-        for c in candidates:
-            if c != loc:
-                return c
-        return None
+        faces = rowfaces.faces(ax=axis) 
+        bucks = (self.neg[axis], self.pos[axis])
+
+        return search(faces=faces, bucks=bucks)
 
 ################################################################################
 # FILE 14/22: utils/mdx.py (END)
@@ -2518,15 +2494,15 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.594214 seconds, total 5.631174 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 178.76 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.001613 seconds, total 5.632788 seconds
+STEP 1 :  3D grid partition built: lap 3: 5.955787 seconds, total 5.991011 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 167.90 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.001804 seconds, total 5.992815 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.399906 seconds, total 6.032694 seconds
+ - All 10000 rows deleted in: lap 5: 0.474379 seconds, total 6.467194 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.608644 seconds, total 6.641338 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1643.00 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.001616 seconds, total 6.642953 seconds
+ - second time 3D grid partition built: lap 6: 0.664422 seconds, total 7.131616 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1505.07 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.001652 seconds, total 7.133268 seconds
 WORLD VOLUME BEFORE:  72056357089509375
  - SPLIT test 1/10 passed.
  - SPLIT test 2/10 passed.
@@ -2546,8 +2522,8 @@ Material STONE has 51 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
 WORLD VOLUME AFTER:  72056357089509375
-STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.061687 seconds, total 6.704641 seconds
- - SWEEP completed in: lap 9: 0.000257 seconds, total 6.704898 seconds
+STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.055309 seconds, total 7.188577 seconds
+ - SWEEP completed in: lap 9: 0.000551 seconds, total 7.189128 seconds
 WORLD VOLUME AFTER SWEEP:  72056357089509375
 Material AIR has 10 rows after SWEEP tests.
 Material WATER has 0 rows after SWEEP tests.
@@ -2557,17 +2533,17 @@ Material STONE has 51 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
 Material AIR has 11 rows after SWEEP tests.
-  AIR row 0: p0=(226583, 732666, 56935), p1=(226588, 732671, 56940)
-  AIR row 1: p0=(961367, 453370, 10821), p1=(961372, 453375, 10826)
-  AIR row 2: p0=(762059, 757049, 22718), p1=(762064, 757054, 22723)
-  AIR row 3: p0=(846209, 187685, 54398), p1=(846214, 187690, 54403)
-  AIR row 4: p0=(774292, 414782, 18708), p1=(774297, 414787, 18713)
-  AIR row 5: p0=(604728, 496351, 45577), p1=(604733, 496356, 45582)
-  AIR row 6: p0=(710495, 563736, 3089), p1=(710500, 563741, 3094)
-  AIR row 7: p0=(291585, 355182, 2937), p1=(291590, 355187, 2942)
-  AIR row 8: p0=(163509, 373027, 51273), p1=(163514, 373032, 51278)
-  AIR row 9: p0=(221362, 395802, 59351), p1=(221366, 395807, 59356)
-  AIR row 10: p0=(221366, 395802, 59351), p1=(221367, 395807, 59356)
+  AIR row 0: p0=(344999, 417078, 18670), p1=(345004, 417083, 18675)
+  AIR row 1: p0=(977583, 410782, 43225), p1=(977588, 410787, 43230)
+  AIR row 2: p0=(486177, 385911, 30813), p1=(486182, 385916, 30818)
+  AIR row 3: p0=(310365, 656260, 6885), p1=(310370, 656265, 6890)
+  AIR row 4: p0=(221559, 943213, 3116), p1=(221564, 943218, 3121)
+  AIR row 5: p0=(46687, 948501, 53240), p1=(46692, 948506, 53245)
+  AIR row 6: p0=(699561, 694852, 4815), p1=(699566, 694857, 4820)
+  AIR row 7: p0=(249711, 568522, 28522), p1=(249716, 568527, 28527)
+  AIR row 8: p0=(953139, 55064, 33642), p1=(953144, 55069, 33647)
+  AIR row 9: p0=(434388, 794894, 21987), p1=(434392, 794899, 21992)
+  AIR row 10: p0=(434392, 794894, 21987), p1=(434393, 794899, 21992)
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
@@ -2575,12 +2551,12 @@ Material STONE has 51 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
 air rows= 11 stone rows= 51
-main.py: executed in: lap 10: 1.870734 seconds, total 8.575632 seconds
+main.py: executed in: lap 10: 2.239181 seconds, total 9.428308 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2582
+# Total lines in bundle: 2558
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T14:59:35
+# Generated at the time: 2026-01-30T15:48:24
 --- END OF FILE ---
