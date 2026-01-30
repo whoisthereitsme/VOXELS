@@ -265,7 +265,7 @@ class ROWS:
                     if pmid != mid or prid < 0 or prid >= self.n[mid]:
                         continue
 
-                    if self.merge2(mat=mat, rid_a=rid, rid_b=prid):
+                    if self.merge2(mat=mat, rid0=rid, rid1=prid):
                         merges += 1
                         did_merge = True
                         new_rid = self.n[mid] - 1

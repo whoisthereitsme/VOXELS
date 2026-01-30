@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T16:15:13
+#Time when generated: 2026-01-30T16:16:11
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2418,7 +2418,7 @@ class ROWS:
                     if pmid != mid or prid < 0 or prid >= self.n[mid]:
                         continue
 
-                    if self.merge2(mat=mat, rid_a=rid, rid_b=prid):
+                    if self.merge2(mat=mat, rid0=rid, rid1=prid):
                         merges += 1
                         did_merge = True
                         new_rid = self.n[mid] - 1
@@ -2466,28 +2466,34 @@ rows = ROWS()
 ################################################################################
 
 10 mines to be created at random positions.
-Traceback (most recent call last):
-  File "c:\VOXELS\main.py", line 180, in main
-    test3()
-    ~~~~~^^
-  File "c:\VOXELS\main.py", line 145, in test3
-    rows.split(pos=pos, mat="AIR")
-    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 143, in split
-    self.merge(rows=array)  # this gives rows so calls  self.mergerows() and not self.mergemat() so only the new rows created here are considered for merging
-    ~~~~~~~~~~^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 290, in merge
-    self.mergerows(rows=rows)
-    ~~~~~~~~~~~~~~^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 268, in mergerows
-    if self.merge2(mat=mat, rid_a=rid, rid_b=prid):
-       ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: ROWS.merge2() got an unexpected keyword argument 'rid_a'. Did you mean 'rid0'?
+Performing SWEEP to consolidate AIR rows... AIR rows before: 12 in sweep iteration: 1
+Performing SWEEP to consolidate AIR rows... AIR rows before: 11 in sweep iteration: 2
+Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 3
+ No more AIR rows could be consolidated. Stopping SWEEP.
+Material AIR has 10 rows after SWEEP tests.
+  AIR row 0: p0=(969576, 569143, 43922), p1=(969581, 569148, 43927)
+  AIR row 1: p0=(959984, 313453, 31869), p1=(959989, 313458, 31874)
+  AIR row 2: p0=(972180, 156061, 22109), p1=(972185, 156066, 22114)
+  AIR row 3: p0=(616830, 832199, 37110), p1=(616835, 832204, 37115)
+  AIR row 4: p0=(587436, 796451, 10843), p1=(587441, 796456, 10848)
+  AIR row 5: p0=(396757, 759883, 42190), p1=(396762, 759888, 42195)
+  AIR row 6: p0=(156846, 65247, 9972), p1=(156851, 65252, 9977)
+  AIR row 7: p0=(651698, 336429, 3448), p1=(651703, 336434, 3453)
+  AIR row 8: p0=(307667, 234726, 8535), p1=(307672, 234731, 8540)
+  AIR row 9: p0=(598281, 923951, 57562), p1=(598286, 923956, 57567)
+Material WATER has 0 rows after SWEEP tests.
+Material LAVA has 0 rows after SWEEP tests.
+Material GLASS has 0 rows after SWEEP tests.
+Material STONE has 51 rows after SWEEP tests.
+Material OBSIDIAN has 0 rows after SWEEP tests.
+Material BEDROCK has 0 rows after SWEEP tests.
+air rows= 10 stone rows= 51
+main.py: executed in: lap 2: 2.343396 seconds, total 2.372733 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2489
+# Total lines in bundle: 2495
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T16:15:13
+# Generated at the time: 2026-01-30T16:16:11
 --- END OF FILE ---
