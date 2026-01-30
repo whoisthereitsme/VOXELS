@@ -388,57 +388,40 @@ def test5() -> None:
 
 
 
-
-
-
 def test6() -> None:
     """
     test6:
-    Timing benchmark for core operations.
-
-    Measures (10x each):
-    - bulk insert (grid build)
-    - random BVH search
-    - split1 (single-point split)
-    - split2 (region split spanning rows)
-    - merge
-    - remove
+    Timing benchmark: 10 calls per operation category.
+    Uses timer.lap() before the 10 calls and timer.print() after.
     """
 
-    print("=== TEST6: TIMING BENCHMARK ===")
+    print("=== TEST6: TIMING BENCHMARK (10 calls per op) ===")
 
-    # -----------------------------
-    # 1) BULK INSERT (grid build)
-    # -----------------------------
-    timer.lap()
-    for _ in range(10):
-        rows = ROWS()
-        row0 = rows.array[MATERIALS.IDX["STONE"]][0]
-        rows.remove(row=row0)
+    # -------------------------------------------------
+    # Setup a grid world once (for search / split2 etc.)
+    # -------------------------------------------------
+    rows = ROWS()
+    row0 = rows.array[MATERIALS.IDX["STONE"]][0]
+    rows.remove(row=row0)
 
-        cell = 32
-        nx, ny, nz = 20, 20, 8
-        for ix in range(nx):
-            for iy in range(ny):
-                for iz in range(nz):
-                    x0 = ix * cell
-                    y0 = iy * cell
-                    z0 = iz * cell
-                    rows.insert(
-                        p0=(x0, y0, z0),
-                        p1=(x0 + cell, y0 + cell, z0 + cell),
-                        mat="STONE",
-                    )
-    timer.print(msg="test6: bulk insert (grid build) x10")
+    cell = 64
+    nx, ny, nz = 20, 20, 8
+    for ix in range(nx):
+        for iy in range(ny):
+            for iz in range(nz):
+                x0 = ix * cell
+                y0 = iy * cell
+                z0 = iz * cell
+                rows.insert(p0=(x0, y0, z0), p1=(x0 + cell, y0 + cell, z0 + cell), mat="STONE")
 
-    # -----------------------------
-    # 2) RANDOM SEARCH (BVH)
-    # -----------------------------
-    timer.lap()
+    rows.merge()  # allow consolidation if your merge collapses the grid (fine)
+
     max_x = nx * cell - 1
     max_y = ny * cell - 1
     max_z = nz * cell - 1
 
+    # 1) BVH SEARCH: 10 searches
+    timer.lap()
     for _ in range(10):
         pos = (
             random.randint(0, max_x),
@@ -446,11 +429,9 @@ def test6() -> None:
             random.randint(0, max_z),
         )
         rows.search(pos=pos)
-    timer.print(msg="test6: BVH search (1000 lookups ×10)")
+    timer.print(msg="test6: search() x10")
 
-    # -----------------------------
-    # 3) SPLIT1 (single-point)
-    # -----------------------------
+    # 2) split1: 10 point splits
     timer.lap()
     for _ in range(10):
         pos = (
@@ -459,54 +440,52 @@ def test6() -> None:
             random.randint(10, max_z - 10),
         )
         rows.split(pos=pos, mat="AIR")
-    timer.print(msg="test6: split1 (single-point)")
+    timer.print(msg="test6: split1 (point split) x10")
 
-    # -----------------------------
-    # 4) SPLIT2 (region / box)
-    # -----------------------------
+    # 3) split2: 10 region splits (spanning multiple rows by using >cell extents)
     timer.lap()
     for _ in range(10):
-            dx = random.randint(cell, cell * 3)
-            dy = random.randint(cell, cell * 3)
-            dz = random.randint(cell, cell * 2)
+        dx = random.randint(cell + 5, cell * 3)
+        dy = random.randint(cell + 5, cell * 3)
+        dz = random.randint(cell + 5, cell * 2)
 
-            x0 = random.randint(0, max_x - dx)
-            y0 = random.randint(0, max_y - dy)
-            z0 = random.randint(0, max_z - dz)
+        x0 = random.randint(0, max_x - dx)
+        y0 = random.randint(0, max_y - dy)
+        z0 = random.randint(0, max_z - dz)
 
-            p0, p1 = ROW.SORT(
-                p0=(x0, y0, z0),
-                p1=(x0 + dx, y0 + dy, z0 + dz),
-            )
-            rows.split(pos=p0, pos1=p1, mat="AIR")
-    timer.print(msg="test6: split2 (region split)")
+        p0, p1 = ROW.SORT(p0=(x0, y0, z0), p1=(x0 + dx, y0 + dy, z0 + dz))
+        rows.split(pos=p0, pos1=p1, mat="AIR")
+    timer.print(msg="test6: split2 (region split) x10")
 
-    # -----------------------------
-    # 5) MERGE
-    # -----------------------------
+    # 4) merge: 10 merges
     timer.lap()
     for _ in range(10):
         rows.merge()
-    timer.print(msg="test6: merge()")
+    timer.print(msg="test6: merge() x10")
 
-    # -----------------------------
-    # 6) REMOVE (random rows)
-    # -----------------------------
+    # 5) remove: 10 removes (from STONE if possible, otherwise AIR)
     timer.lap()
     for _ in range(10):
-        mid = MATERIALS.IDX["STONE"]
-        n = rows.nrows(mat="STONE")
-        remove_count = min(500, n)
-        for i in range(remove_count):
-            row = rows.array[mid][n - 1 - i]
+        if rows.nrows(mat="STONE") > 0:
+            row = rows.array[MATERIALS.IDX["STONE"]][rows.nrows(mat="STONE") - 1]
             rows.remove(row=row)
-    timer.print(msg="test6: remove()")
+        elif rows.nrows(mat="AIR") > 0:
+            row = rows.array[MATERIALS.IDX["AIR"]][rows.nrows(mat="AIR") - 1]
+            rows.remove(row=row)
+        else:
+            break
+    timer.print(msg="test6: remove() x10")
+
+    # 6) insert: 10 inserts (simple AABBs somewhere safe)
+    timer.lap()
+    for _ in range(10):
+        x0 = random.randint(0, max_x - 2)
+        y0 = random.randint(0, max_y - 2)
+        z0 = random.randint(0, max_z - 2)
+        rows.insert(p0=(x0, y0, z0), p1=(x0 + 1, y0 + 1, z0 + 1), mat="STONE")
+    timer.print(msg="test6: insert() x10")
 
     print("=== TEST6 DONE ===")
-
-
-
-
 
 
 

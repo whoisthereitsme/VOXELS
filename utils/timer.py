@@ -42,7 +42,7 @@ class Timer:
     
     def print(self, msg:str=None) -> None:
         self.lap()
-        txt = f"lap {len(self.delta)}: {self.delta[-1]} seconds, total {round((self.times[-1] - self.started) / 1e9, 6)} seconds"
+        txt = f"lap {len(self.delta)}: {self.delta[-1]} seconds"
         if msg is not None:
             txt = f"{msg}: {txt}"
         print(txt)
