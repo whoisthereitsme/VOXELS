@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T18:51:42
+#Time when generated: 2026-01-30T18:56:15
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -753,6 +753,200 @@ def test3() -> None:
     print(f"air rows= {rows.nrows(mat='AIR')}", f"stone rows= {rows.nrows(mat='STONE')}")
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+def test4() -> None:
+    """
+    test4:
+    Split off multiple *single-row-contained* regions (boxes fully inside one existing row),
+    then merge to consolidate and verify:
+    - total world volume stays constant
+    - AIR volume equals sum of carved boxes
+    - a bunch of random points inside carved boxes are AIR
+    - a bunch of random points outside carved boxes are NOT AIR
+    """
+    rows = ROWS()
+    v0 = rows.volume()
+    print("WORLD VOLUME BEFORE:", v0)
+
+    # We'll carve boxes that are guaranteed to fit inside the initial STONE row.
+    # Keep them well away from borders and reasonably small.
+    boxes: list[tuple[POS, POS]] = []
+    total_air_vol = 0
+
+    for i in range(50):
+        dx = random.randint(4, 48)
+        dy = random.randint(4, 48)
+        dz = random.randint(4, 32)
+
+        x0 = random.randint(2000, 900000)
+        y0 = random.randint(2000, 900000)
+        z0 = random.randint(2000, 60000)
+
+        p0 = (x0, y0, z0)
+        p1 = (x0 + dx, y0 + dy, z0 + dz)
+
+        # split2 expects p0/p1 in any order, but keep it clean
+        p0, p1 = ROW.SORT(p0=p0, p1=p1)
+
+        rows.split(pos=p0, pos1=p1, mat="AIR")
+        boxes.append((p0, p1))
+        total_air_vol += (p1[0] - p0[0]) * (p1[1] - p0[1]) * (p1[2] - p0[2])
+
+        if (i + 1) % 10 == 0:
+            print(f" - carved {i+1}/50 boxes")
+
+    # One last global merge to consolidate as much as possible
+    rows.merge()
+
+    v1 = rows.volume()
+    print("WORLD VOLUME AFTER:", v1)
+    assert v1 == v0, f"volume changed: before={v0}, after={v1}"
+
+    # Compute AIR volume by summing all AIR rows volumes
+    air_mid = Materials.name2idx["AIR"]
+    air_vol = 0
+    for rid in range(rows.n[air_mid]):
+        air_vol += ROW.VOLUME(row=rows.array[air_mid][rid])
+    print("AIR VOLUME:", air_vol, "EXPECTED (sum boxes):", total_air_vol)
+    assert air_vol == total_air_vol, f"AIR volume mismatch: got={air_vol}, expected={total_air_vol}"
+
+    # Random containment checks inside boxes -> must be AIR
+    for _ in range(500):
+        p0, p1 = random.choice(boxes)
+        x = random.randint(p0[0], p1[0] - 1)
+        y = random.randint(p0[1], p1[1] - 1)
+        z = random.randint(p0[2], p1[2] - 1)
+        mat, rid, row = rows.search(pos=(x, y, z))
+        assert mat == "AIR", f"expected AIR at {(x,y,z)}, got {mat} rid={rid}"
+
+    # Random checks outside boxes -> should NOT be AIR (probabilistic; pick points far away)
+    for _ in range(500):
+        x = random.randint(10, 900)
+        y = random.randint(10, 900)
+        z = random.randint(10, 900)
+        mat, rid, row = rows.search(pos=(x, y, z))
+        assert mat != "AIR", f"unexpected AIR at {(x,y,z)}"
+
+    print("test4 OK:",
+          f"air_rows={rows.nrows(mat='AIR')}",
+          f"stone_rows={rows.nrows(mat='STONE')}")
+
+
+def test5() -> None:
+    """
+    test5:
+    Split off regions that *span multiple rows*.
+
+    Build a grid of STONE rows (like in test1 but smaller), then carve AIR boxes that
+    cross row boundaries, and verify:
+    - volume stays constant
+    - AIR volume equals sum of carved boxes
+    - random points inside carved boxes are AIR
+    """
+    rows = ROWS()
+    # Remove the default large STONE row, then build a grid of smaller STONE rows
+    row0 = rows.array[MATERIALS.IDX["STONE"]][0]
+    rows.remove(row=row0)
+
+    cell = 64
+    nx = 20
+    ny = 20
+    nz = 8
+    for ix in range(nx):
+        x0 = ix * cell
+        x1 = x0 + cell
+        for iy in range(ny):
+            y0 = iy * cell
+            y1 = y0 + cell
+            for iz in range(nz):
+                z0 = iz * cell
+                z1 = z0 + cell
+                rows.insert(p0=(x0, y0, z0), p1=(x1, y1, z1), mat="STONE")
+
+    rows.merge()  # optional: consolidate if anything adjacent was inserted
+    v0 = rows.volume()
+    print("WORLD VOLUME BEFORE:", v0)
+    print("Initial rows:",
+          f"stone_rows={rows.nrows(mat='STONE')}",
+          f"air_rows={rows.nrows(mat='AIR')}")
+
+    # Now carve boxes that intentionally cross boundaries:
+    # choose p0 not aligned to cell boundaries and sizes > cell to span multiple cells.
+    boxes: list[tuple[POS, POS]] = []
+    total_air_vol = 0
+
+    max_x = nx * cell
+    max_y = ny * cell
+    max_z = nz * cell
+
+    for i in range(30):
+        dx = random.randint(cell + 5, cell * 3)
+        dy = random.randint(cell + 5, cell * 3)
+        dz = random.randint(cell + 5, cell * 2)
+
+        x0 = random.randint(5, max_x - dx - 5)
+        y0 = random.randint(5, max_y - dy - 5)
+        z0 = random.randint(5, max_z - dz - 5)
+
+        # offset to avoid perfectly aligned starts
+        x0 += random.randint(1, cell - 2)
+        y0 += random.randint(1, cell - 2)
+        z0 += random.randint(1, cell - 2)
+
+        p0 = (x0, y0, z0)
+        p1 = (x0 + dx, y0 + dy, z0 + dz)
+        p0, p1 = ROW.SORT(p0=p0, p1=p1)
+
+        rows.split(pos=p0, pos1=p1, mat="AIR")
+        boxes.append((p0, p1))
+        total_air_vol += (p1[0] - p0[0]) * (p1[1] - p0[1]) * (p1[2] - p0[2])
+
+        if (i + 1) % 10 == 0:
+            print(f" - carved {i+1}/30 spanning boxes")
+
+    rows.merge()
+
+    v1 = rows.volume()
+    print("WORLD VOLUME AFTER:", v1)
+    assert v1 == v0, f"volume changed: before={v0}, after={v1}"
+
+    # AIR volume check
+    air_mid = Materials.name2idx["AIR"]
+    air_vol = 0
+    for rid in range(rows.n[air_mid]):
+        air_vol += ROW.VOLUME(row=rows.array[air_mid][rid])
+    print("AIR VOLUME:", air_vol, "EXPECTED (sum boxes):", total_air_vol)
+    assert air_vol == total_air_vol, f"AIR volume mismatch: got={air_vol}, expected={total_air_vol}"
+
+    # Random containment checks inside carved boxes -> must be AIR
+    for _ in range(1000):
+        p0, p1 = random.choice(boxes)
+        x = random.randint(p0[0], p1[0] - 1)
+        y = random.randint(p0[1], p1[1] - 1)
+        z = random.randint(p0[2], p1[2] - 1)
+        mat, rid, row = rows.search(pos=(x, y, z))
+        assert mat == "AIR", f"expected AIR at {(x,y,z)}, got {mat} rid={rid}"
+
+    print("test5 OK:",
+          f"air_rows={rows.nrows(mat='AIR')}",
+          f"stone_rows={rows.nrows(mat='STONE')}")
+
+
+
+
+
 def main(test=[]) -> None:
     timer.lap()
     with Bundle():
@@ -763,6 +957,10 @@ def main(test=[]) -> None:
                 test2()
             if 3 in test:
                 test3()
+            if 4 in test:
+                test4()
+            if 5 in test:
+                test5()
             timer.print(msg="main.py: executed in")
         except Exception:
             traceback.print_exc()
@@ -772,7 +970,7 @@ def main(test=[]) -> None:
 
 
 if __name__ == "__main__":
-    main(test=[3])
+    main(test=[4, 5])
     
 
 ################################################################################
@@ -828,7 +1026,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
-    from world.rows import ROWS
+    from world._rows import ROWS
     from utils.types import POS
 
 from world.row import ROW
@@ -1279,7 +1477,7 @@ timer.reset()
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from world.rows import ROWS
+    from world._rows import ROWS
     
 
 
@@ -1769,7 +1967,7 @@ __all__ = [
 # FILE 19/23: world/__init__.py (START)
 ################################################################################
 
-from .rows_ import ROWS
+from .rows import ROWS
 from .row import ROW
 from .materials import MATERIALS, Materials, Material
 
@@ -1791,363 +1989,7 @@ __all__ = [
 
 
 ################################################################################
-# FILE 20/23: world/materials.py (START)
-################################################################################
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MATERIALS:
-    TYPES = {
-        "INVIS": 0,     # start at 16384                # invisible
-        "TRANS": 1,     # start at 32768                # transparent
-        "SOLID": 2,     # start at 65536                # solid
-        "ROCKS": 3,     # start at 4294967296           # indestructible
-    }
-
-    DATA  = {
-        "AIR":      (16384+0,     TYPES["INVIS"]),
-
-        "WATER":    (32768+0,     TYPES["TRANS"]), 
-        "LAVA":     (32768+1,     TYPES["TRANS"]),
-        "GLASS":    (32768+2,     TYPES["TRANS"]),
-
-        "STONE":    (65536+0,     TYPES["SOLID"]),
-        "OBSIDIAN": (65536+1,     TYPES["SOLID"]),
-
-        "BEDROCK":  (4294967296+0,TYPES["ROCKS"]),
-    }
-
-    IDX = {name: i for i, name in enumerate(DATA.keys())}
-
-    NUM = len(DATA)
-
-class Material:
-    def __init__(self, name:str=None) -> None:
-        self.id, self.type = MATERIALS.DATA.get(name, (None, None)) 
-        self.idx = MATERIALS.IDX.get(name, None) 
-        if self.id is None or self.type is None or self.idx is None:
-            raise ValueError(f"Invalid material name: {name}")
-
-    def isrocks(self) -> bool:
-        return self.type == MATERIALS.TYPES["ROCKS"]
-
-    def issolid(self) -> bool:
-        return self.type == MATERIALS.TYPES["SOLID"]
-    
-    def istrans(self) -> bool:
-        return self.type == MATERIALS.TYPES["TRANS"]
-    
-    def isinvisible(self) -> bool:
-        return self.type == MATERIALS.TYPES["INVIS"]
-    
-    def isindestructible(self) -> bool:
-        return self.type == MATERIALS.TYPES["ROCKS"]
-
-class Materials:
-    idx2name = {idx: name for name, idx in MATERIALS.IDX.items()}
-    name2idx = MATERIALS.IDX
-
-    name2id  = {name: pair[0] for name, pair in MATERIALS.DATA.items()}
-    id2name  = {pair[0]: name for name, pair in MATERIALS.DATA.items()}
-
-    # the one you actually need:
-    id2idx   = {pair[0]: MATERIALS.IDX[name] for name, pair in MATERIALS.DATA.items()}
-    idx2id   = {MATERIALS.IDX[name]: pair[0] for name, pair in MATERIALS.DATA.items()}
-
-
-    def __init__(self) -> None:
-        for name in MATERIALS.DATA.keys():
-            setattr(self, name.lower(), Material(name=name))
-
-    def idx(self, name: str = None, id: int = None) -> int:
-        if (name is None) == (id is None):
-            raise ValueError("Provide exactly one of name or id")
-        return self.name2idx[name] if name is not None else self.id2idx[id]
-
-    def id(self, name: str = None, idx: int = None) -> int:
-        if (name is None) == (idx is None):
-            raise ValueError("Provide exactly one of name or idx")
-        return self.name2id[name] if name is not None else self.idx2id[idx]
-
-    def name(self, id: int = None, idx: int = None) -> str:
-        if (id is None) == (idx is None):
-            raise ValueError("Provide exactly one of id or idx")
-        return self.id2name[id] if id is not None else self.idx2name[idx]
-
-
-################################################################################
-# FILE 20/23: world/materials.py (END)
-################################################################################
-
-
-################################################################################
-# FILE 21/23: world/row.py (START)
-################################################################################
-
-from __future__ import annotations
-import stat
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    pass
-
-
-
-import numpy as np
-from numpy.typing import NDArray
-
-
-from utils.types import SIZE, POS
-from world.materials import Material, Materials
-
-
-
-
-
-class ROW:
-    DTYPE = np.uint64
-    SHAPE = (4, 4)
-    NBITS = DTYPE(0).nbytes * 8                      # -> 64 bits
-
-    XBITS = 20
-    YBITS = 20
-    ZBITS = 16
-    if XBITS + YBITS + ZBITS + 1 > NBITS:
-        raise ValueError("bit allocation error")
-
-    XMIN = 0
-    YMIN = 0
-    ZMIN = 0
-    XMAX = 2**XBITS
-    YMAX = 2**YBITS
-    ZMAX = 2**ZBITS
-    NMAX = XMAX * YMAX * ZMAX
-    
-
-    # POSITIONS (MIN) — stored in row 0
-    IDS_X0 = (0, 0)
-    IDS_Y0 = (0, 1)
-    IDS_Z0 = (0, 2)
-
-    # POSITIONS (MAX) — stored in row 1
-    IDS_X1 = (1, 0)
-    IDS_Y1 = (1, 1)
-    IDS_Z1 = (1, 2)
-
-    # DIMENSIONS — stored in row 2
-    IDS_DX = (2, 0)
-    IDS_DY = (2, 1)
-    IDS_DZ = (2, 2)
-
-    # METADATA — stored in row 3
-    IDS_ID    = (3, 0)
-    IDS_MAT   = (3, 1)
-    IDS_FLAGS = (3, 2)
-
-    ENCODE_DIRTY        = DTYPE(1 << 0)
-    ENCODE_ALIVE        = DTYPE(1 << 1)
-    ENCODE_SOLID        = DTYPE(1 << 2)
-    ENCODE_DESTRUCTABLE = DTYPE(1 << 3)
-    ENCODE_VISIBLE      = DTYPE(1 << 4)
-
-    SENTINEL = np.iinfo(DTYPE).max
-    ARRAY: NDArray[DTYPE] = np.zeros(SHAPE, dtype=DTYPE)
-    for i in range(4):
-        for j in range(4):
-            ARRAY[i, j] = SENTINEL  # initialize all to -1 -> invalid
-    _ID = 0
-    
-    @staticmethod # get min position (x0, y0, z0)   
-    def P0(row:NDArray[DTYPE]=None) -> POS:
-        return (int(row[*ROW.IDS_X0]), int(row[*ROW.IDS_Y0]), int(row[*ROW.IDS_Z0]))
-    
-    @staticmethod # get max position (x1, y1, z1)
-    def P1(row:NDArray[DTYPE]=None) -> POS:
-        return (int(row[*ROW.IDS_X1]), int(row[*ROW.IDS_Y1]), int(row[*ROW.IDS_Z1]))
-    
-    @staticmethod # get size (dx, dy, dz)
-    def SIZE(row:NDArray[DTYPE]=None) -> SIZE:
-        return (int(row[*ROW.IDS_DX]), int(row[*ROW.IDS_DY]), int(row[*ROW.IDS_DZ]))
-    
-    @staticmethod # get material id
-    def MID(row:NDArray[DTYPE]=None) -> int:
-        return int(row[*ROW.IDS_MAT])
-    
-    @staticmethod # get meterial string name
-    def MAT(row:NDArray[DTYPE]=None) -> str:
-        return Materials.id2name[ROW.MID(row=row)]
-    
-    @staticmethod # get row id
-    def RID(row:NDArray[DTYPE]=None) -> int:
-        return int(row[*ROW.IDS_ID])
-    
-    @staticmethod # get flags
-    def FLAGS(row:NDArray[DTYPE]=None) -> tuple[bool, bool, bool, bool, bool]:
-        flags: int = int(row[*ROW.IDS_FLAGS])
-        dirty, alive, solid, destr, visib = ROW.DECODE(flags=flags)
-        return (dirty, alive, solid, destr, visib)
-    
-    @staticmethod # get volume (dx * dy * dz)
-    def VOLUME(row:NDArray[DTYPE]=None) -> int:
-        dx, dy, dz = ROW.SIZE(row=row)
-        return dx * dy * dz
-
-    @staticmethod # make a copy of the template array
-    def COPY() -> NDArray[DTYPE]:
-        return np.copy(ROW.ARRAY)
-    
-    @staticmethod
-    def CLIP(pos:POS=None) -> POS:
-        x, y, z = pos
-        cx = min(max(x, ROW.XMIN), ROW.XMAX - 1)
-        cy = min(max(y, ROW.YMIN), ROW.YMAX - 1)
-        cz = min(max(z, ROW.ZMIN), ROW.ZMAX - 1)
-        pos: POS = (cx, cy, cz)
-        return pos
-    
-    @staticmethod
-    def SORT(p0:POS=None, p1:POS=None) -> tuple[POS, POS]:
-        x0, y0, z0 = p0
-        x1, y1, z1 = p1
-        sx0, sx1 = (min(x0, x1), max(x0, x1))
-        sy0, sy1 = (min(y0, y1), max(y0, y1))
-        sz0, sz1 = (min(z0, z1), max(z0, z1))
-        p0: POS = (sx0, sy0, sz0)
-        p1: POS = (sx1, sy1, sz1)
-        return (p0, p1)
-    
-    @staticmethod
-    def CONTAINS(row: NDArray[DTYPE], pos: POS) -> bool:
-        x, y, z = pos
-        x0, y0, z0 = ROW.P0(row=row)
-        x1, y1, z1 = ROW.P1(row=row)
-        return (
-            (x0 <= x < x1) and
-            (y0 <= y < y1) and
-            (z0 <= z < z1)
-        )
-    
-    @staticmethod
-    def MERGE(row0: NDArray[DTYPE]=None, row1: NDArray[DTYPE]=None) -> tuple[bool, bool, bool]:
-        if row0[*ROW.IDS_MAT] != row1[*ROW.IDS_MAT]:
-            return (False, False, False)
-
-        x0a, y0a, z0a = ROW.P0(row=row0)
-        x1a, y1a, z1a = ROW.P1(row=row0)
-        x0b, y0b, z0b = ROW.P0(row=row1)
-        x1b, y1b, z1b = ROW.P1(row=row1)
-        p00 = (x0a, y0a, z0a)
-        p01 = (x1a, y1a, z1a)
-        p10 = (x0b, y0b, z0b)
-        p11 = (x1b, y1b, z1b)
-
-        def overlap(a0:int=None, a1:int=None, b0:int=None, b1:int=None) -> bool: return a0 < b1 and b0 < a1
-        def touches(a0:int=None, a1:int=None, b0:int=None, b1:int=None) -> bool: return a1 == b0 or b1 == a0
-
-        touching = [False, False, False]
-        overlaps = [False, False, False]
-
-        for i in range(3):
-            if overlap(a0=p00[i], a1=p01[i], b0=p10[i], b1=p11[i]):
-                overlaps[i] = True
-            elif touches(a0=p00[i], a1=p01[i], b0=p10[i], b1=p11[i]):
-                touching[i] = True
-            else:
-                return (False, False, False)  # separated on this axis
-            
-        if sum(touching) == 1 and sum(overlaps) == 2:
-            return tuple(touching)  # (x_touch, y_touch, z_touch)
-
-        return (False, False, False)
-    
-
-    @staticmethod
-    def ENCODE(dirty:bool=None, alive:bool=None, solid:bool=None, destructable:bool=None, visible:bool=None) -> int:
-        f: int = 0
-        if dirty:
-            f |= int(ROW.ENCODE_DIRTY)
-        if alive:
-            f |= int(ROW.ENCODE_ALIVE)
-        if solid:
-            f |= int(ROW.ENCODE_SOLID)
-        if destructable:
-            f |= int(ROW.ENCODE_DESTRUCTABLE)
-        if visible:
-            f |= int(ROW.ENCODE_VISIBLE)
-        return f
-    
-    @staticmethod
-    def DECODE(flags) -> tuple[bool, bool, bool, bool, bool]:
-        f: int = int(flags)
-
-        dirty = (f & int(ROW.ENCODE_DIRTY)) != 0
-        alive = (f & int(ROW.ENCODE_ALIVE)) != 0
-        solid = (f & int(ROW.ENCODE_SOLID)) != 0
-        destr = (f & int(ROW.ENCODE_DESTRUCTABLE)) != 0
-        visib = (f & int(ROW.ENCODE_VISIBLE)) != 0
-        return dirty, alive, solid, destr, visib
-
-
-
-
-
-
-
-
-                
-
-    @staticmethod
-    def new(p0:POS=None, p1:POS=None, mat:str=None, rid:int=None, dirty:bool=True, alive:bool=True) -> NDArray[DTYPE]:
-        p0, p1 = ROW.SORT(p0=ROW.CLIP(pos=p0), p1=ROW.CLIP(pos=p1))
-        mat: Material = Material(name=mat)
-        flags: int = ROW.ENCODE(dirty=dirty, alive=alive, solid=mat.issolid(), destructable=not mat.isindestructible(), visible=not mat.isinvisible())
-        
-        copy: NDArray[ROW.DTYPE] = ROW.COPY()
-
-        # POS0
-        copy[*ROW.IDS_X0]    = np.uint64(p0[0])
-        copy[*ROW.IDS_Y0]    = np.uint64(p0[1])
-        copy[*ROW.IDS_Z0]    = np.uint64(p0[2])
-        # POS1
-        copy[*ROW.IDS_X1]    = np.uint64(p1[0])
-        copy[*ROW.IDS_Y1]    = np.uint64(p1[1])
-        copy[*ROW.IDS_Z1]    = np.uint64(p1[2])
-        # SIZE
-        copy[*ROW.IDS_DX]    = np.uint64(p1[0] - p0[0])
-        copy[*ROW.IDS_DY]    = np.uint64(p1[1] - p0[1])
-        copy[*ROW.IDS_DZ]    = np.uint64(p1[2] - p0[2])
-        # METADATA
-        copy[*ROW.IDS_ID]    = np.uint64(rid)       # stores now the row index within material array instead of global unique id
-        copy[*ROW.IDS_MAT]   = np.uint64(mat.id)
-        copy[*ROW.IDS_FLAGS] = np.uint64(flags)
-
-        if any(v < 0 for v in (copy[*ROW.IDS_DX], copy[*ROW.IDS_DY], copy[*ROW.IDS_DZ])):
-            raise ValueError("p1 must be greater than or equal to p0 on all axes")
-        if any(v < 0 for v in (copy[*ROW.IDS_X0], copy[*ROW.IDS_Y0], copy[*ROW.IDS_Z0])):
-            raise ValueError("positions must be non-negative")
-        return copy
-    
-    
-
-################################################################################
-# FILE 21/23: world/row.py (END)
-################################################################################
-
-
-################################################################################
-# FILE 22/23: world/rows.py (START)
+# FILE 20/23: world/_rows.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -2626,12 +2468,368 @@ class ROWS:
 # use also the methods in ROW as much as possible to avoid redoing work that is already done there!!!
 
 ################################################################################
-# FILE 22/23: world/rows.py (END)
+# FILE 20/23: world/_rows.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 23/23: world/rows_.py (START)
+# FILE 21/23: world/materials.py (START)
+################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MATERIALS:
+    TYPES = {
+        "INVIS": 0,     # start at 16384                # invisible
+        "TRANS": 1,     # start at 32768                # transparent
+        "SOLID": 2,     # start at 65536                # solid
+        "ROCKS": 3,     # start at 4294967296           # indestructible
+    }
+
+    DATA  = {
+        "AIR":      (16384+0,     TYPES["INVIS"]),
+
+        "WATER":    (32768+0,     TYPES["TRANS"]), 
+        "LAVA":     (32768+1,     TYPES["TRANS"]),
+        "GLASS":    (32768+2,     TYPES["TRANS"]),
+
+        "STONE":    (65536+0,     TYPES["SOLID"]),
+        "OBSIDIAN": (65536+1,     TYPES["SOLID"]),
+
+        "BEDROCK":  (4294967296+0,TYPES["ROCKS"]),
+    }
+
+    IDX = {name: i for i, name in enumerate(DATA.keys())}
+
+    NUM = len(DATA)
+
+class Material:
+    def __init__(self, name:str=None) -> None:
+        self.id, self.type = MATERIALS.DATA.get(name, (None, None)) 
+        self.idx = MATERIALS.IDX.get(name, None) 
+        if self.id is None or self.type is None or self.idx is None:
+            raise ValueError(f"Invalid material name: {name}")
+
+    def isrocks(self) -> bool:
+        return self.type == MATERIALS.TYPES["ROCKS"]
+
+    def issolid(self) -> bool:
+        return self.type == MATERIALS.TYPES["SOLID"]
+    
+    def istrans(self) -> bool:
+        return self.type == MATERIALS.TYPES["TRANS"]
+    
+    def isinvisible(self) -> bool:
+        return self.type == MATERIALS.TYPES["INVIS"]
+    
+    def isindestructible(self) -> bool:
+        return self.type == MATERIALS.TYPES["ROCKS"]
+
+class Materials:
+    idx2name = {idx: name for name, idx in MATERIALS.IDX.items()}
+    name2idx = MATERIALS.IDX
+
+    name2id  = {name: pair[0] for name, pair in MATERIALS.DATA.items()}
+    id2name  = {pair[0]: name for name, pair in MATERIALS.DATA.items()}
+
+    # the one you actually need:
+    id2idx   = {pair[0]: MATERIALS.IDX[name] for name, pair in MATERIALS.DATA.items()}
+    idx2id   = {MATERIALS.IDX[name]: pair[0] for name, pair in MATERIALS.DATA.items()}
+
+
+    def __init__(self) -> None:
+        for name in MATERIALS.DATA.keys():
+            setattr(self, name.lower(), Material(name=name))
+
+    def idx(self, name: str = None, id: int = None) -> int:
+        if (name is None) == (id is None):
+            raise ValueError("Provide exactly one of name or id")
+        return self.name2idx[name] if name is not None else self.id2idx[id]
+
+    def id(self, name: str = None, idx: int = None) -> int:
+        if (name is None) == (idx is None):
+            raise ValueError("Provide exactly one of name or idx")
+        return self.name2id[name] if name is not None else self.idx2id[idx]
+
+    def name(self, id: int = None, idx: int = None) -> str:
+        if (id is None) == (idx is None):
+            raise ValueError("Provide exactly one of id or idx")
+        return self.id2name[id] if id is not None else self.idx2name[idx]
+
+
+################################################################################
+# FILE 21/23: world/materials.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 22/23: world/row.py (START)
+################################################################################
+
+from __future__ import annotations
+import stat
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    pass
+
+
+
+import numpy as np
+from numpy.typing import NDArray
+
+
+from utils.types import SIZE, POS
+from world.materials import Material, Materials
+
+
+
+
+
+class ROW:
+    DTYPE = np.uint64
+    SHAPE = (4, 4)
+    NBITS = DTYPE(0).nbytes * 8                      # -> 64 bits
+
+    XBITS = 20
+    YBITS = 20
+    ZBITS = 16
+    if XBITS + YBITS + ZBITS + 1 > NBITS:
+        raise ValueError("bit allocation error")
+
+    XMIN = 0
+    YMIN = 0
+    ZMIN = 0
+    XMAX = 2**XBITS
+    YMAX = 2**YBITS
+    ZMAX = 2**ZBITS
+    NMAX = XMAX * YMAX * ZMAX
+    
+
+    # POSITIONS (MIN) — stored in row 0
+    IDS_X0 = (0, 0)
+    IDS_Y0 = (0, 1)
+    IDS_Z0 = (0, 2)
+
+    # POSITIONS (MAX) — stored in row 1
+    IDS_X1 = (1, 0)
+    IDS_Y1 = (1, 1)
+    IDS_Z1 = (1, 2)
+
+    # DIMENSIONS — stored in row 2
+    IDS_DX = (2, 0)
+    IDS_DY = (2, 1)
+    IDS_DZ = (2, 2)
+
+    # METADATA — stored in row 3
+    IDS_ID    = (3, 0)
+    IDS_MAT   = (3, 1)
+    IDS_FLAGS = (3, 2)
+
+    ENCODE_DIRTY        = DTYPE(1 << 0)
+    ENCODE_ALIVE        = DTYPE(1 << 1)
+    ENCODE_SOLID        = DTYPE(1 << 2)
+    ENCODE_DESTRUCTABLE = DTYPE(1 << 3)
+    ENCODE_VISIBLE      = DTYPE(1 << 4)
+
+    SENTINEL = np.iinfo(DTYPE).max
+    ARRAY: NDArray[DTYPE] = np.zeros(SHAPE, dtype=DTYPE)
+    for i in range(4):
+        for j in range(4):
+            ARRAY[i, j] = SENTINEL  # initialize all to -1 -> invalid
+    _ID = 0
+    
+    @staticmethod # get min position (x0, y0, z0)   
+    def P0(row:NDArray[DTYPE]=None) -> POS:
+        return (int(row[*ROW.IDS_X0]), int(row[*ROW.IDS_Y0]), int(row[*ROW.IDS_Z0]))
+    
+    @staticmethod # get max position (x1, y1, z1)
+    def P1(row:NDArray[DTYPE]=None) -> POS:
+        return (int(row[*ROW.IDS_X1]), int(row[*ROW.IDS_Y1]), int(row[*ROW.IDS_Z1]))
+    
+    @staticmethod # get size (dx, dy, dz)
+    def SIZE(row:NDArray[DTYPE]=None) -> SIZE:
+        return (int(row[*ROW.IDS_DX]), int(row[*ROW.IDS_DY]), int(row[*ROW.IDS_DZ]))
+    
+    @staticmethod # get material id
+    def MID(row:NDArray[DTYPE]=None) -> int:
+        return int(row[*ROW.IDS_MAT])
+    
+    @staticmethod # get meterial string name
+    def MAT(row:NDArray[DTYPE]=None) -> str:
+        return Materials.id2name[ROW.MID(row=row)]
+    
+    @staticmethod # get row id
+    def RID(row:NDArray[DTYPE]=None) -> int:
+        return int(row[*ROW.IDS_ID])
+    
+    @staticmethod # get flags
+    def FLAGS(row:NDArray[DTYPE]=None) -> tuple[bool, bool, bool, bool, bool]:
+        flags: int = int(row[*ROW.IDS_FLAGS])
+        dirty, alive, solid, destr, visib = ROW.DECODE(flags=flags)
+        return (dirty, alive, solid, destr, visib)
+    
+    @staticmethod # get volume (dx * dy * dz)
+    def VOLUME(row:NDArray[DTYPE]=None) -> int:
+        dx, dy, dz = ROW.SIZE(row=row)
+        return dx * dy * dz
+
+    @staticmethod # make a copy of the template array
+    def COPY() -> NDArray[DTYPE]:
+        return np.copy(ROW.ARRAY)
+    
+    @staticmethod
+    def CLIP(pos:POS=None) -> POS:
+        x, y, z = pos
+        cx = min(max(x, ROW.XMIN), ROW.XMAX - 1)
+        cy = min(max(y, ROW.YMIN), ROW.YMAX - 1)
+        cz = min(max(z, ROW.ZMIN), ROW.ZMAX - 1)
+        pos: POS = (cx, cy, cz)
+        return pos
+    
+    @staticmethod
+    def SORT(p0:POS=None, p1:POS=None) -> tuple[POS, POS]:
+        x0, y0, z0 = p0
+        x1, y1, z1 = p1
+        sx0, sx1 = (min(x0, x1), max(x0, x1))
+        sy0, sy1 = (min(y0, y1), max(y0, y1))
+        sz0, sz1 = (min(z0, z1), max(z0, z1))
+        p0: POS = (sx0, sy0, sz0)
+        p1: POS = (sx1, sy1, sz1)
+        return (p0, p1)
+    
+    @staticmethod
+    def CONTAINS(row: NDArray[DTYPE], pos: POS) -> bool:
+        x, y, z = pos
+        x0, y0, z0 = ROW.P0(row=row)
+        x1, y1, z1 = ROW.P1(row=row)
+        return (
+            (x0 <= x < x1) and
+            (y0 <= y < y1) and
+            (z0 <= z < z1)
+        )
+    
+    @staticmethod
+    def MERGE(row0: NDArray[DTYPE]=None, row1: NDArray[DTYPE]=None) -> tuple[bool, bool, bool]:
+        if row0[*ROW.IDS_MAT] != row1[*ROW.IDS_MAT]:
+            return (False, False, False)
+
+        x0a, y0a, z0a = ROW.P0(row=row0)
+        x1a, y1a, z1a = ROW.P1(row=row0)
+        x0b, y0b, z0b = ROW.P0(row=row1)
+        x1b, y1b, z1b = ROW.P1(row=row1)
+        p00 = (x0a, y0a, z0a)
+        p01 = (x1a, y1a, z1a)
+        p10 = (x0b, y0b, z0b)
+        p11 = (x1b, y1b, z1b)
+
+        def overlap(a0:int=None, a1:int=None, b0:int=None, b1:int=None) -> bool: return a0 < b1 and b0 < a1
+        def touches(a0:int=None, a1:int=None, b0:int=None, b1:int=None) -> bool: return a1 == b0 or b1 == a0
+
+        touching = [False, False, False]
+        overlaps = [False, False, False]
+
+        for i in range(3):
+            if overlap(a0=p00[i], a1=p01[i], b0=p10[i], b1=p11[i]):
+                overlaps[i] = True
+            elif touches(a0=p00[i], a1=p01[i], b0=p10[i], b1=p11[i]):
+                touching[i] = True
+            else:
+                return (False, False, False)  # separated on this axis
+            
+        if sum(touching) == 1 and sum(overlaps) == 2:
+            return tuple(touching)  # (x_touch, y_touch, z_touch)
+
+        return (False, False, False)
+    
+
+    @staticmethod
+    def ENCODE(dirty:bool=None, alive:bool=None, solid:bool=None, destructable:bool=None, visible:bool=None) -> int:
+        f: int = 0
+        if dirty:
+            f |= int(ROW.ENCODE_DIRTY)
+        if alive:
+            f |= int(ROW.ENCODE_ALIVE)
+        if solid:
+            f |= int(ROW.ENCODE_SOLID)
+        if destructable:
+            f |= int(ROW.ENCODE_DESTRUCTABLE)
+        if visible:
+            f |= int(ROW.ENCODE_VISIBLE)
+        return f
+    
+    @staticmethod
+    def DECODE(flags) -> tuple[bool, bool, bool, bool, bool]:
+        f: int = int(flags)
+
+        dirty = (f & int(ROW.ENCODE_DIRTY)) != 0
+        alive = (f & int(ROW.ENCODE_ALIVE)) != 0
+        solid = (f & int(ROW.ENCODE_SOLID)) != 0
+        destr = (f & int(ROW.ENCODE_DESTRUCTABLE)) != 0
+        visib = (f & int(ROW.ENCODE_VISIBLE)) != 0
+        return dirty, alive, solid, destr, visib
+
+
+
+
+
+
+
+
+                
+
+    @staticmethod
+    def new(p0:POS=None, p1:POS=None, mat:str=None, rid:int=None, dirty:bool=True, alive:bool=True) -> NDArray[DTYPE]:
+        p0, p1 = ROW.SORT(p0=ROW.CLIP(pos=p0), p1=ROW.CLIP(pos=p1))
+        mat: Material = Material(name=mat)
+        flags: int = ROW.ENCODE(dirty=dirty, alive=alive, solid=mat.issolid(), destructable=not mat.isindestructible(), visible=not mat.isinvisible())
+        
+        copy: NDArray[ROW.DTYPE] = ROW.COPY()
+
+        # POS0
+        copy[*ROW.IDS_X0]    = np.uint64(p0[0])
+        copy[*ROW.IDS_Y0]    = np.uint64(p0[1])
+        copy[*ROW.IDS_Z0]    = np.uint64(p0[2])
+        # POS1
+        copy[*ROW.IDS_X1]    = np.uint64(p1[0])
+        copy[*ROW.IDS_Y1]    = np.uint64(p1[1])
+        copy[*ROW.IDS_Z1]    = np.uint64(p1[2])
+        # SIZE
+        copy[*ROW.IDS_DX]    = np.uint64(p1[0] - p0[0])
+        copy[*ROW.IDS_DY]    = np.uint64(p1[1] - p0[1])
+        copy[*ROW.IDS_DZ]    = np.uint64(p1[2] - p0[2])
+        # METADATA
+        copy[*ROW.IDS_ID]    = np.uint64(rid)       # stores now the row index within material array instead of global unique id
+        copy[*ROW.IDS_MAT]   = np.uint64(mat.id)
+        copy[*ROW.IDS_FLAGS] = np.uint64(flags)
+
+        if any(v < 0 for v in (copy[*ROW.IDS_DX], copy[*ROW.IDS_DY], copy[*ROW.IDS_DZ])):
+            raise ValueError("p1 must be greater than or equal to p0 on all axes")
+        if any(v < 0 for v in (copy[*ROW.IDS_X0], copy[*ROW.IDS_Y0], copy[*ROW.IDS_Z0])):
+            raise ValueError("positions must be non-negative")
+        return copy
+    
+    
+
+################################################################################
+# FILE 22/23: world/row.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 23/23: world/rows.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -2645,9 +2843,10 @@ from numpy.typing import NDArray
 
 from world.row import ROW
 from utils.bvh import BVH
+from utils.mdx import MDX
 from world.materials import Materials, MATERIALS
 from utils.types import POS, SIZE
-from utils.mdx import MDX
+
 
 
 ARRAY_ARIDS = tuple[NDArray[ROW.DTYPE], dict[int, int]]
@@ -3084,7 +3283,7 @@ class ROWS:
 
 
 ################################################################################
-# FILE 23/23: world/rows_.py (END)
+# FILE 23/23: world/rows.py (END)
 ################################################################################
 
 
@@ -3092,33 +3291,44 @@ class ROWS:
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-10 mines to be created at random positions.
-Performing SWEEP to consolidate AIR rows... AIR rows before: 10 in sweep iteration: 1
- No more AIR rows could be consolidated. Stopping SWEEP.
-Material AIR has 10 rows after SWEEP tests.
-  AIR row 0: p0=(766453, 927958, 15739), p1=(766458, 927963, 15744)
-  AIR row 1: p0=(135396, 155738, 58417), p1=(135401, 155743, 58422)
-  AIR row 2: p0=(306237, 216104, 30185), p1=(306242, 216109, 30190)
-  AIR row 3: p0=(521075, 110792, 48800), p1=(521080, 110797, 48805)
-  AIR row 4: p0=(248743, 990989, 43322), p1=(248748, 990994, 43327)
-  AIR row 5: p0=(666312, 455790, 61513), p1=(666317, 455795, 61518)
-  AIR row 6: p0=(583911, 222538, 48060), p1=(583916, 222543, 48065)
-  AIR row 7: p0=(712630, 838599, 61676), p1=(712635, 838604, 61681)
-  AIR row 8: p0=(859880, 423158, 40845), p1=(859885, 423163, 40850)
-  AIR row 9: p0=(889446, 5880, 2036), p1=(889451, 5885, 2041)
-Material WATER has 0 rows after SWEEP tests.
-Material LAVA has 0 rows after SWEEP tests.
-Material GLASS has 0 rows after SWEEP tests.
-Material STONE has 51 rows after SWEEP tests.
-Material OBSIDIAN has 0 rows after SWEEP tests.
-Material BEDROCK has 0 rows after SWEEP tests.
-air rows= 10 stone rows= 51
-main.py: executed in: lap 2: 2.93154 seconds, total 2.966397 seconds
+WORLD VOLUME BEFORE: 72056357089509375
+ - carved 10/50 boxes
+ - carved 20/50 boxes
+ - carved 30/50 boxes
+ - carved 40/50 boxes
+ - carved 50/50 boxes
+WORLD VOLUME AFTER: 72056357089509375
+AIR VOLUME: 667479 EXPECTED (sum boxes): 667479
+test4 OK: air_rows=50 stone_rows=251
+WORLD VOLUME BEFORE: 838860800
+Initial rows: stone_rows=1 air_rows=0
+Traceback (most recent call last):
+  File "c:\VOXELS\main.py", line 378, in main
+    test5()
+    ~~~~~^^
+  File "c:\VOXELS\main.py", line 327, in test5
+    rows.split(pos=p0, pos1=p1, mat="AIR")
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 259, in split
+    return self.split2(p0=pos, p1=pos1, mat=mat)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 237, in split2
+    b, a = self.split2(p0=(p0[0], p0[1], q1[2]), p1=(q1[0], q1[1], p1[2]), mat=mat)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 208, in split2
+    mat0, rid, row = self.search(pos=p0)
+                     ~~~~~~~~~~~^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 140, in search
+    mat, rid, row = self.bvh.search(pos=pos)
+                    ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "c:\VOXELS\utils\bvh.py", line 295, in search
+    raise LookupError("[ERROR] BVH.search() failed: point not found (partition invariant violated or BVH not updated)")
+LookupError: [ERROR] BVH.search() failed: point not found (partition invariant violated or BVH not updated)
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3120
+# Total lines in bundle: 3330
 # Total files in bundle: 23
-# Generated at the time: 2026-01-30T18:51:42
+# Generated at the time: 2026-01-30T18:56:15
 --- END OF FILE ---

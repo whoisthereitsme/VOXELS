@@ -168,6 +168,200 @@ def test3() -> None:
     print(f"air rows= {rows.nrows(mat='AIR')}", f"stone rows= {rows.nrows(mat='STONE')}")
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+def test4() -> None:
+    """
+    test4:
+    Split off multiple *single-row-contained* regions (boxes fully inside one existing row),
+    then merge to consolidate and verify:
+    - total world volume stays constant
+    - AIR volume equals sum of carved boxes
+    - a bunch of random points inside carved boxes are AIR
+    - a bunch of random points outside carved boxes are NOT AIR
+    """
+    rows = ROWS()
+    v0 = rows.volume()
+    print("WORLD VOLUME BEFORE:", v0)
+
+    # We'll carve boxes that are guaranteed to fit inside the initial STONE row.
+    # Keep them well away from borders and reasonably small.
+    boxes: list[tuple[POS, POS]] = []
+    total_air_vol = 0
+
+    for i in range(50):
+        dx = random.randint(4, 48)
+        dy = random.randint(4, 48)
+        dz = random.randint(4, 32)
+
+        x0 = random.randint(2000, 900000)
+        y0 = random.randint(2000, 900000)
+        z0 = random.randint(2000, 60000)
+
+        p0 = (x0, y0, z0)
+        p1 = (x0 + dx, y0 + dy, z0 + dz)
+
+        # split2 expects p0/p1 in any order, but keep it clean
+        p0, p1 = ROW.SORT(p0=p0, p1=p1)
+
+        rows.split(pos=p0, pos1=p1, mat="AIR")
+        boxes.append((p0, p1))
+        total_air_vol += (p1[0] - p0[0]) * (p1[1] - p0[1]) * (p1[2] - p0[2])
+
+        if (i + 1) % 10 == 0:
+            print(f" - carved {i+1}/50 boxes")
+
+    # One last global merge to consolidate as much as possible
+    rows.merge()
+
+    v1 = rows.volume()
+    print("WORLD VOLUME AFTER:", v1)
+    assert v1 == v0, f"volume changed: before={v0}, after={v1}"
+
+    # Compute AIR volume by summing all AIR rows volumes
+    air_mid = Materials.name2idx["AIR"]
+    air_vol = 0
+    for rid in range(rows.n[air_mid]):
+        air_vol += ROW.VOLUME(row=rows.array[air_mid][rid])
+    print("AIR VOLUME:", air_vol, "EXPECTED (sum boxes):", total_air_vol)
+    assert air_vol == total_air_vol, f"AIR volume mismatch: got={air_vol}, expected={total_air_vol}"
+
+    # Random containment checks inside boxes -> must be AIR
+    for _ in range(500):
+        p0, p1 = random.choice(boxes)
+        x = random.randint(p0[0], p1[0] - 1)
+        y = random.randint(p0[1], p1[1] - 1)
+        z = random.randint(p0[2], p1[2] - 1)
+        mat, rid, row = rows.search(pos=(x, y, z))
+        assert mat == "AIR", f"expected AIR at {(x,y,z)}, got {mat} rid={rid}"
+
+    # Random checks outside boxes -> should NOT be AIR (probabilistic; pick points far away)
+    for _ in range(500):
+        x = random.randint(10, 900)
+        y = random.randint(10, 900)
+        z = random.randint(10, 900)
+        mat, rid, row = rows.search(pos=(x, y, z))
+        assert mat != "AIR", f"unexpected AIR at {(x,y,z)}"
+
+    print("test4 OK:",
+          f"air_rows={rows.nrows(mat='AIR')}",
+          f"stone_rows={rows.nrows(mat='STONE')}")
+
+
+def test5() -> None:
+    """
+    test5:
+    Split off regions that *span multiple rows*.
+
+    Build a grid of STONE rows (like in test1 but smaller), then carve AIR boxes that
+    cross row boundaries, and verify:
+    - volume stays constant
+    - AIR volume equals sum of carved boxes
+    - random points inside carved boxes are AIR
+    """
+    rows = ROWS()
+    # Remove the default large STONE row, then build a grid of smaller STONE rows
+    row0 = rows.array[MATERIALS.IDX["STONE"]][0]
+    rows.remove(row=row0)
+
+    cell = 64
+    nx = 20
+    ny = 20
+    nz = 8
+    for ix in range(nx):
+        x0 = ix * cell
+        x1 = x0 + cell
+        for iy in range(ny):
+            y0 = iy * cell
+            y1 = y0 + cell
+            for iz in range(nz):
+                z0 = iz * cell
+                z1 = z0 + cell
+                rows.insert(p0=(x0, y0, z0), p1=(x1, y1, z1), mat="STONE")
+
+    rows.merge()  # optional: consolidate if anything adjacent was inserted
+    v0 = rows.volume()
+    print("WORLD VOLUME BEFORE:", v0)
+    print("Initial rows:",
+          f"stone_rows={rows.nrows(mat='STONE')}",
+          f"air_rows={rows.nrows(mat='AIR')}")
+
+    # Now carve boxes that intentionally cross boundaries:
+    # choose p0 not aligned to cell boundaries and sizes > cell to span multiple cells.
+    boxes: list[tuple[POS, POS]] = []
+    total_air_vol = 0
+
+    max_x = nx * cell
+    max_y = ny * cell
+    max_z = nz * cell
+
+    for i in range(30):
+        dx = random.randint(cell + 5, cell * 3)
+        dy = random.randint(cell + 5, cell * 3)
+        dz = random.randint(cell + 5, cell * 2)
+
+        x0 = random.randint(5, max_x - dx - 5)
+        y0 = random.randint(5, max_y - dy - 5)
+        z0 = random.randint(5, max_z - dz - 5)
+
+        # offset to avoid perfectly aligned starts
+        x0 += random.randint(1, cell - 2)
+        y0 += random.randint(1, cell - 2)
+        z0 += random.randint(1, cell - 2)
+
+        p0 = (x0, y0, z0)
+        p1 = (x0 + dx, y0 + dy, z0 + dz)
+        p0, p1 = ROW.SORT(p0=p0, p1=p1)
+
+        rows.split(pos=p0, pos1=p1, mat="AIR")
+        boxes.append((p0, p1))
+        total_air_vol += (p1[0] - p0[0]) * (p1[1] - p0[1]) * (p1[2] - p0[2])
+
+        if (i + 1) % 10 == 0:
+            print(f" - carved {i+1}/30 spanning boxes")
+
+    rows.merge()
+
+    v1 = rows.volume()
+    print("WORLD VOLUME AFTER:", v1)
+    assert v1 == v0, f"volume changed: before={v0}, after={v1}"
+
+    # AIR volume check
+    air_mid = Materials.name2idx["AIR"]
+    air_vol = 0
+    for rid in range(rows.n[air_mid]):
+        air_vol += ROW.VOLUME(row=rows.array[air_mid][rid])
+    print("AIR VOLUME:", air_vol, "EXPECTED (sum boxes):", total_air_vol)
+    assert air_vol == total_air_vol, f"AIR volume mismatch: got={air_vol}, expected={total_air_vol}"
+
+    # Random containment checks inside carved boxes -> must be AIR
+    for _ in range(1000):
+        p0, p1 = random.choice(boxes)
+        x = random.randint(p0[0], p1[0] - 1)
+        y = random.randint(p0[1], p1[1] - 1)
+        z = random.randint(p0[2], p1[2] - 1)
+        mat, rid, row = rows.search(pos=(x, y, z))
+        assert mat == "AIR", f"expected AIR at {(x,y,z)}, got {mat} rid={rid}"
+
+    print("test5 OK:",
+          f"air_rows={rows.nrows(mat='AIR')}",
+          f"stone_rows={rows.nrows(mat='STONE')}")
+
+
+
+
+
 def main(test=[]) -> None:
     timer.lap()
     with Bundle():
@@ -178,6 +372,10 @@ def main(test=[]) -> None:
                 test2()
             if 3 in test:
                 test3()
+            if 4 in test:
+                test4()
+            if 5 in test:
+                test5()
             timer.print(msg="main.py: executed in")
         except Exception:
             traceback.print_exc()
@@ -187,5 +385,5 @@ def main(test=[]) -> None:
 
 
 if __name__ == "__main__":
-    main(test=[3])
+    main(test=[4, 5])
     
