@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T19:10:34
+#Time when generated: 2026-01-30T19:11:33
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -699,14 +699,14 @@ def test2() -> None:
         print(f"Material {Materials.idx2name[i]} has {n} rows after SPLIT tests.")
     
     print("WORLD VOLUME AFTER: ", rows.volume())
-    timer.print(msg="STARTING STEP 4 : Now testing SWEEP functionality...")
-    rows.sweep()
-    timer.print(msg=" - SWEEP completed in")
-    print("WORLD VOLUME AFTER SWEEP: ", rows.volume())
+    timer.print(msg="STARTING STEP 4 : Now testing MERGE functionality...")
+    rows.merge()
+    timer.print(msg=" - MERGE completed in")
+    print("WORLD VOLUME AFTER MERGE: ", rows.volume())
 
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
-        print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
+        print(f"Material {Materials.idx2name[i]} has {n} rows after MERGE tests.")
 
 
 def test3() -> None:
@@ -731,18 +731,18 @@ def test3() -> None:
 
     rowsbefore = rows.nrows(mat="AIR")
     for i in range(10):
-        print("Performing SWEEP to consolidate AIR rows... AIR rows before:", rows.nrows(mat="AIR"), "in sweep iteration:", i+1)
+        print("Performing MERGE to consolidate AIR rows... AIR rows before:", rows.nrows(mat="AIR"), "in merge iteration:", i+1)
         rows.merge()
         rowsafter = rows.nrows(mat="AIR")
         if rowsafter == rowsbefore:
-            print(" No more AIR rows could be consolidated. Stopping SWEEP.")
+            print(" No more AIR rows could be consolidated. Stopping MERGE.")
             break
         rowsbefore = rowsafter
 
 
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
-        print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
+        print(f"Material {Materials.idx2name[i]} has {n} rows after MERGE tests.")
         if "AIR"==Materials.idx2name[i]:
             for j in range(n):
                 row = rows.array[i][j]
@@ -3298,15 +3298,15 @@ class ROWS:
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.687507 seconds, total 5.701915 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 175.82 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.001483 seconds, total 5.703398 seconds
+STEP 1 :  3D grid partition built: lap 3: 5.644329 seconds, total 5.663476 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 177.17 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.002592 seconds, total 5.666067 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.421646 seconds, total 6.125044 seconds
+ - All 10000 rows deleted in: lap 5: 0.389452 seconds, total 6.055519 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.625439 seconds, total 6.750483 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1598.88 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.001743 seconds, total 6.752226 seconds
+ - second time 3D grid partition built: lap 6: 0.622443 seconds, total 6.677961 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1606.57 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.001819 seconds, total 6.67978 seconds
 WORLD VOLUME BEFORE:  72056357089509375
  - SPLIT test 1/10 passed.
  - SPLIT test 2/10 passed.
@@ -3326,20 +3326,59 @@ Material STONE has 51 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
 WORLD VOLUME AFTER:  72056357089509375
-STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.055112 seconds, total 6.807338 seconds
-Traceback (most recent call last):
-  File "c:\VOXELS\main.py", line 377, in main
-    test2()
-    ~~~~~^^
-  File "c:\VOXELS\main.py", line 118, in test2
-    rows.sweep()
-    ^^^^^^^^^^
-AttributeError: 'ROWS' object has no attribute 'sweep'
+STARTING STEP 4 : Now testing MERGE functionality...: lap 8: 0.056131 seconds, total 6.735911 seconds
+ - MERGE completed in: lap 9: 0.000711 seconds, total 6.736622 seconds
+WORLD VOLUME AFTER MERGE:  72056357089509375
+Material AIR has 10 rows after MERGE tests.
+Material WATER has 0 rows after MERGE tests.
+Material LAVA has 0 rows after MERGE tests.
+Material GLASS has 0 rows after MERGE tests.
+Material STONE has 51 rows after MERGE tests.
+Material OBSIDIAN has 0 rows after MERGE tests.
+Material BEDROCK has 0 rows after MERGE tests.
+10 mines to be created at random positions.
+Performing MERGE to consolidate AIR rows... AIR rows before: 10 in merge iteration: 1
+ No more AIR rows could be consolidated. Stopping MERGE.
+Material AIR has 10 rows after MERGE tests.
+  AIR row 0: p0=(418260, 493670, 19358), p1=(418265, 493675, 19363)
+  AIR row 1: p0=(935027, 948478, 19671), p1=(935032, 948483, 19676)
+  AIR row 2: p0=(456663, 189674, 62208), p1=(456668, 189679, 62213)
+  AIR row 3: p0=(297424, 467030, 11768), p1=(297429, 467035, 11773)
+  AIR row 4: p0=(862873, 878255, 20881), p1=(862878, 878260, 20886)
+  AIR row 5: p0=(660151, 843239, 63463), p1=(660156, 843244, 63468)
+  AIR row 6: p0=(318113, 830919, 31680), p1=(318118, 830924, 31685)
+  AIR row 7: p0=(185013, 642293, 46214), p1=(185018, 642298, 46219)
+  AIR row 8: p0=(397986, 808529, 50535), p1=(397991, 808534, 50540)
+  AIR row 9: p0=(579823, 70282, 1580), p1=(579828, 70287, 1585)
+Material WATER has 0 rows after MERGE tests.
+Material LAVA has 0 rows after MERGE tests.
+Material GLASS has 0 rows after MERGE tests.
+Material STONE has 51 rows after MERGE tests.
+Material OBSIDIAN has 0 rows after MERGE tests.
+Material BEDROCK has 0 rows after MERGE tests.
+air rows= 10 stone rows= 51
+WORLD VOLUME BEFORE: 72056357089509375
+ - carved 10/50 boxes
+ - carved 20/50 boxes
+ - carved 30/50 boxes
+ - carved 40/50 boxes
+ - carved 50/50 boxes
+WORLD VOLUME AFTER: 72056357089509375
+AIR VOLUME: 441570 EXPECTED (sum boxes): 441570
+test4 OK: air_rows=50 stone_rows=251
+WORLD VOLUME BEFORE: 838860800
+Initial rows: stone_rows=1 air_rows=0
+ - carved 10/30 boxes
+ - carved 20/30 boxes
+ - carved 30/30 boxes
+WORLD VOLUME AFTER: 838860800
+AIR VOLUME: 45503654
+test5 OK: air_rows=44 stone_rows=207
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3341
+# Total lines in bundle: 3380
 # Total files in bundle: 23
-# Generated at the time: 2026-01-30T19:10:34
+# Generated at the time: 2026-01-30T19:11:33
 --- END OF FILE ---

@@ -114,14 +114,14 @@ def test2() -> None:
         print(f"Material {Materials.idx2name[i]} has {n} rows after SPLIT tests.")
     
     print("WORLD VOLUME AFTER: ", rows.volume())
-    timer.print(msg="STARTING STEP 4 : Now testing SWEEP functionality...")
-    rows.sweep()
-    timer.print(msg=" - SWEEP completed in")
-    print("WORLD VOLUME AFTER SWEEP: ", rows.volume())
+    timer.print(msg="STARTING STEP 4 : Now testing MERGE functionality...")
+    rows.merge()
+    timer.print(msg=" - MERGE completed in")
+    print("WORLD VOLUME AFTER MERGE: ", rows.volume())
 
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
-        print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
+        print(f"Material {Materials.idx2name[i]} has {n} rows after MERGE tests.")
 
 
 def test3() -> None:
@@ -146,18 +146,18 @@ def test3() -> None:
 
     rowsbefore = rows.nrows(mat="AIR")
     for i in range(10):
-        print("Performing SWEEP to consolidate AIR rows... AIR rows before:", rows.nrows(mat="AIR"), "in sweep iteration:", i+1)
+        print("Performing MERGE to consolidate AIR rows... AIR rows before:", rows.nrows(mat="AIR"), "in merge iteration:", i+1)
         rows.merge()
         rowsafter = rows.nrows(mat="AIR")
         if rowsafter == rowsbefore:
-            print(" No more AIR rows could be consolidated. Stopping SWEEP.")
+            print(" No more AIR rows could be consolidated. Stopping MERGE.")
             break
         rowsbefore = rowsafter
 
 
     for i in range(len(rows.array)):
         n = rows.nrows(mat=Materials.idx2name[i])
-        print(f"Material {Materials.idx2name[i]} has {n} rows after SWEEP tests.")
+        print(f"Material {Materials.idx2name[i]} has {n} rows after MERGE tests.")
         if "AIR"==Materials.idx2name[i]:
             for j in range(n):
                 row = rows.array[i][j]
