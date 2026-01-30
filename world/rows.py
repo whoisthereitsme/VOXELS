@@ -201,31 +201,30 @@ class ROWS:
         for mat in self.mats.name2idx.keys():
             self.merge(mat=mat)
 
-    def merges(self, rows:NDArray[ROW.DTYPE]=None) -> int:
+    def merges(self, rows=None) -> int:
         if rows is None:
             return 0
 
         merges = 0
-        seen: set[tuple[int, int]] = set()
-        extra: list[tuple[int, int]] = []
 
+        # build a base seed list once
+        seed: list[tuple[int,int]] = []
         for mid in range(rows.shape[0]):
             for i in range(rows.shape[1] - 1, -1, -1):
                 row = rows[mid][i]
                 if row[*ROW.IDS_ID] == ROW.SENTINEL:
                     continue
-
                 rid = int(row[*ROW.IDS_ID])
-                if rid < 0 or rid >= self.n[mid]:
-                    continue
-
-                extra.append((mid, rid))
+                if 0 <= rid < self.n[mid]:
+                    seed.append((mid, rid))
 
         for ax in range(3):
+            extra = seed[:]          # fresh worklist for this axis
+            seen: set[tuple[int,int]] = set()
+
             while extra:
                 mid, rid = extra.pop()
-
-                if rid < 0 or rid >= self.n[mid]:
+                if not (0 <= rid < self.n[mid]):
                     continue
 
                 key = (mid, rid)
@@ -240,24 +239,21 @@ class ROWS:
                     continue
 
                 pmid, prid = partner
-                if pmid != mid or prid < 0 or prid >= self.n[mid]:
+                if pmid != mid or not (0 <= prid < self.n[mid]):
                     continue
 
                 if self.merge_pair(mat=mat, rid_a=rid, rid_b=prid):
                     merges += 1
-
-                    # merged row is appended at end
                     new_rid = self.n[mid] - 1
+
+                    # keep working on THIS axis until it can't merge further
                     extra.append((mid, new_rid))
 
-                    # optional: push neighbors too (if you implement it)
+                    # optional neighbor push
                     if hasattr(self.mdx, "neighbors_of"):
                         extra.extend(self.mdx.neighbors_of(mid=mid, rid=new_rid))
 
-                    break  # rid invalid now
-
         return merges
-
 
 
     def __repr__(self) -> str:

@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-30T14:24:30
+#Time when generated: 2026-01-30T14:27:10
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2329,31 +2329,30 @@ class ROWS:
         for mat in self.mats.name2idx.keys():
             self.merge(mat=mat)
 
-    def merges(self, rows:NDArray[ROW.DTYPE]=None) -> int:
+    def merges(self, rows=None) -> int:
         if rows is None:
             return 0
 
         merges = 0
-        seen: set[tuple[int, int]] = set()
-        extra: list[tuple[int, int]] = []
 
+        # build a base seed list once
+        seed: list[tuple[int,int]] = []
         for mid in range(rows.shape[0]):
             for i in range(rows.shape[1] - 1, -1, -1):
                 row = rows[mid][i]
                 if row[*ROW.IDS_ID] == ROW.SENTINEL:
                     continue
-
                 rid = int(row[*ROW.IDS_ID])
-                if rid < 0 or rid >= self.n[mid]:
-                    continue
-
-                extra.append((mid, rid))
+                if 0 <= rid < self.n[mid]:
+                    seed.append((mid, rid))
 
         for ax in range(3):
+            extra = seed[:]          # fresh worklist for this axis
+            seen: set[tuple[int,int]] = set()
+
             while extra:
                 mid, rid = extra.pop()
-
-                if rid < 0 or rid >= self.n[mid]:
+                if not (0 <= rid < self.n[mid]):
                     continue
 
                 key = (mid, rid)
@@ -2368,24 +2367,21 @@ class ROWS:
                     continue
 
                 pmid, prid = partner
-                if pmid != mid or prid < 0 or prid >= self.n[mid]:
+                if pmid != mid or not (0 <= prid < self.n[mid]):
                     continue
 
                 if self.merge_pair(mat=mat, rid_a=rid, rid_b=prid):
                     merges += 1
-
-                    # merged row is appended at end
                     new_rid = self.n[mid] - 1
+
+                    # keep working on THIS axis until it can't merge further
                     extra.append((mid, new_rid))
 
-                    # optional: push neighbors too (if you implement it)
+                    # optional neighbor push
                     if hasattr(self.mdx, "neighbors_of"):
                         extra.extend(self.mdx.neighbors_of(mid=mid, rid=new_rid))
 
-                    break  # rid invalid now
-
         return merges
-
 
 
     def __repr__(self) -> str:
@@ -2410,15 +2406,15 @@ rows = ROWS()
 ### CAPTURED OUTPUT (STDOUT/STDERR) ###
 ################################################################################
 
-STEP 1 :  3D grid partition built: lap 3: 5.751272 seconds, total 5.787291 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 173.87 lookups/second
- - Random CONTAINS checks completed in: lap 4: 0.002083 seconds, total 5.789373 seconds
+STEP 1 :  3D grid partition built: lap 3: 5.743421 seconds, total 5.779358 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 174.11 lookups/second
+ - Random CONTAINS checks completed in: lap 4: 0.001561 seconds, total 5.780919 seconds
  - Now deleting all rows...
- - All 10000 rows deleted in: lap 5: 0.396384 seconds, total 6.185758 seconds
+ - All 10000 rows deleted in: lap 5: 0.41307 seconds, total 6.193989 seconds
 STEP 2 : Rebuilding rows after deletion...
- - second time 3D grid partition built: lap 6: 0.626271 seconds, total 6.812028 seconds
- - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1596.75 lookups/second
- - Second random CONTAINS checks completed in: lap 7: 0.00216 seconds, total 6.814188 seconds
+ - second time 3D grid partition built: lap 6: 0.621402 seconds, total 6.815392 seconds
+ - All random CONTAINS checks passed. Successes: 0, Fails: 1000 is a succes percentage of 0.00% adn per lookup 1609.26 lookups/second
+ - Second random CONTAINS checks completed in: lap 7: 0.001471 seconds, total 6.816863 seconds
 WORLD VOLUME BEFORE:  72056357089509375
  - SPLIT test 1/10 passed.
  - SPLIT test 2/10 passed.
@@ -2434,26 +2430,26 @@ Material AIR has 10 rows after SPLIT tests.
 Material WATER has 0 rows after SPLIT tests.
 Material LAVA has 0 rows after SPLIT tests.
 Material GLASS has 0 rows after SPLIT tests.
-Material STONE has 221 rows after SPLIT tests.
+Material STONE has 51 rows after SPLIT tests.
 Material OBSIDIAN has 0 rows after SPLIT tests.
 Material BEDROCK has 0 rows after SPLIT tests.
 WORLD VOLUME AFTER:  72056357089509375
-STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.032915 seconds, total 6.847103 seconds
- - SWEEP completed in: lap 9: 0.022499 seconds, total 6.869603 seconds
+STARTING STEP 4 : Now testing SWEEP functionality...: lap 8: 0.049428 seconds, total 6.866291 seconds
+ - SWEEP completed in: lap 9: 0.000174 seconds, total 6.866465 seconds
 WORLD VOLUME AFTER SWEEP:  72056357089509375
 Material AIR has 10 rows after SWEEP tests.
 Material WATER has 0 rows after SWEEP tests.
 Material LAVA has 0 rows after SWEEP tests.
 Material GLASS has 0 rows after SWEEP tests.
-Material STONE has 74 rows after SWEEP tests.
+Material STONE has 51 rows after SWEEP tests.
 Material OBSIDIAN has 0 rows after SWEEP tests.
 Material BEDROCK has 0 rows after SWEEP tests.
-main.py: executed in: lap 10: 0.000875 seconds, total 6.870478 seconds
+main.py: executed in: lap 10: 0.000669 seconds, total 6.867133 seconds
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 2455
+# Total lines in bundle: 2451
 # Total files in bundle: 22
-# Generated at the time: 2026-01-30T14:24:30
+# Generated at the time: 2026-01-30T14:27:10
 --- END OF FILE ---
