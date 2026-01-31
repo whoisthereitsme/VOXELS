@@ -29,7 +29,8 @@ class Miner:
 
     def init(self) -> None:
         self.id:int         = self.getid()
-        self.nframes:int    = self.seconds * 60 if not self.floor else self.seconds * 60 * (self.size[0] * self.size[1]) + random.randint(-30*60, 30*60)  # to spread out floor miners
+        self.nframes:int    = self.seconds * 60 if not self.floor else self.seconds * 60 * (self.size[0] * self.size[1])
+        self.nframes += random.randint(-0.5*self.nframes, 0.5*self.nframes)  # add jitter
         self.frame:int      = self.getframe()
 
         self.minepos0:POS    = self.pos
