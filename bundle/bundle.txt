@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T04:21:26
+#Time when generated: 2026-01-31T04:21:50
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -3943,14 +3943,14 @@ class ROWS:
 
 === RUNNING TEST 1/1: test6 ===
 === TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
-test6: search() [tests=10]: lap 3: 0.009039 seconds
-test6: split1 (point split) [tests=10]: lap 5: 0.084611 seconds
-test6: split2 (region split) [tests=10]: lap 7: 2.193053 seconds
-test6: merge() [tests=10]: lap 9: 0.145057 seconds
-test6: remove() [tests=10]: lap 11: 0.000466 seconds
-test6: insert() [tests=10]: lap 13: 0.000761 seconds
+test6: search() [tests=10]: lap 3: 0.009644 seconds
+test6: split1 (point split) [tests=10]: lap 5: 0.083636 seconds
+test6: split2 (region split) [tests=10]: lap 7: 1.996832 seconds
+test6: merge() [tests=10]: lap 9: 0.125582 seconds
+test6: remove() [tests=10]: lap 11: 0.000412 seconds
+test6: insert() [tests=10]: lap 13: 0.000787 seconds
 === TEST6 DONE ===
-=== TEST 1/1: test6 PASSED in 0.001 seconds ===
+=== TEST 1/1: test6 PASSED in 0.000 seconds ===
 
 
 ################################################################################
@@ -3958,5 +3958,5 @@ test6: insert() [tests=10]: lap 13: 0.000761 seconds
 ################################################################################
 # Total lines in bundle: 3958
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T04:21:26
+# Generated at the time: 2026-01-31T04:21:50
 --- END OF FILE ---
