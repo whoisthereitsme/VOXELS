@@ -110,7 +110,7 @@ class MDX:
             del m[key]
 
 
-    def search(self, r: Row, axis: int) -> Optional[Row]:
+    def search(self, r:Row, axis:int) -> Optional[Row]:
         """
         Find ONE merge-candidate neighbor (same material) touching on `axis`.
 

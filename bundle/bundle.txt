@@ -1,12 +1,12 @@
-#Time when generated: 2026-01-31T10:04:25
+#Time when generated: 2026-01-31T12:35:05
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
-Files included: 43
+Files included: 44
 
 
 ################################################################################
-# FILE 1/43: __init__.py (START)
+# FILE 1/44: __init__.py (START)
 ################################################################################
 
 import utils
@@ -17,12 +17,12 @@ __all__ = world.__all__ + utils.__all__ + bundle.__all__
 
 
 ################################################################################
-# FILE 1/43: __init__.py (END)
+# FILE 1/44: __init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 2/43: __main__.py (START)
+# FILE 2/44: __main__.py (START)
 ################################################################################
 
 from main import main
@@ -31,12 +31,12 @@ if __name__ == "__main__":
     main()
 
 ################################################################################
-# FILE 2/43: __main__.py (END)
+# FILE 2/44: __main__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 3/43: all/__init__.py (START)
+# FILE 3/44: all/__init__.py (START)
 ################################################################################
 
 from bundle import *
@@ -59,12 +59,12 @@ for name in __all__:
     print(f" - {name}")
 
 ################################################################################
-# FILE 3/43: all/__init__.py (END)
+# FILE 3/44: all/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 4/43: bundle/__init__.py (START)
+# FILE 4/44: bundle/__init__.py (START)
 ################################################################################
 
 from .bundle import *
@@ -76,12 +76,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 4/43: bundle/__init__.py (END)
+# FILE 4/44: bundle/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 5/43: bundle/bundle.py (START)
+# FILE 5/44: bundle/bundle.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -344,12 +344,12 @@ class Bundle:
 
 
 ################################################################################
-# FILE 5/43: bundle/bundle.py (END)
+# FILE 5/44: bundle/bundle.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 6/43: bundle/github.py (START)
+# FILE 6/44: bundle/github.py (START)
 ################################################################################
 
 import base64
@@ -562,12 +562,12 @@ class GitHub:
 
 
 ################################################################################
-# FILE 6/43: bundle/github.py (END)
+# FILE 6/44: bundle/github.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 7/43: credentials/__init__.py (START)
+# FILE 7/44: credentials/__init__.py (START)
 ################################################################################
 
 from .environ import Environ
@@ -577,12 +577,12 @@ __all__ = [
 ]   
 
 ################################################################################
-# FILE 7/43: credentials/__init__.py (END)
+# FILE 7/44: credentials/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 8/43: credentials/environ.py (START)
+# FILE 8/44: credentials/environ.py (START)
 ################################################################################
 
 
@@ -603,12 +603,12 @@ class Environ:
 
 
 ################################################################################
-# FILE 8/43: credentials/environ.py (END)
+# FILE 8/44: credentials/environ.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 9/43: main.py (START)
+# FILE 9/44: main.py (START)
 ################################################################################
 
 from all import *
@@ -621,12 +621,12 @@ if __name__ == "__main__":
     tests(tests=[test8])
 
 ################################################################################
-# FILE 9/43: main.py (END)
+# FILE 9/44: main.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 10/43: tests/__init__.py (START)
+# FILE 10/44: tests/__init__.py (START)
 ################################################################################
 
 
@@ -657,12 +657,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 10/43: tests/__init__.py (END)
+# FILE 10/44: tests/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 11/43: tests/test1.py (START)
+# FILE 11/44: tests/test1.py (START)
 ################################################################################
 
 # tests/test1.py
@@ -786,12 +786,12 @@ def test1() -> None:
     timer.print(msg=" - STEP 2 lookups completed in")
 
 ################################################################################
-# FILE 11/43: tests/test1.py (END)
+# FILE 11/44: tests/test1.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 12/43: tests/test10.py (START)
+# FILE 12/44: tests/test10.py (START)
 ################################################################################
 
 
@@ -800,12 +800,12 @@ def test10() -> None:
     pass
 
 ################################################################################
-# FILE 12/43: tests/test10.py (END)
+# FILE 12/44: tests/test10.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 13/43: tests/test2.py (START)
+# FILE 13/44: tests/test2.py (START)
 ################################################################################
 
 # tests/test2.py
@@ -864,12 +864,12 @@ def test2() -> None:
         print(f"Material {name} has {n} rows after MERGE tests.")
 
 ################################################################################
-# FILE 13/43: tests/test2.py (END)
+# FILE 13/44: tests/test2.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 14/43: tests/test3.py (START)
+# FILE 14/44: tests/test3.py (START)
 ################################################################################
 
 # tests/test3.py
@@ -938,12 +938,12 @@ def test3() -> None:
     print(f"air rows= {rows.nrows(mat='AIR')}", f"stone rows= {rows.nrows(mat='STONE')}")
 
 ################################################################################
-# FILE 14/43: tests/test3.py (END)
+# FILE 14/44: tests/test3.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 15/43: tests/test4.py (START)
+# FILE 15/44: tests/test4.py (START)
 ################################################################################
 
 # tests/test4.py
@@ -1022,12 +1022,12 @@ def test4() -> None:
     print("test4 OK:", f"air_rows={rows.nrows(mat='AIR')}", f"stone_rows={rows.nrows(mat='STONE')}")
 
 ################################################################################
-# FILE 15/43: tests/test4.py (END)
+# FILE 15/44: tests/test4.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 16/43: tests/test5.py (START)
+# FILE 16/44: tests/test5.py (START)
 ################################################################################
 
 # tests/test5.py
@@ -1130,12 +1130,12 @@ def test5() -> None:
     print("test5 OK:", f"air_rows={rows.nrows(mat='AIR')}", f"stone_rows={rows.nrows(mat='STONE')}")
 
 ################################################################################
-# FILE 16/43: tests/test5.py (END)
+# FILE 16/44: tests/test5.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 17/43: tests/test6.py (START)
+# FILE 17/44: tests/test6.py (START)
 ################################################################################
 
 # tests/test6.py
@@ -1245,12 +1245,12 @@ def test6() -> None:
     print("=== TEST6 DONE ===")
 
 ################################################################################
-# FILE 17/43: tests/test6.py (END)
+# FILE 17/44: tests/test6.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 18/43: tests/test7.py (START)
+# FILE 18/44: tests/test7.py (START)
 ################################################################################
 
 # tests/test7.py
@@ -1372,12 +1372,12 @@ def test7() -> None:
     print("=== TEST7 DONE ===")
 
 ################################################################################
-# FILE 18/43: tests/test7.py (END)
+# FILE 18/44: tests/test7.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 19/43: tests/test8.py (START)
+# FILE 19/44: tests/test8.py (START)
 ################################################################################
 
 from world.buildings.miner import Miner
@@ -1414,12 +1414,12 @@ def test8() -> None:
     print(rows)
 
 ################################################################################
-# FILE 19/43: tests/test8.py (END)
+# FILE 19/44: tests/test8.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 20/43: tests/test9.py (START)
+# FILE 20/44: tests/test9.py (START)
 ################################################################################
 
 
@@ -1431,12 +1431,12 @@ def test9() -> None:
     pass
 
 ################################################################################
-# FILE 20/43: tests/test9.py (END)
+# FILE 20/44: tests/test9.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 21/43: tests/tests.py (START)
+# FILE 21/44: tests/tests.py (START)
 ################################################################################
 
 from utils import *
@@ -1466,12 +1466,12 @@ def tests(tests:list=None) -> None:
             pass
 
 ################################################################################
-# FILE 21/43: tests/tests.py (END)
+# FILE 21/44: tests/tests.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 22/43: TODO.md (START)
+# FILE 22/44: TODO.md (START)
 ################################################################################
 
 
@@ -1487,32 +1487,33 @@ def tests(tests:list=None) -> None:
 # TODO: 
 
 ################################################################################
-# FILE 22/43: TODO.md (END)
+# FILE 22/44: TODO.md (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 23/43: utils/__init__.py (START)
+# FILE 23/44: utils/__init__.py (START)
 ################################################################################
 
 from .request import Request
-
+from .job import Job
 from .includes import *
 from .includes import __all__ as inc
 
 __all__ = [
     "Request",
+    "Job",
 ]
 
 __all__.extend(inc)
 
 ################################################################################
-# FILE 23/43: utils/__init__.py (END)
+# FILE 23/44: utils/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 24/43: utils/bvh.py (START)
+# FILE 24/44: utils/bvh.py (START)
 ################################################################################
 
 # utils/bvh.py
@@ -1737,12 +1738,12 @@ class BVH:
         raise LookupError("point not found")
 
 ################################################################################
-# FILE 24/43: utils/bvh.py (END)
+# FILE 24/44: utils/bvh.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 25/43: utils/event.py (START)
+# FILE 25/44: utils/event.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1775,12 +1776,12 @@ class Handler:
 
 
 ################################################################################
-# FILE 25/43: utils/event.py (END)
+# FILE 25/44: utils/event.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 26/43: utils/includes.py (START)
+# FILE 26/44: utils/includes.py (START)
 ################################################################################
 
 from __future__ import annotations  # MUST BE FIRST
@@ -1867,12 +1868,91 @@ __all__ = [
 # END OF FILE
 
 ################################################################################
-# FILE 26/43: utils/includes.py (END)
+# FILE 26/44: utils/includes.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 27/43: utils/mdx.py (START)
+# FILE 27/44: utils/job.py (START)
+################################################################################
+
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from utils.types import Row
+    from utils.types import POS
+
+
+
+class Job: 
+    id = 0
+    def __init__(self, row:Row=None, axis:int=None, pos:POS=None, job:str=None, cls:str=None) -> None:
+        """
+        - JOBS=["insert", "remove", "search"]
+        - CLSS=["mdx", "bvh"]
+        - ARGS=DEPENDS ON JOB AND CLASS
+         
+        - 1. [bhv args = row] --- [mdx args = row] for insert
+        - 2. [bhv args = row] --- [mdx args = row] for remove
+        - 3. [bhv args = pos] --- [mdx args = row, axis] for search
+
+        """
+        self.row: Row = row
+        self.axis: int = axis
+        self.pos: POS = pos
+        self.job: str = job    # "insert","remove","search"
+        self.cls: str = cls      # "mdx","bvh"
+
+        self.init()
+
+    def init(self) -> None:
+        self.id: int = self.getid()
+        self.result: Row = None
+        self.ready: bool = False
+
+        self.validate()
+
+    def getid(self) -> int:
+        id: int = Job.id
+        Job.id += 1
+        return id
+
+    def validate(self) -> None:
+        # CHECK VALIDITY OF JOB AND CLASS
+        if self.job not in ("insert", "remove", "search"):
+            raise ValueError("Task.job must be 'insert','remove','search'")
+        if self.cls not in ("mdx","bvh"):
+            raise ValueError("Task.cls must be 'mdx','bvh'")
+        
+        # CHECK REQUIRED PARAMS FOR JOB AND CLASS -> WITHOUT THE RIGHT PARAMS THE JOB CANNOT BE DONE
+        if self.job in ("insert","remove") and self.row is None:        # insert/remove needs row
+            raise ValueError("Task.row is required for insert/remove jobs")
+        if self.job == "search":
+            if self.cls == "mdx" and (self.row is None or self.axis is None):   # mdx search needs row and axis
+                raise ValueError("Task.row and Task.axis are required for mdx search jobs")
+            if self.cls == "bvh" and self.pos is None:                          # bvh search needs pos
+                raise ValueError("Task.pos is required for bvh search jobs")
+        
+
+    def finish(self, row:Row=None) -> None:      # only needed for search tasks -> insert/remove dont return anything buit can be marked as done anyway
+        if self.result is None:
+            row = self.row   # for insert/remove tasks we can return the row that was inserted/removed as result (its relevant info and its the same type as search result)
+        self.result:Row = row 
+        self.ready = True   
+
+    def get(self) -> Row|None:  # return result if ready
+        if self.ready==True:
+            return self.result  # at this point result is a Row instence
+        return None             # not ready yet
+
+
+################################################################################
+# FILE 27/44: utils/job.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 28/44: utils/mdx.py (START)
 ################################################################################
 
 # utils/mdx.py
@@ -1987,7 +2067,7 @@ class MDX:
             del m[key]
 
 
-    def search(self, r: Row, axis: int) -> Optional[Row]:
+    def search(self, r:Row, axis:int) -> Optional[Row]:
         """
         Find ONE merge-candidate neighbor (same material) touching on `axis`.
 
@@ -2022,104 +2102,162 @@ class MDX:
         return None
 
 ################################################################################
-# FILE 27/43: utils/mdx.py (END)
+# FILE 28/44: utils/mdx.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 28/43: utils/queue.py (START)
+# FILE 29/44: utils/queue.py (START)
 ################################################################################
 
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
+
 if TYPE_CHECKING:
-    from utils.types import Row
     from utils.mdx import MDX
     from utils.bvh import BVH
-    from utils.types import POS
+    from utils.job import Job
 
 
-from queue import SimpleQueue
+
+from queue import Empty, SimpleQueue
 import threading
 
 
 
 
+
 class Queue:
-    def __init__(self, cls:MDX|BVH=None, lock:threading.Lock=None) -> None:
+    def __init__(self, cls:MDX|BVH=None) -> None:
         self.cls: MDX|BVH = cls
 
         self.init()
         self.start()
 
     def init(self) -> None:
-        self.queueinsert: SimpleQueue = SimpleQueue()
-        self.queueremove: SimpleQueue = SimpleQueue()
-        self.queuesearch: SimpleQueue = SimpleQueue()
-        self.queueanswer: SimpleQueue = SimpleQueue()
+        self.results: dict[str, dict[int, Job]] = {"insert":{}, "remove":{}, "search":{}}
+        self.pending: dict[str, dict[int, Job]] = {"insert":{}, "remove":{}, "search":{}}
+        self.insertjobs, self.insertresp = SimpleQueue(), SimpleQueue()
+        self.removejobs, self.removeresp = SimpleQueue(), SimpleQueue()
+        self.searchjobs, self.searchresp = SimpleQueue(), SimpleQueue()
+
         self.threadinsert = threading.Thread(target=self.runinsert, daemon=True)
         self.threadremove = threading.Thread(target=self.runremove, daemon=True)
         self.threadsearch = threading.Thread(target=self.runsearch, daemon=True)
+        self.threadresult = threading.Thread(target=self.runresult, daemon=True)
 
     def start(self) -> None:    
+        self.running = True
         self.threadinsert.start()
         self.threadremove.start()
         self.threadsearch.start()
+        self.threadresult.start()
 
     def stop(self) -> None:    
+        self.running = False
         self.threadinsert.join()
         self.threadremove.join()
         self.threadsearch.join()
+        self.threadresult.join()
 
     def runinsert(self) -> None:
-         while True:
-            self.cls.insert(row=self.queueinsert.get())
+         while self.running==True:
+            job: Job = self.insertjobs.get()
+            res: Job = self.cls.insert(job=job)
+            self.insertresp.put(res)
 
     def runremove(self) -> None:
-         while True:
-            self.cls.remove(row=self.queueremove.get())
+         while self.running==True:
+            job: Job = self.removejobs.get()
+            res: Job = self.cls.remove(job=job)
+            self.removeresp.put(res)
 
     def runsearch(self) -> None:
-         while True:
-            self.queueanswer.put(self.cls.search(pos=self.queuesearch.get()))
-            
-    def insert(self, row:Row=None) -> None:
-        self.queueinsert.put(row)
+         while self.running==True:
+            job: Job = self.searchjobs.get()
+            result:Job = self.cls.search(job=job)
+            self.searchresp.put(result)
 
-    def remove(self, row:Row=None) -> None:
-        self.queueremove.put(row)
+    def runresult(self) -> None:
+        def save(job:Job=None) -> None:
+            self.results[job.job][job.id] = job   
 
-    def search(self, pos:POS=None) -> any:
-        self.queuesearch.put(pos)
-        return self.queueanswer.get()
+        def tryit(fn:callable=None) -> Job | None:
+            try:
+                job: Job = fn()
+                save(job=job)       # fn() raises the Empty exception if no item was available within that time.
+            except Empty:
+                pass
+            except Exception as e:
+                print(f"[ERROR] Queue.runresult(): unexpected error:\n{e!r}")
+        
+        while self.running==True:
+            workload = self.workload()
+            if workload == 0:
+                wait = 0.001
+            else:
+                wait = 0.0
+            block = True if wait > 0.0 else False
+            tryit(fn=lambda call=self.insertresp.get, time=wait, block=block: call(timeout=time, block=block)) # raises the Empty exception if no item was available within that time.
+            tryit(fn=lambda call=self.removeresp.get, time=0.00, block=False: call(timeout=time, block=block)) # raises the Empty exception if no item was available within that time.
+            tryit(fn=lambda call=self.searchresp.get, time=0.00, block=False: call(timeout=time, block=block)) # raises the Empty exception if no item was available within that time.
 
-    def add(self, row:Row=None, pos:POS=None, insert:bool=False, remove:bool=False) -> None:
-        if row is not None and insert==True:
-            self.insert(row=row)
-        if row is not None and remove==True:
-            self.remove(row=row)
-        if pos is not None and insert==False and remove==False:
-            self.search(pos=pos)
 
-    def get(self) -> Row:
-        return self.queueanswer.get()
+    def insert(self, job:Job=None) -> None:
+        self.insertjobs.put(job)
 
-# and then i ROWS 
+    def remove(self, job:Job=None) -> None:
+        self.removejobs.put(job)
+
+    def search(self, job:Job=None) -> None:
+        self.searchjobs.put(job)
+
+    def job(self, job:Job=None) -> None:
+        # at this point the job is allready distributed to the right class in ROWS.job(job=job) -> send to either mdx or bvh queue
+        # so here i only need to send it to the right method in this queue
+        # NOTE the validation of the right params is done in Job.validate() so here its safe to just call the right method
+        if job.job in ("insert","remove","search")  :
+            self.pending[job.job][job.id] = job   # keep track of pending jobs
+        if job.job == "insert":
+            self.insert(job=job)
+        if job.job == "remove":
+            self.remove(job=job)
+        if job.job == "search":
+            self.search(job=job)
+        
+    def workload(self) -> int:
+        pending = sum(len(v) for v in self.pending.values())
+        results = sum(len(v) for v in self.results.values())
+        return pending - results
+
+    def get(self, task:str=None, id:int=None) -> Job|None:
+        if task not in ("insert","remove","search"):
+            raise ValueError("Queue.get(): task must be 'insert','remove' or 'search'")
+        if id is None:
+            raise ValueError("Queue.get(): id must be provided")
+        job: Job = self.results[task].pop(id, None)
+        if job is not None:
+            self.pending[task].pop(id, None)   # remove from pending as well
+        return job # return the whole job instence so the caller can check if its ready and get the result -> job can be None too!!!
+
+
+
 # self.bvh = Queue(cls=self.bvh)
 # self.mdx = Queue(cls=self.mdx)
-# usage
-# self.bvh.add(row=row, insert=True)
-# self.bvh.add(row=row, remove=True)
-# self.mdx.add(row=row, insert=True)
-# self.mdx.add(row=row, remove=True)
+# usage:
+# self.job(job=job)  # job is an instence of Job -> distributes to the right queue
+# result = self.get(task="search", id=some_id)  # for search jobs only
+# result = self.get(task="insert", id=some_id)  # for insert jobs only
+# result = self.get(task="remove", id=some_id)  # for remove jobs only
 
 ################################################################################
-# FILE 28/43: utils/queue.py (END)
+# FILE 29/44: utils/queue.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 29/43: utils/request.py (START)
+# FILE 30/44: utils/request.py (START)
 ################################################################################
 
 import time
@@ -2176,12 +2314,12 @@ class Request:
             raise RuntimeError(f"[ERROR] unexpected error for {self.url}\n{e!r}") from e
 
 ################################################################################
-# FILE 29/43: utils/request.py (END)
+# FILE 30/44: utils/request.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 30/43: utils/schedule.py (START)
+# FILE 31/44: utils/schedule.py (START)
 ################################################################################
 
 import threading
@@ -2345,12 +2483,12 @@ if __name__ == "__main__":
     sched.stop()
 
 ################################################################################
-# FILE 30/43: utils/schedule.py (END)
+# FILE 31/44: utils/schedule.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 31/43: utils/timer.py (START)
+# FILE 32/44: utils/timer.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -2441,12 +2579,12 @@ class Timer:
 now = Timer.now # now: now() returns the current time in nanoseconds
 
 ################################################################################
-# FILE 31/43: utils/timer.py (END)
+# FILE 32/44: utils/timer.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 32/43: utils/types.py (START)
+# FILE 33/44: utils/types.py (START)
 ################################################################################
 
 from typing import TypeAlias
@@ -2474,12 +2612,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 32/43: utils/types.py (END)
+# FILE 33/44: utils/types.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 33/43: world/__init__.py (START)
+# FILE 34/44: world/__init__.py (START)
 ################################################################################
 
 
@@ -2505,12 +2643,12 @@ __all__.extend(allbuildings)
 __all__.extend(allresources)
 
 ################################################################################
-# FILE 33/43: world/__init__.py (END)
+# FILE 34/44: world/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 34/43: world/buildings/__init__.py (START)
+# FILE 35/44: world/buildings/__init__.py (START)
 ################################################################################
 
 
@@ -2527,12 +2665,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 34/43: world/buildings/__init__.py (END)
+# FILE 35/44: world/buildings/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 35/43: world/buildings/factory.py (START)
+# FILE 36/44: world/buildings/factory.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -2597,12 +2735,12 @@ class Factory:
             
 
 ################################################################################
-# FILE 35/43: world/buildings/factory.py (END)
+# FILE 36/44: world/buildings/factory.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 36/43: world/buildings/miner.py (START)
+# FILE 37/44: world/buildings/miner.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -2693,12 +2831,12 @@ class Miner:
     
 
 ################################################################################
-# FILE 36/43: world/buildings/miner.py (END)
+# FILE 37/44: world/buildings/miner.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 37/43: world/buildings/warehouse.py (START)
+# FILE 38/44: world/buildings/warehouse.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -2771,12 +2909,12 @@ class Warehouse:
         return self.split(request=requested)[0] # what we can provide
 
 ################################################################################
-# FILE 37/43: world/buildings/warehouse.py (END)
+# FILE 38/44: world/buildings/warehouse.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 38/43: world/materials.py (START)
+# FILE 39/44: world/materials.py (START)
 ################################################################################
 
 
@@ -2944,12 +3082,12 @@ class Materials:
         return list(MATERIALS.MID.values())
 
 ################################################################################
-# FILE 38/43: world/materials.py (END)
+# FILE 39/44: world/materials.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 39/43: world/resources/__init__.py (START)
+# FILE 40/44: world/resources/__init__.py (START)
 ################################################################################
 
 from .resource import Resource, RESOURCELIKE
@@ -2962,12 +3100,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 39/43: world/resources/__init__.py (END)
+# FILE 40/44: world/resources/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 40/43: world/resources/resource.py (START)
+# FILE 41/44: world/resources/resource.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -3119,12 +3257,12 @@ class Resource:
     
 
 ################################################################################
-# FILE 40/43: world/resources/resource.py (END)
+# FILE 41/44: world/resources/resource.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 41/43: world/resources/resources.py (START)
+# FILE 42/44: world/resources/resources.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -3246,12 +3384,12 @@ class Resources:
         return self.__repr__()
 
 ################################################################################
-# FILE 41/43: world/resources/resources.py (END)
+# FILE 42/44: world/resources/resources.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 42/43: world/row.py (START)
+# FILE 43/44: world/row.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -3646,12 +3784,12 @@ class ROW:
     
 
 ################################################################################
-# FILE 42/43: world/row.py (END)
+# FILE 43/44: world/row.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 43/43: world/rows.py (START)
+# FILE 44/44: world/rows.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -3667,7 +3805,7 @@ from utils.bvh import BVH
 from utils.mdx import MDX
 from utils.types import POS, SIZE, NDARR, REQS, Row
 from utils.queue import Queue
-
+from utils.job import Job
 
 
 
@@ -3706,26 +3844,27 @@ class ROWS:
 
         # default world row
         self.insert(p0=self.p0, p1=self.p1, mat="STONE")
+        self.jobs: dict[str, dict[int, Job]] = {"insert":{}, "remove":{}, "search":{}}
 
-    # ============================================================
-    # allocation / counters
-    # ============================================================
+    def job(self, task:str=None, cls:str=None, row:Row=None, axis:int=None, pos:POS=None)->Job:
+        job: Job = Job(row=row, axis=axis, pos=pos, job=task, cls=cls)
+        if cls=="bvh":
+            self.bvh.job(job=job)        # no need to check everything here -> job itself is validated in Job class
+        if cls=="mdx":
+            self.mdx.job(job=job)
+        self.jobs[task][job.id] = job
+        return job
 
     def reqs(self, n:int=None)->REQS:
-        n = int(n) if n is not None else 0
-        array = np.full(
-            (MATERIALS.NUM, n, *ROW.SHAPE),
-            fill_value=ROW.SENTINEL,
-            dtype=ROW.DTYPE
-        )
+        array: NDARR = np.full((MATERIALS.NUM, n, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
         arids:dict[int,int] = {mid: 0 for mid in range(MATERIALS.NUM)}
         return (array, arids)
 
     def newn(self, mat:str=None)->int:
         if mat is None:
             raise ValueError("newn requires mat")
-        mid = int(self.mat.mid(name=mat))
-        rid = int(self.arids[mid])
+        mid = self.mat.mid(name=mat)
+        rid = self.arids[mid]
         self.arids[mid] += 1
         self.total += 1
         return rid
@@ -3733,19 +3872,19 @@ class ROWS:
     def deln(self, mat:str=None)->int:
         if mat is None:
             raise ValueError("deln requires mat")
-        mid = int(self.mat.mid(name=mat))
+        mid = self.mat.mid(name=mat)
         if self.arids[mid] <= 0:
             raise ValueError("no rows to free")
         self.arids[mid] -= 1
         self.total -= 1
-        return int(self.arids[mid])
+        return self.arids[mid]
 
     def nrows(self, mat:str=None, mid:int=None)->int:
         if mid is None:
             if mat is None:
                 raise ValueError("nrows requires mat or mid")
-            mid = int(self.mat.mid(name=mat))
-        return int(self.arids[int(mid)])
+            mid = self.mat.mid(name=mat)
+        return self.arids[mid]
 
     # ============================================================
     # Row helpers
@@ -3754,8 +3893,7 @@ class ROWS:
     def get(self, mat:str=None, rid:int=None)->Row:
         if mat is None or rid is None:
             raise ValueError("get requires mat and rid")
-        mid = int(self.mat.mid(name=mat))
-        rid = int(rid)
+        mid = self.mat.mid(name=mat)
         return Row(mid=mid, rid=rid, row=self.array[mid][rid])
 
     # ============================================================
@@ -3770,8 +3908,8 @@ class ROWS:
         rid = self.newn(mat=mat)
         raw:NDARR = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
 
-        mid = int(ROW.MID(row=raw))
-        rid = int(ROW.RID(row=raw))
+        mid = ROW.MID(row=raw)
+        rid = ROW.RID(row=raw)
 
         # IMPORTANT FIX: actually write RAW into the storage slot
         slot = self.array[mid][rid]
@@ -3780,39 +3918,46 @@ class ROWS:
         stored = Row(mid=mid, rid=rid, row=slot)
 
         # index the stored row
-        self.bvh.insert(row=stored)
-        self.mdx.insert(row=stored)
+        self.job(job="insert", cls="bvh", row=stored)
+        self.job(job="insert", cls="mdx", row=stored)
+        # self.bvh.insert(row=stored)
+        # self.mdx.insert(row=stored)
         return stored
 
     def remove(self, row:Row=None)->None:
         if row is None:
             raise ValueError("remove requires row")
 
-        mid = int(row.mid)
-        rid = int(row.rid)
+        mid = row.mid
+        rid = row.rid
         mat_name = self.mat.name(mid=mid)
-
         n = self.nrows(mid=mid)
         last = n - 1
 
         # remove target from indices
-        self.bvh.remove(row=row)
-        self.mdx.remove(row=row)
+        # self.bvh.remove(row=row)
+        # self.mdx.remove(row=row)
+        self.job(job="remove", cls="bvh", row=row)
+        self.job(job="remove", cls="mdx", row=row)
 
         if rid != last:
             # remove moved's old identity from indices
             moved_old = Row(mid=mid, rid=last, row=self.array[mid][last])
-            self.bvh.remove(row=moved_old)
-            self.mdx.remove(row=moved_old)
+            # self.bvh.remove(row=moved_old)
+            # self.mdx.remove(row=moved_old)
+            self.job(job="remove", cls="bvh", row=moved_old)
+            self.job(job="remove", cls="mdx", row=moved_old)
 
             # move data
             moved_data = self.array[mid][last].copy()
-            moved_data[*ROW.IDS_RID] = np.uint64(rid)   # fix payload rid
+            moved_data[*ROW.IDS_RID] = np.uint64(rid) 
             self.array[mid][rid][:] = moved_data
 
             moved_new = Row(mid=mid, rid=rid, row=self.array[mid][rid])
-            self.bvh.insert(row=moved_new)
-            self.mdx.insert(row=moved_new)
+            # self.bvh.insert(row=moved_new)
+            # self.mdx.insert(row=moved_new)
+            self.job(job="insert", cls="bvh", row=moved_new)
+            self.job(job="insert", cls="mdx", row=moved_new)
 
         # invalidate last
         self.array[mid][last][:] = ROW.ARRAY
@@ -3840,12 +3985,30 @@ class ROWS:
             total += int(ROW.VOLUME(row=self.array[mid][rid]))
         return int(total)
 
-    def search(self, pos:POS=None)->tuple[str,int,NDARR]:
-        if pos is None:
-            raise ValueError("search requires pos")
-        hit:Row = self.bvh.search(pos=pos)               # BVH returns Row(mid,rid,row)
-        mat = self.mat.name(mid=int(hit.mid))
-        return (mat, int(hit.rid), hit.row)
+    """
+    TODO DELETE THIS METHOD AS A WHOLE - REPLACED BY self.job() METHOD ABOVE
+    # it distributes the job to the right queue based on class (not seen here but in the Queue() class itself)
+    """
+    def search(self, pos:POS=None, row:Row=None, axis:int=None)->tuple[str,int,NDARR]:
+        """
+        SOLVED: now we can use this search fro both MDX and BVH searches
+        """
+        if row is not None and axis is not None and pos is None:    # then it is an MDX search
+            self.job(job="search", cls="mdx", row=row, axis=axis)  # FIXED -> jobs are stored in self.jobs to be able to get their results later
+            """
+            TODO # FIX!!! MDX search is currently synchronous, so the job system is not used properly here.
+            """
+            # hit:Row = self.mdx.search(row=row, axis=axis)               # MDX returns Row(mid,rid,row)
+            # mat = self.mat.name(mid=int(hit.mid))
+            # return (mat, int(hit.rid), hit.row)
+        if pos is not None and row is None and axis is None: # then it is a BVH search
+            self.job(job="search", cls="bvh", pos=pos)      # FIXED -> jobs are stored in self.jobs to be able to get their results later
+            # hit:Row = self.bvh.search(pos=pos)               # BVH returns Row(mid,rid,row)
+            """
+            TODO # FIX!!! BVH search is currently synchronous, so the job system is not used properly here.
+            """
+            # mat = self.mat.name(mid=int(hit.mid))
+            # return (mat, int(hit.rid), hit.row)
 
     # ============================================================
     # split
@@ -3924,8 +4087,13 @@ class ROWS:
 
         acc:list[list[NDARR]] = [[] for _ in range(MATERIALS.NUM)]
 
-        _, _, hitrow1 = self.search(pos=p0)
-        _, _, hitrow2 = self.search(pos=p1)
+        # _, _, hitrow1 = self.search(pos=p0)
+        # _, _, hitrow2 = self.search(pos=p1)
+        self.job(job="search", cls="bvh", pos=p0)      # FIXED -> jobs are stored in self.jobs to be able to get their results later
+        self.job(job="search", cls="bvh", pos=p1)      # FIXED -> jobs are stored in self.jobs to be able to get their results later
+        """
+        TODO # FIX!!! BVH search is currently synchronous, so the job system is not used properly here.
+        """
         r0 = ROW.P0(row=hitrow1)
         r1 = ROW.P1(row=hitrow1)
         r2 = ROW.P0(row=hitrow2)
@@ -3986,9 +4154,6 @@ class ROWS:
             return self.split1(pos=pos, mat=mat)
         return self.split1(pos=pos1, mat=mat)
 
-    # ============================================================
-    # merge (FIXED to match MDX.search signature)
-    # ============================================================
 
     def merge2(self, row0:Row=None, row1:Row=None)->REQS:
         if row0 is None or row1 is None:
@@ -4042,8 +4207,12 @@ class ROWS:
                 continue
             seen.add(rid)
 
-            row0 = Row(mid=mid, rid=rid, row=self.array[mid][rid])
-            row1 = self.mdx.search(r=row0, axis=axis)   # FIXED call
+            row0: Row = Row(mid=mid, rid=rid, row=self.array[mid][rid])
+            self.job(job="search", cls="mdx", row=row0, axis=axis)  # FIXED call
+            """
+            TODO # FIX!!! MDX search is currently synchronous, so the job system is not used properly here.
+            """
+            # row1: Row = self.mdx.search(row=row0, axis=axis)
             if row1 is None:
                 continue
 
@@ -4116,7 +4285,11 @@ class ROWS:
                     seen.add(key)
 
                     row0 = Row(mid=mid, rid=rid, row=self.array[mid][rid])
-                    row1 = self.mdx.search(r=row0, axis=ax)   # FIXED call
+                    self.job(job="search", cls="mdx", row=row0, axis=ax)  # FIXED call
+                    """
+                    TODO # FIX!!! MDX search is currently synchronous, so the job system is not used properly here.
+                    """
+                    # row1 = self.mdx.search(row=row0, axis=ax)   # FIXED call
                     if row1 is None:
                         continue
 
@@ -4180,7 +4353,7 @@ class ROWS:
         return self.stats()
 
 ################################################################################
-# FILE 43/43: world/rows.py (END)
+# FILE 44/44: world/rows.py (END)
 ################################################################################
 
 
@@ -4190,343 +4363,24 @@ class ROWS:
 
 
 === RUNNING TEST 1/1: test8 ===
-Creating Miner id=0 at pos=(957327, 813394, 5779) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=1 at pos=(398761, 320557, 8712) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=2 at pos=(484878, 370233, 8383) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=3 at pos=(281990, 810743, 5915) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=4 at pos=(212643, 242476, 7254) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=5 at pos=(591623, 993478, 8060) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=6 at pos=(789278, 468646, 5237) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=7 at pos=(391014, 225236, 3937) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=8 at pos=(660114, 706522, 5611) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=9 at pos=(210040, 73245, 4249) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=10 at pos=(412636, 86296, 5100) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=11 at pos=(496064, 382207, 8116) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=12 at pos=(277666, 264893, 4789) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=13 at pos=(89885, 767556, 6416) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=14 at pos=(662019, 728158, 3365) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=15 at pos=(8205, 114330, 6704) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=16 at pos=(24652, 800013, 3046) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=17 at pos=(946163, 190473, 1952) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=18 at pos=(326394, 897644, 4861) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=19 at pos=(84501, 971559, 1536) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=20 at pos=(462978, 198500, 2067) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=21 at pos=(321303, 446675, 2187) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=22 at pos=(997995, 854325, 7057) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=23 at pos=(260776, 514170, 2761) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=24 at pos=(584175, 519997, 2158) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=25 at pos=(165006, 363345, 4857) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=26 at pos=(980008, 164414, 1175) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=27 at pos=(987307, 546318, 6128) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=28 at pos=(337117, 443330, 5545) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=29 at pos=(892893, 350645, 6439) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=30 at pos=(895906, 461587, 4828) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=31 at pos=(671242, 732098, 2178) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=32 at pos=(41663, 946570, 1126) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=33 at pos=(726529, 330066, 4502) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=34 at pos=(387723, 437801, 8426) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=35 at pos=(467151, 559166, 5784) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=36 at pos=(699070, 889352, 7956) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=37 at pos=(1988, 298302, 7652) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=38 at pos=(239455, 399481, 3437) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=39 at pos=(765543, 694499, 5076) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=40 at pos=(286407, 56751, 8670) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=41 at pos=(653279, 950619, 6535) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=42 at pos=(875220, 86081, 7245) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=43 at pos=(314658, 85240, 5065) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=44 at pos=(240423, 791341, 2554) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=45 at pos=(614007, 278807, 3295) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=46 at pos=(600448, 30606, 4983) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=47 at pos=(96701, 893608, 5461) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=48 at pos=(829471, 79760, 2843) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=49 at pos=(538022, 690850, 4606) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=50 at pos=(426627, 532863, 7577) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=51 at pos=(681499, 391485, 4921) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=52 at pos=(418984, 83457, 2466) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=53 at pos=(490307, 851223, 2042) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=54 at pos=(996333, 91533, 3303) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=55 at pos=(828121, 651263, 2163) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=56 at pos=(586845, 188778, 5062) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=57 at pos=(753600, 496345, 4247) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=58 at pos=(371978, 802597, 3516) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=59 at pos=(649407, 636263, 6801) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=60 at pos=(949478, 598341, 6693) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=61 at pos=(311322, 605556, 3820) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=62 at pos=(334507, 131893, 1095) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=63 at pos=(424205, 221721, 8469) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=64 at pos=(485551, 374581, 1263) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=65 at pos=(994993, 238022, 6456) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=66 at pos=(121751, 319246, 7600) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=67 at pos=(184259, 629189, 2108) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=68 at pos=(537917, 377046, 2210) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=69 at pos=(36041, 583186, 2240) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=70 at pos=(765542, 22100, 8634) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=71 at pos=(240484, 905884, 3643) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=72 at pos=(953163, 506958, 2289) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=73 at pos=(109395, 755473, 4127) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=74 at pos=(366988, 606190, 6868) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=75 at pos=(491367, 295145, 2093) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=76 at pos=(564298, 872395, 7030) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=77 at pos=(973155, 444651, 4223) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=78 at pos=(873900, 396984, 2142) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=79 at pos=(14699, 292887, 8065) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=80 at pos=(666148, 31261, 3414) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=81 at pos=(62308, 671509, 6692) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=82 at pos=(835494, 84503, 6039) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=83 at pos=(545064, 116821, 2744) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=84 at pos=(9020, 557021, 8382) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=85 at pos=(522703, 924065, 6302) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=86 at pos=(222746, 843830, 1897) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=87 at pos=(278437, 816903, 1861) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=88 at pos=(872582, 734399, 5505) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=89 at pos=(543483, 736789, 6032) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=90 at pos=(934540, 717258, 4102) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=91 at pos=(413069, 811383, 1350) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=92 at pos=(741742, 228127, 5415) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=93 at pos=(415569, 925995, 4698) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=94 at pos=(60127, 504651, 4360) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=95 at pos=(777033, 116930, 7270) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=96 at pos=(747288, 875791, 3009) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=97 at pos=(821935, 959166, 6616) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=98 at pos=(898645, 99415, 5657) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=99 at pos=(663700, 560442, 5942) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=100 at pos=(572130, 756942, 4421) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=101 at pos=(294360, 480841, 7213) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=102 at pos=(881833, 500599, 6590) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=103 at pos=(486916, 825112, 5716) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=104 at pos=(741609, 875745, 8219) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=105 at pos=(845096, 785626, 3746) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=106 at pos=(467205, 758134, 6023) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=107 at pos=(805720, 346228, 8913) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=108 at pos=(712411, 260850, 2659) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=109 at pos=(916570, 634251, 6348) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=110 at pos=(962099, 130620, 3007) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=111 at pos=(76598, 981369, 7106) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=112 at pos=(728676, 287223, 3248) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=113 at pos=(970847, 443229, 8660) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=114 at pos=(980329, 869416, 2369) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=115 at pos=(808466, 894884, 3973) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=116 at pos=(476181, 978527, 4004) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=117 at pos=(753085, 5526, 2869) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=118 at pos=(496595, 127876, 1227) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=119 at pos=(950942, 427183, 5347) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=120 at pos=(45474, 127102, 2304) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=121 at pos=(452378, 227221, 8170) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=122 at pos=(891449, 990984, 3095) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=123 at pos=(423825, 666909, 1518) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=124 at pos=(356816, 85156, 3483) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=125 at pos=(348670, 359962, 2211) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=126 at pos=(886913, 336474, 5041) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=127 at pos=(504051, 607540, 7946) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=128 at pos=(273680, 63945, 7599) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=129 at pos=(285882, 763274, 4241) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=130 at pos=(409869, 7151, 8153) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=131 at pos=(10799, 497124, 5183) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=132 at pos=(189047, 485463, 5887) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=133 at pos=(822043, 706115, 1486) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=134 at pos=(840710, 98801, 1397) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=135 at pos=(707899, 610346, 3173) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=136 at pos=(664480, 328736, 1829) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=137 at pos=(340160, 46280, 4132) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=138 at pos=(171278, 583239, 7338) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=139 at pos=(258477, 866822, 6757) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=140 at pos=(712229, 270298, 4817) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=141 at pos=(81379, 655601, 5333) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=142 at pos=(689658, 804068, 1723) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=143 at pos=(336132, 370307, 2610) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=144 at pos=(928443, 370455, 3532) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=145 at pos=(768578, 533243, 7682) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=146 at pos=(229147, 145484, 2669) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=147 at pos=(746520, 276480, 4161) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=148 at pos=(324915, 345643, 7959) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=149 at pos=(201269, 864648, 2784) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=150 at pos=(10438, 692461, 8501) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=151 at pos=(512516, 186653, 2522) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=152 at pos=(924887, 201767, 2204) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=153 at pos=(57408, 894499, 3826) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=154 at pos=(897273, 335111, 2310) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=155 at pos=(708217, 266698, 4150) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=156 at pos=(548282, 326839, 7858) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=157 at pos=(805575, 327452, 5391) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=158 at pos=(509970, 889573, 3207) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=159 at pos=(797228, 582652, 6660) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=160 at pos=(786984, 911742, 5371) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=161 at pos=(35308, 849593, 8275) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=162 at pos=(133706, 939129, 7622) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=163 at pos=(920990, 445532, 7197) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=164 at pos=(477893, 399600, 6235) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=165 at pos=(864390, 514014, 6860) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=166 at pos=(761045, 305013, 1463) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=167 at pos=(728255, 100923, 2440) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=168 at pos=(584597, 224427, 7240) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=169 at pos=(67606, 697937, 6656) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=170 at pos=(215033, 92078, 2669) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=171 at pos=(963511, 824930, 5689) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=172 at pos=(5899, 235372, 5247) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=173 at pos=(401032, 278654, 1385) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=174 at pos=(884055, 570233, 5452) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=175 at pos=(602630, 279906, 8030) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=176 at pos=(921223, 362451, 3029) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=177 at pos=(848349, 251531, 3636) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=178 at pos=(433171, 19327, 7210) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=179 at pos=(179691, 406123, 2271) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=180 at pos=(637062, 165341, 7353) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=181 at pos=(431891, 741985, 3194) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=182 at pos=(761538, 194494, 5310) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=183 at pos=(313990, 324688, 1560) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=184 at pos=(1826, 680687, 8967) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=185 at pos=(671161, 432068, 8232) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=186 at pos=(831722, 379665, 4493) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=187 at pos=(745809, 947427, 3829) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=188 at pos=(121779, 109849, 1429) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=189 at pos=(850867, 178734, 7174) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=190 at pos=(751129, 524005, 3692) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=191 at pos=(740062, 731558, 1995) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=192 at pos=(224905, 420128, 7326) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=193 at pos=(154575, 384927, 5822) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=194 at pos=(694102, 514513, 8127) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=195 at pos=(829064, 545297, 2506) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=196 at pos=(611054, 458535, 6754) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=197 at pos=(206579, 221183, 6505) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=198 at pos=(743609, 230749, 7130) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=199 at pos=(536613, 656118, 3872) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=200 at pos=(222489, 815258, 1768) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=201 at pos=(52399, 781776, 6188) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=202 at pos=(118240, 638903, 1109) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=203 at pos=(52531, 364637, 6052) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=204 at pos=(118088, 896017, 3057) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=205 at pos=(693919, 819591, 3563) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=206 at pos=(647644, 990111, 1007) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=207 at pos=(861192, 134367, 5901) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=208 at pos=(784959, 975896, 7871) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=209 at pos=(279553, 42533, 7927) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=210 at pos=(256342, 61657, 3044) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=211 at pos=(988338, 976711, 7396) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=212 at pos=(971645, 764522, 7992) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=213 at pos=(262284, 778982, 2424) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=214 at pos=(861402, 452912, 5167) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=215 at pos=(625718, 768236, 4801) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=216 at pos=(556205, 262167, 5909) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=217 at pos=(890450, 616809, 3627) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=218 at pos=(220334, 147533, 6194) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=219 at pos=(469682, 642516, 5380) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=220 at pos=(741046, 58499, 5385) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=221 at pos=(419077, 404035, 6965) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=222 at pos=(137783, 515739, 7622) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=223 at pos=(929786, 689052, 5595) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=224 at pos=(732384, 520373, 7209) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=225 at pos=(870879, 783664, 4129) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=226 at pos=(777059, 844755, 5025) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=227 at pos=(903314, 758545, 8390) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=228 at pos=(41119, 229940, 6119) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=229 at pos=(784520, 970306, 7320) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=230 at pos=(278373, 806931, 2861) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=231 at pos=(389691, 408631, 5115) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=232 at pos=(843705, 412254, 3635) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=233 at pos=(644258, 579356, 3150) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=234 at pos=(927397, 924681, 8402) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=235 at pos=(373021, 572417, 1118) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=236 at pos=(628746, 945854, 5047) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=237 at pos=(283726, 637863, 1488) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=238 at pos=(478900, 188145, 8948) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=239 at pos=(217313, 993397, 7081) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=240 at pos=(939514, 620216, 5841) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=241 at pos=(297311, 951979, 8827) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=242 at pos=(55257, 808337, 4686) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=243 at pos=(327869, 183113, 3839) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=244 at pos=(75133, 739661, 3913) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=245 at pos=(403141, 766525, 7034) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=246 at pos=(932578, 943193, 5593) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=247 at pos=(376182, 474875, 4263) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=248 at pos=(976062, 192581, 1828) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=249 at pos=(554331, 738230, 7280) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=250 at pos=(508691, 254727, 7246) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=251 at pos=(665917, 301176, 5322) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=252 at pos=(349072, 63003, 8187) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=253 at pos=(890855, 114445, 5887) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=254 at pos=(852652, 60828, 2215) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=255 at pos=(855313, 600333, 3191) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=256 at pos=(99136, 315553, 3019) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=257 at pos=(230301, 948802, 5642) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=258 at pos=(943087, 569959, 1126) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=259 at pos=(128413, 74337, 6613) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=260 at pos=(260902, 274081, 6071) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=261 at pos=(919007, 48151, 5055) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=262 at pos=(62662, 159568, 5308) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=263 at pos=(520120, 482480, 7296) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=264 at pos=(557846, 207419, 6304) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=265 at pos=(711993, 94179, 2335) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=266 at pos=(910810, 121060, 4419) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=267 at pos=(422853, 289153, 5247) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=268 at pos=(363223, 141343, 8694) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=269 at pos=(912634, 49696, 1671) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=270 at pos=(168491, 392035, 2624) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=271 at pos=(137214, 117560, 7908) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=272 at pos=(134079, 778642, 3051) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=273 at pos=(908441, 920316, 6374) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=274 at pos=(355498, 411200, 6858) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=275 at pos=(611591, 172869, 2201) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=276 at pos=(258672, 687596, 8208) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=277 at pos=(301028, 676074, 3548) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=278 at pos=(337432, 761618, 5954) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=279 at pos=(28958, 495702, 2342) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=280 at pos=(953549, 978280, 8142) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=281 at pos=(46373, 722620, 1083) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=282 at pos=(853770, 25023, 2262) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=283 at pos=(160104, 713289, 3169) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=284 at pos=(699709, 6188, 4069) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=285 at pos=(552325, 575108, 2550) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=286 at pos=(267692, 760505, 8933) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=287 at pos=(637357, 25966, 3335) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=288 at pos=(11517, 322339, 3889) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=289 at pos=(924716, 910526, 5694) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=290 at pos=(817744, 28366, 8396) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=291 at pos=(926529, 832172, 1482) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=292 at pos=(982329, 238362, 7221) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=293 at pos=(717155, 122729, 1141) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=294 at pos=(624703, 985188, 6962) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=295 at pos=(173292, 41375, 4563) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=296 at pos=(791173, 156314, 2561) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=297 at pos=(644210, 724487, 3121) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=298 at pos=(70522, 332048, 2602) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=299 at pos=(163103, 184912, 2554) size=(20, 20, 50000) seconds=1 floor=True
-Created 300 miners.
-Simulating 1200 seconds of mining...
-c:\VOXELS\utils\bvh.py:81: RuntimeWarning: overflow encountered in scalar multiply
-  (self.x1[n]-self.x0[n]) *
 Traceback (most recent call last):
   File "c:\VOXELS\tests\tests.py", line 19, in tests
     test()
     ~~~~^^
-  File "c:\VOXELS\tests\test8.py", line 24, in test8
-    miner.update(frame=frame)
-    ~~~~~~~~~~~~^^^^^^^^^^^^^
-  File "c:\VOXELS\world\buildings\miner.py", line 75, in update
-    self.mine(frame=frame)
-    ~~~~~~~~~^^^^^^^^^^^^^
-  File "c:\VOXELS\world\buildings\miner.py", line 82, in mine
-    self.rows.split(pos=pos0, pos1=pos1, mat="AIR")
-    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 328, in split
-    return self.split2(p0=pos, p1=pos1, mat=mat)
-           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 278, in split2
-    return self.split1(pos=p0, pos1=p1, mat=mat) # this is the case where both hits are the same row -> so only one split needed
-           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 250, in split1
-    merged, marids = self.merge(rows=batch)
-                     ~~~~~~~~~~^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 496, in merge
-    return self.mergerows(rows=rows)
-           ~~~~~~~~~~~~~~^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 463, in mergerows
-    row1 = self.mdx.search(r=row0, axis=ax)   # FIXED call
-TypeError: Queue.search() got an unexpected keyword argument 'r'
+  File "c:\VOXELS\tests\test8.py", line 8, in test8
+    rows = ROWS()
+  File "c:\VOXELS\world\rows.py", line 52, in __init__
+    self.insert(p0=self.p0, p1=self.p1, mat="STONE")
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 127, in insert
+    self.job(job="insert", cls="bvh", row=stored)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: ROWS.job() got an unexpected keyword argument 'job'
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 4528
-# Total files in bundle: 43
-# Generated at the time: 2026-01-31T10:04:25
+# Total lines in bundle: 4382
+# Total files in bundle: 44
+# Generated at the time: 2026-01-31T12:35:05
 --- END OF FILE ---
