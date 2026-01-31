@@ -14,23 +14,9 @@ from world.row import ROW
 
 class BVH:
     __slots__ = (
-        "rows",
-        "root",
-        "left",
-        "right",
-        "parent",
-        # AABB as 6 parallel lists (SoA)
-        "xmin",
-        "ymin",
-        "zmin",
-        "xmax",
-        "ymax",
-        "zmax",
-        # leaf as 2 parallel lists
-        "leaf_mid",
-        "leaf_rid",
-        # fast delete index
-        "leaf_index",
+        "rows", "root", "left", "right", "parent",
+        "xmin", "ymin", "zmin", "xmax", "ymax", "zmax",
+        "leaf_mid", "leaf_rid", "leaf_index",
     )
 
     def __init__(self, rows: ROWS) -> None:
@@ -50,8 +36,6 @@ class BVH:
 
         self.leaf_mid: list[int] = []
         self.leaf_rid: list[int] = []
-
-        # (mid, rid) -> node index
         self.leaf_index: dict[tuple[int, int], int] = {}
 
     # ------------------------------------------------------------------
@@ -261,35 +245,32 @@ class BVH:
         x, y, z = pos
         stack = [self.root]
 
-        xminL = self.xmin; yminL = self.ymin; zminL = self.zmin
-        xmaxL = self.xmax; ymaxL = self.ymax; zmaxL = self.zmax
-        leftL = self.left; rightL = self.right
-        leaf_midL = self.leaf_mid; leaf_ridL = self.leaf_rid
-        rows_arr = self.rows.array
-        idx2name = self.rows.mats.idx2name
+        x0, y0, z0 = self.xmin, self.ymin, self.zmin
+        x1, y1, z1 = self.xmax, self.ymax, self.zmax
+        l0, r0 = self.left, self.right
+        lm, lr = self.leaf_mid, self.leaf_rid
 
         while stack:
             n = stack.pop()
             if n == -1:
                 continue
 
-            if not (xminL[n] <= x < xmaxL[n] and yminL[n] <= y < ymaxL[n] and zminL[n] <= z < zmaxL[n]):
+            if not (x0[n] <= x < x1[n] and y0[n] <= y < y1[n] and z0[n] <= z < z1[n]):
                 continue
 
-            mid = leaf_midL[n]
+            mid = lm[n]
             if mid != -1:
-                rid = leaf_ridL[n]
-                row = rows_arr[mid][rid]
+                rid = lr[n]
+                row = self.rows.array[mid][rid]
                 if ROW.CONTAINS(row=row, pos=pos):
-                    return idx2name[mid], rid, row
+                    mid = self.rows.mats.idx2name[mid]
+                    return mid, rid, row
                 continue
 
-            l = leftL[n]
-            r = rightL[n]
-
-            if l != -1 and (xminL[l] <= x < xmaxL[l] and yminL[l] <= y < ymaxL[l] and zminL[l] <= z < zmaxL[l]):
+            l, r = l0[n], r0[n]
+            if l != -1 and (x0[l] <= x < x1[l] and y0[l] <= y < y1[l] and z0[l] <= z < z1[l]):
                 stack.append(l)
-            if r != -1 and (xminL[r] <= x < xmaxL[r] and yminL[r] <= y < ymaxL[r] and zminL[r] <= z < zmaxL[r]):
+            if r != -1 and (x0[r] <= x < x1[r] and y0[r] <= y < y1[r] and z0[r] <= z < z1[r]):
                 stack.append(r)
 
         raise LookupError("[ERROR] BVH.search() failed: point not found (partition invariant violated or BVH not updated)")

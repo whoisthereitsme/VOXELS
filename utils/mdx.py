@@ -59,17 +59,14 @@ class MDX:
         self.pos: Tuple[BUCK, ...] = (defaultdict(set), defaultdict(set), defaultdict(set))
         self._faces: Dict[Loc, ROWFACES] = {}
 
-
     def faces(self, mid:int=None, row:NDArray[ROW.DTYPE]=None) -> ROWFACES:
         x0, y0, z0 = ROW.P0(row=row)
         x1, y1, z1 = ROW.P1(row=row)
-        # axis X: spans are (y0,y1,z0,z1), face coord is x0 or x1
+
         kx0: FACE = (mid, y0, y1, z0, z1, x0)
         kx1: FACE = (mid, y0, y1, z0, z1, x1)
-        # axis Y: spans are (x0,x1,z0,z1), face coord is y0 or y1
         ky0: FACE = (mid, x0, x1, z0, z1, y0)
         ky1: FACE = (mid, x0, x1, z0, z1, y1)
-        # axis Z: spans are (x0,x1,y0,y1), face coord is z0 or z1
         kz0: FACE = (mid, x0, x1, y0, y1, z0)
         kz1: FACE = (mid, x0, x1, y0, y1, z1)
         return ROWFACES(x0=kx0, x1=kx1, y0=ky0, y1=ky1, z0=kz0, z1=kz1)
@@ -77,23 +74,21 @@ class MDX:
     def insert(self, row:NDArray[ROW.DTYPE]=None) -> None:
         mid = self.rows.mats.name2idx[ROW.MAT(row=row)]
         rid = ROW.RID(row=row)
-        loc = (mid, rid)
-        faces = self.faces(mid, row)
+        loc: Loc = (mid, rid)
+        faces = self.faces(mid=mid, row=row)
         self._faces[loc] = faces
 
         self.neg[self.AX_X][faces.x0].add(loc)
         self.pos[self.AX_X][faces.x1].add(loc)
-
         self.neg[self.AX_Y][faces.y0].add(loc)
         self.pos[self.AX_Y][faces.y1].add(loc)
-
         self.neg[self.AX_Z][faces.z0].add(loc)
         self.pos[self.AX_Z][faces.z1].add(loc)
 
     def remove(self, mat:str=None, rid:int=None) -> None:
         mid = self.rows.mats.name2idx[mat]
-        loc = (mid, rid)
-        faces = self._faces.pop(loc, None)
+        loc: Loc = (mid, rid)
+        faces: ROWFACES = self._faces.pop(loc, None)
         if faces is None:
             return
 
@@ -105,7 +100,7 @@ class MDX:
         self.discard(m=self.pos[self.AX_Z], key=faces.z1, loc=loc)
 
     def discard(self, m:BUCK=None, key:FACE=None, loc:Loc=None) -> None:
-        s = m.get(key)
+        s: Set[Loc] = m.get(key)
         if not s:
             return
         s.discard(loc)
@@ -115,7 +110,7 @@ class MDX:
     def search(self, mid:int=None, rid:int=None, axis:int=None) -> Optional[Loc]:
         if mid is None or rid is None or axis is None:
             raise ValueError("mid, rid, and axis must be provided")
-        loc = (mid, rid)
+        loc: Loc = (mid, rid)
         rowfaces: ROWFACES = self._faces.get(loc)
         if rowfaces is None:
             return None
@@ -132,7 +127,7 @@ class MDX:
                         return c
             return None
 
-        faces = rowfaces.faces(ax=axis) 
-        bucks = (self.neg[axis], self.pos[axis])
+        faces: FACES = rowfaces.faces(ax=axis) 
+        bucks: BUCKS = (self.neg[axis], self.pos[axis])
 
         return search(faces=faces, bucks=bucks)

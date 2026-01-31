@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T01:16:07
+#Time when generated: 2026-01-31T02:00:37
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -618,7 +618,7 @@ from all import *
 
 
 if __name__ == "__main__":
-    tests(tests=[test1, test2, test3, test4, test5, test6, test7, test8, test9, test10])
+    tests(tests=[test7, test8, test9, test10])
 
 ################################################################################
 # FILE 9/42: main.py (END)
@@ -1527,23 +1527,9 @@ from world.row import ROW
 
 class BVH:
     __slots__ = (
-        "rows",
-        "root",
-        "left",
-        "right",
-        "parent",
-        # AABB as 6 parallel lists (SoA)
-        "xmin",
-        "ymin",
-        "zmin",
-        "xmax",
-        "ymax",
-        "zmax",
-        # leaf as 2 parallel lists
-        "leaf_mid",
-        "leaf_rid",
-        # fast delete index
-        "leaf_index",
+        "rows", "root", "left", "right", "parent",
+        "xmin", "ymin", "zmin", "xmax", "ymax", "zmax",
+        "leaf_mid", "leaf_rid", "leaf_index",
     )
 
     def __init__(self, rows: ROWS) -> None:
@@ -1563,8 +1549,6 @@ class BVH:
 
         self.leaf_mid: list[int] = []
         self.leaf_rid: list[int] = []
-
-        # (mid, rid) -> node index
         self.leaf_index: dict[tuple[int, int], int] = {}
 
     # ------------------------------------------------------------------
@@ -1774,35 +1758,32 @@ class BVH:
         x, y, z = pos
         stack = [self.root]
 
-        xminL = self.xmin; yminL = self.ymin; zminL = self.zmin
-        xmaxL = self.xmax; ymaxL = self.ymax; zmaxL = self.zmax
-        leftL = self.left; rightL = self.right
-        leaf_midL = self.leaf_mid; leaf_ridL = self.leaf_rid
-        rows_arr = self.rows.array
-        idx2name = self.rows.mats.idx2name
+        x0, y0, z0 = self.xmin, self.ymin, self.zmin
+        x1, y1, z1 = self.xmax, self.ymax, self.zmax
+        l0, r0 = self.left, self.right
+        lm, lr = self.leaf_mid, self.leaf_rid
 
         while stack:
             n = stack.pop()
             if n == -1:
                 continue
 
-            if not (xminL[n] <= x < xmaxL[n] and yminL[n] <= y < ymaxL[n] and zminL[n] <= z < zmaxL[n]):
+            if not (x0[n] <= x < x1[n] and y0[n] <= y < y1[n] and z0[n] <= z < z1[n]):
                 continue
 
-            mid = leaf_midL[n]
+            mid = lm[n]
             if mid != -1:
-                rid = leaf_ridL[n]
-                row = rows_arr[mid][rid]
+                rid = lr[n]
+                row = self.rows.array[mid][rid]
                 if ROW.CONTAINS(row=row, pos=pos):
-                    return idx2name[mid], rid, row
+                    mid = self.rows.mats.idx2name[mid]
+                    return mid, rid, row
                 continue
 
-            l = leftL[n]
-            r = rightL[n]
-
-            if l != -1 and (xminL[l] <= x < xmaxL[l] and yminL[l] <= y < ymaxL[l] and zminL[l] <= z < zmaxL[l]):
+            l, r = l0[n], r0[n]
+            if l != -1 and (x0[l] <= x < x1[l] and y0[l] <= y < y1[l] and z0[l] <= z < z1[l]):
                 stack.append(l)
-            if r != -1 and (xminL[r] <= x < xmaxL[r] and yminL[r] <= y < ymaxL[r] and zminL[r] <= z < zmaxL[r]):
+            if r != -1 and (x0[r] <= x < x1[r] and y0[r] <= y < y1[r] and z0[r] <= z < z1[r]):
                 stack.append(r)
 
         raise LookupError("[ERROR] BVH.search() failed: point not found (partition invariant violated or BVH not updated)")
@@ -2022,17 +2003,14 @@ class MDX:
         self.pos: Tuple[BUCK, ...] = (defaultdict(set), defaultdict(set), defaultdict(set))
         self._faces: Dict[Loc, ROWFACES] = {}
 
-
     def faces(self, mid:int=None, row:NDArray[ROW.DTYPE]=None) -> ROWFACES:
         x0, y0, z0 = ROW.P0(row=row)
         x1, y1, z1 = ROW.P1(row=row)
-        # axis X: spans are (y0,y1,z0,z1), face coord is x0 or x1
+
         kx0: FACE = (mid, y0, y1, z0, z1, x0)
         kx1: FACE = (mid, y0, y1, z0, z1, x1)
-        # axis Y: spans are (x0,x1,z0,z1), face coord is y0 or y1
         ky0: FACE = (mid, x0, x1, z0, z1, y0)
         ky1: FACE = (mid, x0, x1, z0, z1, y1)
-        # axis Z: spans are (x0,x1,y0,y1), face coord is z0 or z1
         kz0: FACE = (mid, x0, x1, y0, y1, z0)
         kz1: FACE = (mid, x0, x1, y0, y1, z1)
         return ROWFACES(x0=kx0, x1=kx1, y0=ky0, y1=ky1, z0=kz0, z1=kz1)
@@ -2040,23 +2018,21 @@ class MDX:
     def insert(self, row:NDArray[ROW.DTYPE]=None) -> None:
         mid = self.rows.mats.name2idx[ROW.MAT(row=row)]
         rid = ROW.RID(row=row)
-        loc = (mid, rid)
-        faces = self.faces(mid, row)
+        loc: Loc = (mid, rid)
+        faces = self.faces(mid=mid, row=row)
         self._faces[loc] = faces
 
         self.neg[self.AX_X][faces.x0].add(loc)
         self.pos[self.AX_X][faces.x1].add(loc)
-
         self.neg[self.AX_Y][faces.y0].add(loc)
         self.pos[self.AX_Y][faces.y1].add(loc)
-
         self.neg[self.AX_Z][faces.z0].add(loc)
         self.pos[self.AX_Z][faces.z1].add(loc)
 
     def remove(self, mat:str=None, rid:int=None) -> None:
         mid = self.rows.mats.name2idx[mat]
-        loc = (mid, rid)
-        faces = self._faces.pop(loc, None)
+        loc: Loc = (mid, rid)
+        faces: ROWFACES = self._faces.pop(loc, None)
         if faces is None:
             return
 
@@ -2068,7 +2044,7 @@ class MDX:
         self.discard(m=self.pos[self.AX_Z], key=faces.z1, loc=loc)
 
     def discard(self, m:BUCK=None, key:FACE=None, loc:Loc=None) -> None:
-        s = m.get(key)
+        s: Set[Loc] = m.get(key)
         if not s:
             return
         s.discard(loc)
@@ -2078,7 +2054,7 @@ class MDX:
     def search(self, mid:int=None, rid:int=None, axis:int=None) -> Optional[Loc]:
         if mid is None or rid is None or axis is None:
             raise ValueError("mid, rid, and axis must be provided")
-        loc = (mid, rid)
+        loc: Loc = (mid, rid)
         rowfaces: ROWFACES = self._faces.get(loc)
         if rowfaces is None:
             return None
@@ -2095,8 +2071,8 @@ class MDX:
                         return c
             return None
 
-        faces = rowfaces.faces(ax=axis) 
-        bucks = (self.neg[axis], self.pos[axis])
+        faces: FACES = rowfaces.faces(ax=axis) 
+        bucks: BUCKS = (self.neg[axis], self.pos[axis])
 
         return search(faces=faces, bucks=bucks)
 
@@ -3854,133 +3830,32 @@ class ROWS:
 ################################################################################
 
 
-=== RUNNING TEST 1/10: test1 ===
-STEP 1 : 3D grid partition built: lap 3: 5.897797 seconds
- - STEP 1 lookup checks OK: 1000 successes, 0 fails, 169.55 lookups/sec
- - STEP 1 lookups completed in: lap 4: 0.411158 seconds
- - Now deleting 10000 rows...
- - Deleted 10000 rows in: lap 5: 0.392111 seconds
-STEP 2 : Rebuilding rows after deletion...
- - STEP 2 grid partition built: lap 7: 0.531203 seconds
- - STEP 2 lookup checks OK: 1000 successes, 0 fails, 1882.52 lookups/sec
- - STEP 2 lookups completed in: lap 8: 0.080133 seconds
-=== TEST 1/10: test1 PASSED in 0.000 seconds ===
-
-
-=== RUNNING TEST 2/10: test2 ===
-WORLD VOLUME BEFORE: 72056357089509375
- - SPLIT test 1/10 passed.
- - SPLIT test 2/10 passed.
- - SPLIT test 3/10 passed.
- - SPLIT test 4/10 passed.
- - SPLIT test 5/10 passed.
- - SPLIT test 6/10 passed.
- - SPLIT test 7/10 passed.
- - SPLIT test 8/10 passed.
- - SPLIT test 9/10 passed.
- - SPLIT test 10/10 passed.
-WORLD VOLUME AFTER: 72056357089509375
-STARTING STEP : Now testing MERGE functionality...: lap 11: 0.055449 seconds
- - MERGE completed in: lap 12: 0.00057 seconds
-WORLD VOLUME AFTER MERGE: 72056357089509375
-Material AIR has 10 rows after MERGE tests.
-Material WATER has 0 rows after MERGE tests.
-Material LAVA has 0 rows after MERGE tests.
-Material GLASS has 0 rows after MERGE tests.
-Material STONE has 51 rows after MERGE tests.
-Material OBSIDIAN has 0 rows after MERGE tests.
-Material BEDROCK has 0 rows after MERGE tests.
-=== TEST 2/10: test2 PASSED in 0.001 seconds ===
-
-
-=== RUNNING TEST 3/10: test3 ===
-10 mines to be created at random positions.
-Performing MERGE to consolidate AIR rows... AIR rows before: 10 in merge iteration: 1
- No more AIR rows could be consolidated. Stopping MERGE.
-Material AIR has 10 rows after MERGE tests.
-  AIR row 0: p0=(787262, 471032, 22833), p1=(787267, 471037, 22838)
-  AIR row 1: p0=(27923, 479968, 8133), p1=(27928, 479973, 8138)
-  AIR row 2: p0=(736418, 540848, 57117), p1=(736423, 540853, 57122)
-  AIR row 3: p0=(60870, 918403, 9399), p1=(60875, 918408, 9404)
-  AIR row 4: p0=(543426, 144396, 27853), p1=(543431, 144401, 27858)
-  AIR row 5: p0=(19591, 759952, 30964), p1=(19596, 759957, 30969)
-  AIR row 6: p0=(782277, 40736, 43583), p1=(782282, 40741, 43588)
-  AIR row 7: p0=(636161, 26781, 31472), p1=(636166, 26786, 31477)
-  AIR row 8: p0=(194007, 450939, 14033), p1=(194012, 450944, 14038)
-  AIR row 9: p0=(222439, 653448, 47213), p1=(222444, 653453, 47218)
-Material WATER has 0 rows after MERGE tests.
-Material LAVA has 0 rows after MERGE tests.
-Material GLASS has 0 rows after MERGE tests.
-Material STONE has 51 rows after MERGE tests.
-Material OBSIDIAN has 0 rows after MERGE tests.
-Material BEDROCK has 0 rows after MERGE tests.
-air rows= 10 stone rows= 51
-=== TEST 3/10: test3 PASSED in 2.408 seconds ===
-
-
-=== RUNNING TEST 4/10: test4 ===
-WORLD VOLUME BEFORE: 72056357089509375
- - carved 10/50 boxes
- - carved 20/50 boxes
- - carved 30/50 boxes
- - carved 40/50 boxes
- - carved 50/50 boxes
-WORLD VOLUME AFTER: 72056357089509375
-AIR VOLUME: 650366 EXPECTED (sum boxes): 650366
-test4 OK: air_rows=50 stone_rows=247
-=== TEST 4/10: test4 PASSED in 0.312 seconds ===
-
-
-=== RUNNING TEST 5/10: test5 ===
-WORLD VOLUME BEFORE: 838860800
-Initial rows: stone_rows=1 air_rows=0
- - carved 10/30 boxes
- - carved 20/30 boxes
- - carved 30/30 boxes
-WORLD VOLUME AFTER: 838860800
-AIR VOLUME: 50887309
-test5 OK: air_rows=53 stone_rows=214
-=== TEST 5/10: test5 PASSED in 1.604 seconds ===
-
-
-=== RUNNING TEST 6/10: test6 ===
-=== TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
-test6: search() [tests=10]: lap 22: 5.9e-05 seconds
-test6: split1 (point split) [tests=10]: lap 24: 0.04169 seconds
-test6: split2 (region split) [tests=10]: lap 26: 0.077752 seconds
-test6: merge() [tests=10]: lap 28: 0.045123 seconds
-test6: remove() [tests=10]: lap 30: 5.1e-05 seconds
-test6: insert() [tests=10]: lap 32: 0.000458 seconds
-=== TEST6 DONE ===
-=== TEST 6/10: test6 PASSED in 0.000 seconds ===
-
-
-=== RUNNING TEST 7/10: test7 ===
+=== RUNNING TEST 1/4: test7 ===
 === TEST7: RESOURCE / WAREHOUSE INVARIANTS ===
  - split() invariants OK (1000 cases)
  - Resource +/- semantics OK
  - Resources ingest/transfer OK
  - Warehouse give/take invariants OK
 === TEST7 DONE ===
-=== TEST 7/10: test7 PASSED in 0.003 seconds ===
+=== TEST 1/4: test7 PASSED in 0.003 seconds ===
 
 
-=== RUNNING TEST 8/10: test8 ===
-=== TEST 8/10: test8 PASSED in 0.000 seconds ===
+=== RUNNING TEST 2/4: test8 ===
+=== TEST 2/4: test8 PASSED in 0.000 seconds ===
 
 
-=== RUNNING TEST 9/10: test9 ===
-=== TEST 9/10: test9 PASSED in 0.000 seconds ===
+=== RUNNING TEST 3/4: test9 ===
+=== TEST 3/4: test9 PASSED in 0.000 seconds ===
 
 
-=== RUNNING TEST 10/10: test10 ===
-=== TEST 10/10: test10 PASSED in 0.000 seconds ===
+=== RUNNING TEST 4/4: test10 ===
+=== TEST 4/4: test10 PASSED in 0.000 seconds ===
 
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3982
+# Total lines in bundle: 3857
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T01:16:07
+# Generated at the time: 2026-01-31T02:00:37
 --- END OF FILE ---
