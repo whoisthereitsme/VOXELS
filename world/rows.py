@@ -104,7 +104,7 @@ class ROWS:
             self.bvh.remove(mat=mat, rid=last)
             self.mdx.remove(mat=mat, rid=last)
             self.array[mid][index] = self.array[mid][last]
-            self.array[mid][index][*ROW.IDS_ID] = np.uint64(index)
+            self.array[mid][index][*ROW.IDS_RID] = np.uint64(index)
             self.bvh.insert(row=self.array[mid][index])
             self.mdx.insert(row=self.array[mid][index])
 
@@ -350,7 +350,7 @@ class ROWS:
         mids_present: set[int] = set()
         for mid in range(rows.shape[0]):
             for i in range(rows.shape[1]):
-                if rows[mid][i][*ROW.IDS_ID] != ROW.SENTINEL:
+                if rows[mid][i][*ROW.IDS_RID] != ROW.SENTINEL:
                     mids_present.add(mid)
                     break
 

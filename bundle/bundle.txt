@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T04:17:54
+#Time when generated: 2026-01-31T04:19:42
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -3597,7 +3597,7 @@ class ROWS:
             self.bvh.remove(mat=mat, rid=last)
             self.mdx.remove(mat=mat, rid=last)
             self.array[mid][index] = self.array[mid][last]
-            self.array[mid][index][*ROW.IDS_ID] = np.uint64(index)
+            self.array[mid][index][*ROW.IDS_RID] = np.uint64(index)
             self.bvh.insert(row=self.array[mid][index])
             self.mdx.insert(row=self.array[mid][index])
 
@@ -3843,7 +3843,7 @@ class ROWS:
         mids_present: set[int] = set()
         for mid in range(rows.shape[0]):
             for i in range(rows.shape[1]):
-                if rows[mid][i][*ROW.IDS_ID] != ROW.SENTINEL:
+                if rows[mid][i][*ROW.IDS_RID] != ROW.SENTINEL:
                     mids_present.add(mid)
                     break
 
@@ -3941,7 +3941,7 @@ class ROWS:
 
 === RUNNING TEST 1/1: test6 ===
 === TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
-test6: search() [tests=10]: lap 3: 0.011328 seconds
+test6: search() [tests=10]: lap 3: 0.009864 seconds
 Traceback (most recent call last):
   File "c:\VOXELS\tests\tests.py", line 19, in tests
     test()
@@ -3952,21 +3952,21 @@ Traceback (most recent call last):
   File "c:\VOXELS\world\rows.py", line 251, in split
     return self.split1(pos=pos, mat=mat)
            ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 177, in split1
-    batch, arids = self.splitrow(pos=pos, p2=p2, mat=mat)
-                   ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 172, in splitrow
-    self.remove(row=row)
-    ~~~~~~~~~~~^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 107, in remove
-    self.array[mid][index][*ROW.IDS_ID] = np.uint64(index)
-                            ^^^^^^^^^^
-AttributeError: type object 'ROW' has no attribute 'IDS_ID'. Did you mean: 'IDS_MID'?
+  File "c:\VOXELS\world\rows.py", line 178, in split1
+    batch, arids = self.merge(rows=batch)
+                   ~~~~~~~~~~^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 426, in merge
+    return self.mergerows(rows=rows)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 360, in mergerows
+    worst += self.nrows(mid=mid)
+             ~~~~~~~~~~^^^^^^^^^
+TypeError: ROWS.nrows() got an unexpected keyword argument 'mid'
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
 # Total lines in bundle: 3968
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T04:17:54
+# Generated at the time: 2026-01-31T04:19:42
 --- END OF FILE ---
