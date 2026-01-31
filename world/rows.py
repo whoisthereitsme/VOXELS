@@ -182,7 +182,6 @@ class ROWS:
                     arids[mid_new] += 1
 
         self.remove(row=row)
-        self.bvh.fixupwards(node=self.bvh.root)
         return array, arids
 
     def split1(self, pos:POS=None, mat:str=None) -> ARRAY_ARIDS:
