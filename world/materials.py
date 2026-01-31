@@ -116,6 +116,32 @@ class Materials:
             raise ValueError("Provide exactly one of mid or idx")
         return self.mid2name[mid] if mid is not None else self.idx2name[idx]
     
+    def mat(self, name:str=None, mid:int=None, idx:int=None) -> Material:
+        """
+        PUBLIC:
+        -> Get the Material object given either the material name, mid, or idx.
+        -> Provide exactly one of name, mid, or idx.
+        """
+        if mid is not None:
+            name = self.mid2name.get(mid, None)
+        if idx is not None:
+            name = self.idx2name.get(idx, None)
+        mat:Material = getattr(self, name)  # to avoid unused method warning
+        return mat  # to avoid unused method warning
+        
+        if name is not None:
+            return Material(name=name)
+        elif mid is not None:
+            name = self.mid2name.get(mid, None)
+            if name is None:
+                raise ValueError(f"Invalid material mid: {mid}")
+            return Material(name=name)
+        else:  # idx is not None
+            name = self.idx2name.get(idx, None)
+            if name is None:
+                raise ValueError(f"Invalid material idx: {idx}")
+            return Material(name=name)
+    
     def names(self) -> list[str]:
         """
         PUBLIC:

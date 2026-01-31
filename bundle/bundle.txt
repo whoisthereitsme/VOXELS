@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T03:56:50
+#Time when generated: 2026-01-31T04:02:07
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2734,6 +2734,32 @@ class Materials:
             raise ValueError("Provide exactly one of mid or idx")
         return self.mid2name[mid] if mid is not None else self.idx2name[idx]
     
+    def mat(self, name:str=None, mid:int=None, idx:int=None) -> Material:
+        """
+        PUBLIC:
+        -> Get the Material object given either the material name, mid, or idx.
+        -> Provide exactly one of name, mid, or idx.
+        """
+        if mid is not None:
+            name = self.mid2name.get(mid, None)
+        if idx is not None:
+            name = self.idx2name.get(idx, None)
+        mat:Material = getattr(self, name)  # to avoid unused method warning
+        return mat  # to avoid unused method warning
+        
+        if name is not None:
+            return Material(name=name)
+        elif mid is not None:
+            name = self.mid2name.get(mid, None)
+            if name is None:
+                raise ValueError(f"Invalid material mid: {mid}")
+            return Material(name=name)
+        else:  # idx is not None
+            name = self.idx2name.get(idx, None)
+            if name is None:
+                raise ValueError(f"Invalid material idx: {idx}")
+            return Material(name=name)
+    
     def names(self) -> list[str]:
         """
         PUBLIC:
@@ -3356,7 +3382,8 @@ class ROW:
         RETURN: a new ROW with given parameters
         """
         p0, p1 = ROW.SORT(p0=ROW.CLIP(pos=p0), p1=ROW.CLIP(pos=p1))
-        mat: Material = Material(name=mat)
+        mats: Materials = Materials()
+        mat: Material = mats.mat(name=mat)
         flags: int = ROW.ENCODE(dirty=dirty, alive=alive, solid=mat.issolid(), destructable=not mat.isindestructible(), visible=not mat.isinvisible())
         copy: NDARR = ROW.COPY()
 
@@ -3374,7 +3401,7 @@ class ROW:
         copy[*ROW.IDS_DZ]    = np.uint64(p1[2] - p0[2])
         # METADATA
         copy[*ROW.IDS_ID]    = np.uint64(rid)       # stores now the row index within material array instead of global unique id
-        copy[*ROW.IDS_MID]   = np.uint64(mat.id)
+        copy[*ROW.IDS_MID]   = np.uint64(mat.mid)  # material id
         copy[*ROW.IDS_FLAGS] = np.uint64(flags)
 
         if any(v < 0 for v in (copy[*ROW.IDS_DX], copy[*ROW.IDS_DY], copy[*ROW.IDS_DZ])):
@@ -3858,15 +3885,18 @@ Traceback (most recent call last):
     ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "c:\VOXELS\world\rows.py", line 85, in insert
     row = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
-  File "c:\VOXELS\world\row.py", line 309, in new
-    copy[*ROW.IDS_MID]   = np.uint64(mat.id)
-                                     ^^^^^^
-AttributeError: 'Material' object has no attribute 'id'. Did you mean: 'idx'?
+  File "c:\VOXELS\world\row.py", line 292, in new
+    mat: Material = mats.mat(name=mat)
+                    ~~~~~~~~^^^^^^^^^^
+  File "c:\VOXELS\world\materials.py", line 129, in mat
+    mat:Material = getattr(self, name)  # to avoid unused method warning
+                   ~~~~~~~^^^^^^^^^^^^
+AttributeError: 'Materials' object has no attribute 'STONE'
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3868
+# Total lines in bundle: 3898
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T03:56:50
+# Generated at the time: 2026-01-31T04:02:07
 --- END OF FILE ---

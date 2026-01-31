@@ -288,7 +288,8 @@ class ROW:
         RETURN: a new ROW with given parameters
         """
         p0, p1 = ROW.SORT(p0=ROW.CLIP(pos=p0), p1=ROW.CLIP(pos=p1))
-        mat: Material = Material(name=mat)
+        mats: Materials = Materials()
+        mat: Material = mats.mat(name=mat)
         flags: int = ROW.ENCODE(dirty=dirty, alive=alive, solid=mat.issolid(), destructable=not mat.isindestructible(), visible=not mat.isinvisible())
         copy: NDARR = ROW.COPY()
 
@@ -306,7 +307,7 @@ class ROW:
         copy[*ROW.IDS_DZ]    = np.uint64(p1[2] - p0[2])
         # METADATA
         copy[*ROW.IDS_ID]    = np.uint64(rid)       # stores now the row index within material array instead of global unique id
-        copy[*ROW.IDS_MID]   = np.uint64(mat.id)
+        copy[*ROW.IDS_MID]   = np.uint64(mat.mid)  # material id
         copy[*ROW.IDS_FLAGS] = np.uint64(flags)
 
         if any(v < 0 for v in (copy[*ROW.IDS_DX], copy[*ROW.IDS_DY], copy[*ROW.IDS_DZ])):
