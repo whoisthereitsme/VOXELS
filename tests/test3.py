@@ -59,6 +59,6 @@ def test3() -> None:
         if name == "AIR":
             for rid in range(n):
                 r = rows.get(mat="AIR", rid=rid)
-                print(f"  AIR row {rid}: p0={ROW.P0(row=r)}, p1={ROW.P1(row=r)}")
+                print(f"  AIR row {rid}: p0={ROW.P0(row=r.row)}, p1={ROW.P1(row=r.row)}")
 
     print(f"air rows= {rows.nrows(mat='AIR')}", f"stone rows= {rows.nrows(mat='STONE')}")
