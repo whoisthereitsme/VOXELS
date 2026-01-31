@@ -1,22 +1,32 @@
+# utils/mdx.py
 from __future__ import annotations
 from typing import TYPE_CHECKING, DefaultDict, Dict, Optional, Set, Tuple
-if TYPE_CHECKING:
-    from world.rows import ROWS, Row
-
 from collections import defaultdict
 from dataclasses import dataclass
+
+if TYPE_CHECKING:
+    from world.rows import ROWS
+
 from world.row import ROW
-from utils.types import NDARR
+from utils.types import NDARR, Row
 
+
+# Location identity in the world arrays
 Loc = Tuple[int, int]  # (mid, rid)
+
+# A face key (one plane of an AABB):
+# axis X: (mid, y0, y1, z0, z1, x_face)
+# axis Y: (mid, x0, x1, z0, z1, y_face)
+# axis Z: (mid, x0, x1, y0, y1, z_face)
 FACE = Tuple[int, int, int, int, int, int]
-BUCK = DefaultDict[FACE, Set[Loc]]
-FACES = Tuple[FACE, FACE]
-BUCKS = Tuple[BUCK, BUCK]
+
+BUCK = DefaultDict[FACE, Set[Loc]]  # face_key -> set of Locs
+FACES = Tuple[FACE, FACE]           # (pos_face, neg_face) for search order
+BUCKS = Tuple[BUCK, BUCK]           # (neg_bucket, pos_bucket)
 
 
-@dataclass
-class ROWFACES:
+@dataclass(slots=True)
+class RowFaces:
     x0: FACE
     x1: FACE
     y0: FACE
@@ -24,22 +34,16 @@ class ROWFACES:
     z0: FACE
     z1: FACE
 
-    @property
-    def xfaces(self) -> FACES:
-        return (self.x1, self.x0)
-
-    @property
-    def yfaces(self) -> FACES:
-        return (self.y1, self.y0)
-
-    @property
-    def zfaces(self) -> FACES:
-        return (self.z1, self.z0)
-
-    def faces(self, ax: int = None) -> FACES:
-        if ax not in [0, 1, 2]:
-            raise ValueError("[VALUE ERROR] ROWFACES.faces() ax must be 0,1,2.")
-        return (self.xfaces, self.yfaces, self.zfaces)[ax]
+    def faces_for_axis(self, ax: int) -> FACES:
+        # Return in "search order": try +face first then -face,
+        # matching merge logic that usually wants touching faces.
+        if ax == 0:
+            return (self.x1, self.x0)
+        if ax == 1:
+            return (self.y1, self.y0)
+        if ax == 2:
+            return (self.z1, self.z0)
+        raise ValueError("axis must be 0,1,2")
 
 
 class MDX:
@@ -53,50 +57,64 @@ class MDX:
         self.init()
 
     def init(self) -> None:
-        self.neg: Tuple[BUCK, ...] = (defaultdict(set), defaultdict(set), defaultdict(set))
-        self.pos: Tuple[BUCK, ...] = (defaultdict(set), defaultdict(set), defaultdict(set))
-        self._faces: Dict[Loc, ROWFACES] = {}
+        self.neg: Tuple[BUCK, BUCK, BUCK] = (defaultdict(set), defaultdict(set), defaultdict(set))
+        self.pos: Tuple[BUCK, BUCK, BUCK] = (defaultdict(set), defaultdict(set), defaultdict(set))
+        self._faces: Dict[Loc, RowFaces] = {}
 
-    def faces(self, mid: int = None, row: NDARR = None) -> ROWFACES:
+    # ============================================================
+    # face building
+    # ============================================================
+
+    def _build_faces(self, mid: int, row: NDARR) -> RowFaces:
         x0, y0, z0 = ROW.P0(row=row)
         x1, y1, z1 = ROW.P1(row=row)
 
-        kx0: FACE = (mid, y0, y1, z0, z1, x0)
-        kx1: FACE = (mid, y0, y1, z0, z1, x1)
-        ky0: FACE = (mid, x0, x1, z0, z1, y0)
-        ky1: FACE = (mid, x0, x1, z0, z1, y1)
-        kz0: FACE = (mid, x0, x1, y0, y1, z0)
-        kz1: FACE = (mid, x0, x1, y0, y1, z1)
-        return ROWFACES(x0=kx0, x1=kx1, y0=ky0, y1=ky1, z0=kz0, z1=kz1)
+        fx0: FACE = (mid, y0, y1, z0, z1, x0)
+        fx1: FACE = (mid, y0, y1, z0, z1, x1)
 
-    # ------------------------------------------------------------
-    # Updated API: insert/remove accept Row
-    # ------------------------------------------------------------
+        fy0: FACE = (mid, x0, x1, z0, z1, y0)
+        fy1: FACE = (mid, x0, x1, z0, z1, y1)
 
-    def insert(self, r: "Row") -> None:
-        mid, rid, row = r.mid, r.rid, r.row
+        fz0: FACE = (mid, x0, x1, y0, y1, z0)
+        fz1: FACE = (mid, x0, x1, y0, y1, z1)
+
+        return RowFaces(x0=fx0, x1=fx1, y0=fy0, y1=fy1, z0=fz0, z1=fz1)
+
+    # ============================================================
+    # insert / remove
+    # ============================================================
+
+    def insert(self, r: Row) -> None:
+        mid, rid, row = int(r.mid), int(r.rid), r.row
         loc: Loc = (mid, rid)
-        faces = self.faces(mid=mid, row=row)
+
+        faces = self._build_faces(mid=mid, row=row)
         self._faces[loc] = faces
 
+        # X axis
         self.neg[self.AX_X][faces.x0].add(loc)
         self.pos[self.AX_X][faces.x1].add(loc)
+        # Y axis
         self.neg[self.AX_Y][faces.y0].add(loc)
         self.pos[self.AX_Y][faces.y1].add(loc)
+        # Z axis
         self.neg[self.AX_Z][faces.z0].add(loc)
         self.pos[self.AX_Z][faces.z1].add(loc)
 
-    def remove(self, r: "Row") -> None:
-        mid, rid = r.mid, r.rid
+    def remove(self, r: Row) -> None:
+        mid, rid = int(r.mid), int(r.rid)
         loc: Loc = (mid, rid)
-        faces: ROWFACES = self._faces.pop(loc, None)
+
+        faces = self._faces.pop(loc, None)
         if faces is None:
             return
 
         self._discard(self.neg[self.AX_X], faces.x0, loc)
         self._discard(self.pos[self.AX_X], faces.x1, loc)
+
         self._discard(self.neg[self.AX_Y], faces.y0, loc)
         self._discard(self.pos[self.AX_Y], faces.y1, loc)
+
         self._discard(self.neg[self.AX_Z], faces.z0, loc)
         self._discard(self.pos[self.AX_Z], faces.z1, loc)
 
@@ -109,24 +127,40 @@ class MDX:
         if not s:
             del m[key]
 
-    def search(self, mid: int = None, rid: int = None, axis: int = None) -> Optional[Loc]:
-        if mid is None or rid is None or axis is None:
-            raise ValueError("mid, rid, and axis must be provided")
+    # ============================================================
+    # adjacency search
+    # ============================================================
+
+    def search(self, r: Row, axis: int) -> Optional[Row]:
+        """
+        Find ONE merge-candidate neighbor (same material) touching on `axis`.
+
+        Returns:
+            Row(mid, rid, row_view) or None
+        """
+        if axis not in (0, 1, 2):
+            raise ValueError("axis must be 0,1,2")
+
+        mid, rid = int(r.mid), int(r.rid)
         loc: Loc = (mid, rid)
-        rowfaces: ROWFACES = self._faces.get(loc)
-        if rowfaces is None:
+
+        faces = self._faces.get(loc)
+        if faces is None:
             return None
 
-        def search(faces: FACES, bucks: BUCKS) -> Optional[Loc]:
-            for face, buck in zip(faces, bucks):
-                candidates = buck.get(face)
-                if not candidates:
-                    continue
-                for c in candidates:
-                    if c != loc:
-                        return c
-            return None
+        face_pos, face_neg = faces.faces_for_axis(axis)
+        bucks: BUCKS = (self.neg[axis], self.pos[axis])
 
-        faces = rowfaces.faces(ax=axis)
-        bucks = (self.neg[axis], self.pos[axis])
-        return search(faces, bucks)
+        # Try +face then -face (or whatever order faces_for_axis returns)
+        for face_key, bucket in ((face_pos, bucks[0]), (face_neg, bucks[1])):
+            candidates = bucket.get(face_key)
+            if not candidates:
+                continue
+
+            # return the first other loc
+            for (pmid, prid) in candidates:
+                if (pmid, prid) != loc:
+                    row = self.rows.array[int(pmid)][int(prid)]
+                    return Row(mid=int(pmid), rid=int(prid), row=row)
+
+        return None
