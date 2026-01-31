@@ -23,12 +23,8 @@ class BVH:
         self.right: list[int] = []
         self.parent: list[int] = []
 
-        self.x0: list[int] = []
-        self.y0: list[int] = []
-        self.z0: list[int] = []
-        self.x1: list[int] = []
-        self.y1: list[int] = []
-        self.z1: list[int] = []
+        self.x0, self.y0, self.z0 = [], [], []
+        self.x1, self.y1, self.z1 = [], [], []
 
         self.lmid: list[int] = []
         self.lrid: list[int] = []
