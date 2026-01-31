@@ -45,52 +45,38 @@ class ROWS:
         self.mats = Materials()
         self.bvh = BVH(rows=self)
         self.mdx = MDX(rows=self)
-        self.n: dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}  # number of valid rows per material
         self.m = 0  # for the total number of rows used
 
-        self.array: NDArray[ROW.DTYPE] = np.full(
-            (MATERIALS.NUM, ROWS.SIZE, *ROW.SHAPE),
-            fill_value=ROW.SENTINEL,
-            dtype=ROW.DTYPE,
-        )
+        self.array, self.arids = self.requirements(ROWS.SIZE)
         self.shape = self.array.shape
         self.nbytes = self.array.nbytes
         self.gbytes = self.nbytes / (1024**3)
 
-        mat = "STONE"
-        self.insert(
-            p0=(ROW.XMIN, ROW.YMIN, ROW.ZMIN),
-            p1=(ROW.XMAX, ROW.YMAX, ROW.ZMAX),
-            mat=mat,
-        )
+        self.insert(p0=(ROW.XMIN, ROW.YMIN, ROW.ZMIN), p1=(ROW.XMAX, ROW.YMAX, ROW.ZMAX), mat="STONE")
         self.size = (ROW.XMAX - ROW.XMIN, ROW.YMAX - ROW.YMIN, ROW.ZMAX - ROW.ZMIN)
-
-        self._merge = 16
-        self.__merge = 0
+        self.vol = self.volume()
 
     def newn(self, mat:str=None) -> int:
         mid: int = Materials.name2idx[mat]
-        n: int = self.n[mid]
-        self.n[mid] += 1
+        n: int = self.arids[mid]
+        self.arids[mid] += 1
         self.m += 1
         return n
+
 
     def deln(self, mat:str=None) -> int:
         if mat is None:
             raise ValueError("material must be specified")
         mid = Materials.name2idx[mat]
-        if self.n[mid] <= 0:
+        if self.arids[mid] <= 0:
             raise ValueError("no rows to free")
-        self.n[mid] -= 1
+        self.arids[mid] -= 1
         self.m -= 1
-        return self.n[mid]
+        return self.arids[mid]
+
 
     def requirements(self, n:int=None) -> ARRAY_ARIDS:
-        array = np.full(
-            (MATERIALS.NUM, n, *ROW.SHAPE),
-            fill_value=ROW.SENTINEL,
-            dtype=ROW.DTYPE,
-        )
+        array = np.full((MATERIALS.NUM, n, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
         arids: dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}
         return (array, arids)
 
@@ -108,7 +94,7 @@ class ROWS:
             mat = ROW.MAT(row=row)
             index = ROW.RID(row=row)
         mid = Materials.name2idx[mat]
-        n = self.n[mid]
+        n = self.arids[mid]
         if index < 0 or index >= n:
             raise IndexError("index out of range")
         last = n - 1
@@ -134,7 +120,7 @@ class ROWS:
                 total += self.volume(mat=Materials.idx2name[mid])   # add up all materials
         else:
             mid = Materials.name2idx[mat]
-            for rid in range(self.n[mid]):
+            for rid in range(self.arids[mid]):
                 total += ROW.VOLUME(row=self.array[mid][rid])
         return total
 
@@ -146,7 +132,7 @@ class ROWS:
         return self.array[Materials.name2idx[mat]][rid]
 
     def nrows(self, mat:str=None) -> int:
-        return self.n[Materials.name2idx[mat]]
+        return self.arids[Materials.name2idx[mat]]
 
     def splitrow(self, pos:POS=None, p2:POS=None, mat:str=None) -> ARRAY_ARIDS:
         mat0, rid, row = self.search(pos=pos)
@@ -265,7 +251,7 @@ class ROWS:
 
     def merge2(self, mat:str=None, rid0:int=None, rid1:int=None) -> ARRAY_ARIDS:
         mid = Materials.name2idx[mat]
-        n = self.n[mid]
+        n = self.arids[mid]
         if rid0 < 0 or rid0 >= n or rid1 < 0 or rid1 >= n or rid0 == rid1:
             return self.requirements(n=0)
 
@@ -292,16 +278,16 @@ class ROWS:
 
     def mergeax(self, mat:str=None, axis:int=None) -> ARRAY_ARIDS:
         mid = Materials.name2idx[mat]
-        start_n = self.n[mid]
+        start_n = self.arids[mid]
         array, arids = self.requirements(n=start_n)
 
-        extra: list[int] = list(range(self.n[mid] - 1, -1, -1))
+        extra: list[int] = list(range(self.arids[mid] - 1, -1, -1))
         seen: set[int] = set()
 
         while extra:
             rid = extra.pop()
 
-            if rid < 0 or rid >= self.n[mid]:
+            if rid < 0 or rid >= self.arids[mid]:
                 continue
             if rid in seen:
                 continue
@@ -312,7 +298,7 @@ class ROWS:
                 continue
 
             pmid, prid = partner
-            if pmid != mid or prid < 0 or prid >= self.n[mid]:
+            if pmid != mid or prid < 0 or prid >= self.arids[mid]:
                 continue
 
             created, carids = self.merge2(mat=mat, rid0=rid, rid1=prid)
@@ -320,7 +306,7 @@ class ROWS:
                 array[mid][arids[mid]] = created[mid][0]
                 arids[mid] += 1
 
-                new_rid = self.n[mid] - 1
+                new_rid = self.arids[mid] - 1
                 extra.append(new_rid)
 
                 if hasattr(self.mdx, "neighbors_of"):
@@ -332,7 +318,7 @@ class ROWS:
                             seen.remove(nr)
                         extra.append(nr)
 
-                if rid < self.n[mid]:
+                if rid < self.arids[mid]:
                     if rid in seen:
                         seen.remove(rid)
                     extra.append(rid)
@@ -341,7 +327,7 @@ class ROWS:
 
     def mergemat(self, mat:str=None) -> ARRAY_ARIDS:
         mid = Materials.name2idx[mat]
-        start_n = self.n[mid]
+        start_n = self.arids[mid]
         array, arids = self.requirements(n=start_n)
 
         for ax in range(3):
@@ -369,7 +355,7 @@ class ROWS:
         # worst-case: you will never create more merged rows than currently exist in those mats combined
         worst = 0
         for mid in mids_present:
-            worst += self.n[mid]
+            worst += self.arids[mid]
 
         array, arids = self.requirements(n=worst)
 
@@ -379,14 +365,14 @@ class ROWS:
             for ax in (self.mdx.AX_X, self.mdx.AX_Y, self.mdx.AX_Z):
                 extra: list[tuple[int, int]] = []
                 for mid in mids_present:
-                    for rid in range(self.n[mid] - 1, -1, -1):
+                    for rid in range(self.arids[mid] - 1, -1, -1):
                         extra.append((mid, rid))
 
                 seen: set[tuple[int, int]] = set()
 
                 while extra:
                     mid, rid = extra.pop()
-                    if rid < 0 or rid >= self.n[mid]:
+                    if rid < 0 or rid >= self.arids[mid]:
                         continue
 
                     key = (mid, rid)
@@ -399,7 +385,7 @@ class ROWS:
                         continue
 
                     pmid, prid = partner
-                    if pmid != mid or prid < 0 or prid >= self.n[mid]:
+                    if pmid != mid or prid < 0 or prid >= self.arids[mid]:
                         continue
 
                     mat = self.mats.idx2name[mid]
@@ -409,10 +395,10 @@ class ROWS:
                         arids[mid] += 1
                         merged_this_round += 1
 
-                        new_rid = self.n[mid] - 1
+                        new_rid = self.arids[mid] - 1
                         extra.append((mid, new_rid))
 
-                        if rid < self.n[mid]:
+                        if rid < self.arids[mid]:
                             seen.discard((mid, rid))
                             extra.append((mid, rid))
 
