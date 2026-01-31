@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T02:45:35
+#Time when generated: 2026-01-31T03:05:02
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -1572,7 +1572,7 @@ class BVH:
             node = self.parent[node]
 
 
-    def insert(self, mat:str=None, rid:int=None, row:NDArray[ROW.DTYPE]=None) -> None:
+    def insert(self, mat:str=None, rid:int=None, row:NDArray[ROW.DTYPE]=None, fixup:bool=False) -> None:
         if row is None:
             mid = self.rows.mats.name2idx[mat]
             row = self.rows.array[mid][rid]
@@ -1591,9 +1591,9 @@ class BVH:
             self.root = leaf_node
             return
 
-        self.root = self.insertnode(leaf=leaf_node)
+        self.root = self.insertnode(leaf=leaf_node, fixup=fixup)
 
-    def insertnode(self, leaf:int=None) -> int:
+    def insertnode(self, leaf:int=None, fixup:bool=False) -> int:
         bx0, by0, bz0 = self.x0[leaf], self.y0[leaf], self.z0[leaf]
         bx1, by1, bz1 = self.x1[leaf], self.y1[leaf], self.z1[leaf]
         root = node = self.root
@@ -1622,7 +1622,8 @@ class BVH:
             self.right[parent0] = parent1
 
         self.parent[parent1] = parent0
-        self.fixupwards(node=parent0)
+        if fixup:
+            self.fixupwards(node=parent0)
         return root
 
     def remove(self, mat:str=None, rid:int=None, row:NDArray[ROW.DTYPE]=None) -> None:
@@ -3453,6 +3454,7 @@ class ROWS:
                     arids[mid_new] += 1
 
         self.remove(row=row)
+        self.bvh.fixupwards(node=self.bvh.parent[self.bvh.lidx[(mat0, rid)]])
         return array, arids
 
     def split1(self, pos:POS=None, mat:str=None) -> ARRAY_ARIDS:
@@ -3734,19 +3736,28 @@ class ROWS:
 === RUNNING TEST 1/1: test6 ===
 === TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
 test6: search() [tests=10]: lap 3: 9.6e-05 seconds
-test6: split1 (point split) [tests=10]: lap 5: 0.044859 seconds
-test6: split2 (region split) [tests=10]: lap 7: 0.078872 seconds
-test6: merge() [tests=10]: lap 9: 0.042848 seconds
-test6: remove() [tests=10]: lap 11: 4.3e-05 seconds
-test6: insert() [tests=10]: lap 13: 0.000443 seconds
-=== TEST6 DONE ===
-=== TEST 1/1: test6 PASSED in 0.000 seconds ===
-
+Traceback (most recent call last):
+  File "c:\VOXELS\tests\tests.py", line 19, in tests
+    test()
+    ~~~~^^
+  File "c:\VOXELS\tests\test6.py", line 55, in test6
+    rows.split(pos=pos, mat="AIR")
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 264, in split
+    return self.split1(pos=pos, mat=mat)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 190, in split1
+    batch, arids = self.splitrow(pos=pos, p2=p2, mat=mat)
+                   ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 185, in splitrow
+    self.bvh.fixupwards(node=self.bvh.parent[self.bvh.lidx[(mat0, rid)]])
+                                             ~~~~~~~~~~~~~^^^^^^^^^^^^^
+KeyError: ('STONE', 0)
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3748
+# Total lines in bundle: 3759
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T02:45:35
+# Generated at the time: 2026-01-31T03:05:02
 --- END OF FILE ---

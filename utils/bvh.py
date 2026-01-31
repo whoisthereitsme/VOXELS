@@ -59,7 +59,7 @@ class BVH:
             node = self.parent[node]
 
 
-    def insert(self, mat:str=None, rid:int=None, row:NDArray[ROW.DTYPE]=None) -> None:
+    def insert(self, mat:str=None, rid:int=None, row:NDArray[ROW.DTYPE]=None, fixup:bool=False) -> None:
         if row is None:
             mid = self.rows.mats.name2idx[mat]
             row = self.rows.array[mid][rid]
@@ -78,9 +78,9 @@ class BVH:
             self.root = leaf_node
             return
 
-        self.root = self.insertnode(leaf=leaf_node)
+        self.root = self.insertnode(leaf=leaf_node, fixup=fixup)
 
-    def insertnode(self, leaf:int=None) -> int:
+    def insertnode(self, leaf:int=None, fixup:bool=False) -> int:
         bx0, by0, bz0 = self.x0[leaf], self.y0[leaf], self.z0[leaf]
         bx1, by1, bz1 = self.x1[leaf], self.y1[leaf], self.z1[leaf]
         root = node = self.root
@@ -109,7 +109,8 @@ class BVH:
             self.right[parent0] = parent1
 
         self.parent[parent1] = parent0
-        self.fixupwards(node=parent0)
+        if fixup:
+            self.fixupwards(node=parent0)
         return root
 
     def remove(self, mat:str=None, rid:int=None, row:NDArray[ROW.DTYPE]=None) -> None:
