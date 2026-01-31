@@ -15,7 +15,7 @@ from world.row import ROW
 class BVH:
     __slots__ = ("rows", "root", "left", "right", "parent", "xmin", "ymin", "zmin", "xmax", "ymax", "zmax", "lmid", "lrid", "lidx")
 
-    def __init__(self, rows: ROWS) -> None:
+    def __init__(self, rows:ROWS=None) -> None:
         self.rows = rows
         self.root: int = -1
 
@@ -23,12 +23,12 @@ class BVH:
         self.right: list[int] = []
         self.parent: list[int] = []
 
-        self.xmin: list[int] = []
-        self.ymin: list[int] = []
-        self.zmin: list[int] = []
-        self.xmax: list[int] = []
-        self.ymax: list[int] = []
-        self.zmax: list[int] = []
+        self.x0: list[int] = []
+        self.y0: list[int] = []
+        self.z0: list[int] = []
+        self.x1: list[int] = []
+        self.y1: list[int] = []
+        self.z1: list[int] = []
 
         self.lmid: list[int] = []
         self.lrid: list[int] = []
@@ -41,12 +41,12 @@ class BVH:
         self.right.append(right)
         self.parent.append(parent)
 
-        self.xmin.append(x0)
-        self.ymin.append(y0)
-        self.zmin.append(z0)
-        self.xmax.append(x1)
-        self.ymax.append(y1)
-        self.zmax.append(z1)
+        self.x0.append(x0)
+        self.y0.append(y0)
+        self.z0.append(z0)
+        self.x1.append(x1)
+        self.y1.append(y1)
+        self.z1.append(z1)
 
         self.lmid.append(lmid)
         self.lrid.append(lrid)
@@ -61,8 +61,8 @@ class BVH:
         return (xmax - xmin) * (ymax - ymin) * (zmax - zmin)
 
     def _merged_volume_with_node(self, node:int=None, bxmin:int=None, bymin:int=None, bzmin:int=None, bxmax:int=None, bymax:int=None, bzmax:int=None) -> int:
-        ax0, ay0, az0 = self.xmin[node], self.ymin[node], self.zmin[node]
-        ax1, ay1, az1 = self.xmax[node], self.ymax[node], self.zmax[node]
+        ax0, ay0, az0 = self.x0[node], self.y0[node], self.z0[node]
+        ax1, ay1, az1 = self.x1[node], self.y1[node], self.z1[node]
 
         x0, x1 = min(ax0, bxmin), max(ax1, bxmax)
         y0, y1 = min(ay0, bymin), max(ay1, bymax)
@@ -74,12 +74,12 @@ class BVH:
         while node != -1:
             l, r = self.left[node], self.right[node]
 
-            self.xmin[node] = min(self.xmin[l], self.xmin[r])
-            self.ymin[node] = min(self.ymin[l], self.ymin[r])
-            self.zmin[node] = min(self.zmin[l], self.zmin[r])
-            self.xmax[node] = max(self.xmax[l], self.xmax[r])
-            self.ymax[node] = max(self.ymax[l], self.ymax[r])
-            self.zmax[node] = max(self.zmax[l], self.zmax[r])
+            self.x0[node] = min(self.x0[l], self.x0[r])
+            self.y0[node] = min(self.y0[l], self.y0[r])
+            self.z0[node] = min(self.z0[l], self.z0[r])
+            self.z1[node] = max(self.z1[l], self.z1[r])
+            self.y1[node] = max(self.y1[l], self.y1[r])
+            self.z1[node] = max(self.z1[l], self.z1[r])
 
             node = self.parent[node]
 
@@ -112,8 +112,9 @@ class BVH:
         self.root = self._insert_node(self.root, leaf_node)
 
     def _insert_node(self, root: int, leaf_node: int) -> int:
-        bxmin = self.xmin[leaf_node]; bymin = self.ymin[leaf_node]; bzmin = self.zmin[leaf_node]
-        bxmax = self.xmax[leaf_node]; bymax = self.ymax[leaf_node]; bzmax = self.zmax[leaf_node]
+        bxmin, bxmax = self.x0[leaf_node], self.x1[leaf_node]
+        bymin, bymax = self.y0[leaf_node], self.y1[leaf_node]
+        bzmin, bzmax = self.z0[leaf_node], self.z1[leaf_node]
 
         node = root
         while self.lmid[node] == -1:
@@ -128,8 +129,8 @@ class BVH:
         old_leaf = node
         parent = self.parent[old_leaf]
 
-        ax0, ay0, az0 = self.xmin[old_leaf], self.ymin[old_leaf], self.zmin[old_leaf]
-        ax1, ay1, az1 = self.xmax[old_leaf], self.ymax[old_leaf], self.zmax[old_leaf]
+        ax0, ay0, az0 = self.x0[old_leaf], self.y0[old_leaf], self.z0[old_leaf]
+        ax1, ay1, az1 = self.x1[old_leaf], self.y1[old_leaf], self.z1[old_leaf]
 
         new_parent = self._new_node(
             min(ax0, bxmin),
@@ -200,8 +201,8 @@ class BVH:
         x, y, z = pos
         stack = [self.root]
 
-        x0, y0, z0 = self.xmin, self.ymin, self.zmin
-        x1, y1, z1 = self.xmax, self.ymax, self.zmax
+        x0, y0, z0 = self.x0, self.y0, self.z0
+        x1, y1, z1 = self.x1, self.y1, self.z1
         l0, r0 = self.left, self.right
         lm, lr = self.lmid, self.lrid
 
