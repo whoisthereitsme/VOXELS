@@ -4,10 +4,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     pass
 
-
+from utils.types import NDARR
 
 import numpy as np
-from numpy.typing import NDArray
 
 
 from utils.types import SIZE, POS
@@ -18,6 +17,22 @@ from world.materials import Material, Materials
 
 
 class ROW:
+    """
+    PRIVATE VARIABLES!
+    NOTES:
+        - use the static methods to get stuff done!
+        - do not acces these variables directly!
+    PURPOSE:
+        - defines the keys and structure of a ROW in the world ROWS array
+    STRUCTURE:
+        - each ROW is a 4x4 numpy uint64 array
+        - row 0: min positions (x0, y0, z0)
+        - row 1: max positions (x1, y1, z1)
+        - row 2: dimensions (dx, dy, dz)
+        - row 3: metadata (id, mid, flags)
+    USAGE:
+        - use the static methods to create, read, and manipulate ROWs
+    """
     DTYPE = np.uint64
     SHAPE = (4, 4)
     NBITS = DTYPE(0).nbytes * 8                      # -> 64 bits
@@ -35,28 +50,29 @@ class ROW:
     YMAX = 2**YBITS
     ZMAX = 2**ZBITS
     NMAX = XMAX * YMAX * ZMAX
-    
 
-    # POSITIONS (MIN) — stored in row 0
+
+    # POSITIONS (MIN) — stored in row 0 (NOT FOR DIRECT USE)
     IDS_X0 = (0, 0)
     IDS_Y0 = (0, 1)
     IDS_Z0 = (0, 2)
 
-    # POSITIONS (MAX) — stored in row 1
+    # POSITIONS (MAX) — stored in row 1 (NOT FOR DIRECT USE)
     IDS_X1 = (1, 0)
     IDS_Y1 = (1, 1)
     IDS_Z1 = (1, 2)
 
-    # DIMENSIONS — stored in row 2
+    # DIMENSIONS — stored in row 2 (NOT FOR DIRECT USE)
     IDS_DX = (2, 0)
     IDS_DY = (2, 1)
     IDS_DZ = (2, 2)
 
-    # METADATA — stored in row 3
+    # METADATA — stored in row 3 (NOT FOR DIRECT USE)
     IDS_ID    = (3, 0)
-    IDS_MAT   = (3, 1)
+    IDS_MID   = (3, 1)
     IDS_FLAGS = (3, 2)
 
+    # ENCODED FLAGS (NOT FOR DIRECT USE)
     ENCODE_DIRTY        = DTYPE(1 << 0)
     ENCODE_ALIVE        = DTYPE(1 << 1)
     ENCODE_SOLID        = DTYPE(1 << 2)
@@ -64,53 +80,99 @@ class ROW:
     ENCODE_VISIBLE      = DTYPE(1 << 4)
 
     SENTINEL = np.iinfo(DTYPE).max
-    ARRAY: NDArray[DTYPE] = np.zeros(SHAPE, dtype=DTYPE)
+    ARRAY: NDARR = np.zeros(SHAPE, dtype=DTYPE)
     for i in range(4):
         for j in range(4):
             ARRAY[i, j] = SENTINEL  # initialize all to -1 -> invalid
     _ID = 0
+
+    """
+    PRIVATE VARIABLES END 
+    """
     
-    @staticmethod # get min position (x0, y0, z0)   
-    def P0(row:NDArray[DTYPE]=None) -> POS:
+    @staticmethod # get min position (x0, y0, z0)  
+    def P0(row:NDARR=None) -> POS:
+        """
+        PUBLIC!
+        RETURN: (x0, y0, z0) == p0
+        """
         return (int(row[*ROW.IDS_X0]), int(row[*ROW.IDS_Y0]), int(row[*ROW.IDS_Z0]))
     
     @staticmethod # get max position (x1, y1, z1)
-    def P1(row:NDArray[DTYPE]=None) -> POS:
+    def P1(row:NDARR=None) -> POS:
+        """
+        PUBLIC!
+        RETURN: (x1, y1, z1) == p1
+        """
         return (int(row[*ROW.IDS_X1]), int(row[*ROW.IDS_Y1]), int(row[*ROW.IDS_Z1]))
     
     @staticmethod # get size (dx, dy, dz)
-    def SIZE(row:NDArray[DTYPE]=None) -> SIZE:
+    def SIZE(row:NDARR=None) -> SIZE:
+        """
+        PUBLIC!
+        RETURN: (dx, dy, dz) == size
+        """
         return (int(row[*ROW.IDS_DX]), int(row[*ROW.IDS_DY]), int(row[*ROW.IDS_DZ]))
     
     @staticmethod # get material id
-    def MID(row:NDArray[DTYPE]=None) -> int:
-        return int(row[*ROW.IDS_MAT])
+    def MID(row:NDARR=None) -> int:
+        """
+        PUBLIC!
+        RETURN: material id integer (Material ID)
+        """
+        return int(row[*ROW.IDS_MID])
     
     @staticmethod # get meterial string name
-    def MAT(row:NDArray[DTYPE]=None) -> str:
+    def MAT(row:NDARR=None) -> str:
+        """
+        PUBLIC!
+        RETURN: material name string (Material Name)
+        """
         return Materials.id2name[ROW.MID(row=row)]
     
     @staticmethod # get row id
-    def RID(row:NDArray[DTYPE]=None) -> int:
+    def RID(row:NDARR=None) -> int:
+        """
+        PUBLIC!
+        RETURN: row unique id integer (Row ID)
+        """
         return int(row[*ROW.IDS_ID])
     
     @staticmethod # get flags
-    def FLAGS(row:NDArray[DTYPE]=None) -> tuple[bool, bool, bool, bool, bool]:
+    def FLAGS(row:NDARR=None) -> tuple[bool, bool, bool, bool, bool]:
+        """
+        PUBLIC!
+        RETURN: tuple of flags (dirty, alive, solid, destructable, visible)
+        """
         flags: int = int(row[*ROW.IDS_FLAGS])
         dirty, alive, solid, destr, visib = ROW.DECODE(flags=flags)
         return (dirty, alive, solid, destr, visib)
     
     @staticmethod # get volume (dx * dy * dz)
-    def VOLUME(row:NDArray[DTYPE]=None) -> int:
+    def VOLUME(row:NDARR=None) -> int:
+        """
+        PUBLIC!
+        RETURN: volume (dx * dy * dz)
+        """
         dx, dy, dz = ROW.SIZE(row=row)
         return dx * dy * dz
 
-    @staticmethod # make a copy of the template array
-    def COPY() -> NDArray[DTYPE]:
+    @staticmethod
+    def COPY() -> NDARR:
+        """
+        PUBLIC!
+        RETURN: a copy of the ROW.ARRAY template
+        USAGE: use this to create new rows
+        """
         return np.copy(ROW.ARRAY)
     
     @staticmethod
     def CLIP(pos:POS=None) -> POS:
+        """
+        PUBLIC!
+        RETURN: clipped position within world bounds
+        USAGE: use this to ensure positions are within valid world limits
+        """
         x, y, z = pos
         cx = min(max(x, ROW.XMIN), ROW.XMAX - 1)
         cy = min(max(y, ROW.YMIN), ROW.YMAX - 1)
@@ -120,6 +182,10 @@ class ROW:
     
     @staticmethod
     def SORT(p0:POS=None, p1:POS=None) -> tuple[POS, POS]:
+        """
+        PUBLIC!
+        RETURN: sorted positions (p0, p1) with p0 <= p1 for each coordinate
+        """
         x0, y0, z0 = p0
         x1, y1, z1 = p1
         sx0, sx1 = (min(x0, x1), max(x0, x1))
@@ -130,19 +196,24 @@ class ROW:
         return (p0, p1)
     
     @staticmethod
-    def CONTAINS(row: NDArray[DTYPE], pos: POS) -> bool:
+    def CONTAINS(row: NDARR, pos: POS) -> bool:
+        """
+        PUBLIC!
+        RETURN: whether the row contains the given position
+        """
         x, y, z = pos
         x0, y0, z0 = ROW.P0(row=row)
         x1, y1, z1 = ROW.P1(row=row)
-        return (
-            (x0 <= x < x1) and
-            (y0 <= y < y1) and
-            (z0 <= z < z1)
-        )
+        return ((x0 <= x < x1) and (y0 <= y < y1) and (z0 <= z < z1))
     
+
     @staticmethod
-    def MERGE(row0: NDArray[DTYPE]=None, row1: NDArray[DTYPE]=None) -> tuple[bool, bool, bool]:
-        if row0[*ROW.IDS_MAT] != row1[*ROW.IDS_MAT]:
+    def MERGE(row0: NDARR=None, row1: NDARR=None) -> tuple[bool, bool, bool]:
+        """
+        PUBLIC!
+        RETURN: tuple indicating if rows can be merged along each axis (x, y, z)
+        """
+        if row0[*ROW.IDS_MID] != row1[*ROW.IDS_MID]:
             return (False, False, False)
 
         x0a, y0a, z0a = ROW.P0(row=row0)
@@ -176,6 +247,10 @@ class ROW:
 
     @staticmethod
     def ENCODE(dirty:bool=None, alive:bool=None, solid:bool=None, destructable:bool=None, visible:bool=None) -> int:
+        """
+        PUBLIC!
+        RETURN: encoded flags integer
+        """
         f: int = 0
         if dirty:
             f |= int(ROW.ENCODE_DIRTY)
@@ -189,8 +264,13 @@ class ROW:
             f |= int(ROW.ENCODE_VISIBLE)
         return f
     
+
     @staticmethod
     def DECODE(flags) -> tuple[bool, bool, bool, bool, bool]:
+        """
+        PUBLIC!
+        RETURN: tuple of flags (dirty, alive, solid, destructable, visible)
+        """
         f: int = int(flags)
 
         dirty = (f & int(ROW.ENCODE_DIRTY)) != 0
@@ -201,21 +281,16 @@ class ROW:
         return dirty, alive, solid, destr, visib
 
 
-
-
-
-
-
-
-                
-
     @staticmethod
-    def new(p0:POS=None, p1:POS=None, mat:str=None, rid:int=None, dirty:bool=True, alive:bool=True) -> NDArray[DTYPE]:
+    def new(p0:POS=None, p1:POS=None, mat:str=None, rid:int=None, dirty:bool=True, alive:bool=True) -> NDARR:
+        """
+        PUBLIC!
+        RETURN: a new ROW with given parameters
+        """
         p0, p1 = ROW.SORT(p0=ROW.CLIP(pos=p0), p1=ROW.CLIP(pos=p1))
         mat: Material = Material(name=mat)
         flags: int = ROW.ENCODE(dirty=dirty, alive=alive, solid=mat.issolid(), destructable=not mat.isindestructible(), visible=not mat.isinvisible())
-        
-        copy: NDArray[ROW.DTYPE] = ROW.COPY()
+        copy: NDARR = ROW.COPY()
 
         # POS0
         copy[*ROW.IDS_X0]    = np.uint64(p0[0])
@@ -231,7 +306,7 @@ class ROW:
         copy[*ROW.IDS_DZ]    = np.uint64(p1[2] - p0[2])
         # METADATA
         copy[*ROW.IDS_ID]    = np.uint64(rid)       # stores now the row index within material array instead of global unique id
-        copy[*ROW.IDS_MAT]   = np.uint64(mat.id)
+        copy[*ROW.IDS_MID]   = np.uint64(mat.id)
         copy[*ROW.IDS_FLAGS] = np.uint64(flags)
 
         if any(v < 0 for v in (copy[*ROW.IDS_DX], copy[*ROW.IDS_DY], copy[*ROW.IDS_DZ])):

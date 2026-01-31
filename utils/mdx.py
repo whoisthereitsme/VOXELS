@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, DefaultDict, Dict, Optional, Set, Tuple
+
+
 if TYPE_CHECKING:
     from world.rows import ROWS
     
@@ -7,9 +9,8 @@ if TYPE_CHECKING:
 
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import DefaultDict, Dict, Optional, Set, Tuple
-
-from world.row import ROW, NDArray
+from world.row import ROW
+from .types import NDARR
 
 Loc = Tuple[int, int]  # (mid, rid)
 FACE = Tuple[int, int, int, int, int, int]  # (mid, a0, a1, b0, b1, face_coord)
@@ -59,7 +60,7 @@ class MDX:
         self.pos: Tuple[BUCK, ...] = (defaultdict(set), defaultdict(set), defaultdict(set))
         self._faces: Dict[Loc, ROWFACES] = {}
 
-    def faces(self, mid:int=None, row:NDArray[ROW.DTYPE]=None) -> ROWFACES:
+    def faces(self, mid:int=None, row:NDARR=None) -> ROWFACES:
         x0, y0, z0 = ROW.P0(row=row)
         x1, y1, z1 = ROW.P1(row=row)
 
@@ -71,7 +72,7 @@ class MDX:
         kz1: FACE = (mid, x0, x1, y0, y1, z1)
         return ROWFACES(x0=kx0, x1=kx1, y0=ky0, y1=ky1, z0=kz0, z1=kz1)
 
-    def insert(self, row:NDArray[ROW.DTYPE]=None) -> None:
+    def insert(self, row:NDARR=None) -> None:
         mid = self.rows.mat.name2idx[ROW.MAT(row=row)]
         rid = ROW.RID(row=row)
         loc: Loc = (mid, rid)
