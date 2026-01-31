@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T07:02:40
+#Time when generated: 2026-01-31T07:09:04
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -618,7 +618,7 @@ from all import *
 
 
 if __name__ == "__main__":
-    tests(tests=[test1, test2, test3, test4, test5, test6, test7, test8, test9, test10])
+    tests(tests=[test8])
 
 ################################################################################
 # FILE 9/42: main.py (END)
@@ -1380,13 +1380,27 @@ def test7() -> None:
 # FILE 19/42: tests/test8.py (START)
 ################################################################################
 
-
-
-
+from world.buildings.miner import Miner
+import random
+from world import ROWS
 
 
 def test8() -> None:
-    pass
+    miners = []
+    rows = ROWS()
+    for i in range(60):
+        x = random.randint(a=1000, b=999000)
+        y = random.randint(a=1000, b=999000)
+        z = random.randint(a=1000, b=60000)
+        miner = Miner(rows=rows, pos=(x, y, z), size=(10, 10, 10), seconds=1)
+        miners.append(miner)
+    print(f"Created {len(miners)} miners.")
+
+    # Simulate updates for 120 frames (~2 seconds)
+    for frame in range(300):
+        for miner in miners:
+            miner: Miner = miner
+            miner.update(frame=frame)
 
 ################################################################################
 # FILE 19/42: tests/test8.py (END)
@@ -2578,6 +2592,9 @@ class Miner:
 
         self.minepos = (x, y, z)    # update to next position
         return pos
+    
+    def update(self, frame:int) -> None:
+        self.mine(frame=frame)
     
     def mine(self, frame:int=None) -> None:
         if frame is None:
@@ -4051,133 +4068,15 @@ class ROWS:
 ################################################################################
 
 
-=== RUNNING TEST 1/10: test1 ===
-STEP 1 : 3D grid partition built: lap 3: 8.793633 seconds
- - STEP 1 lookup checks OK: 1000 successes, 0 fails, 113.72 lookups/sec
- - STEP 1 lookups completed in: lap 4: 5.250791 seconds
- - Now deleting 10000 rows...
- - Deleted 10000 rows in: lap 5: 0.500499 seconds
-STEP 2 : Rebuilding rows after deletion...
- - STEP 2 grid partition built: lap 7: 0.722779 seconds
- - STEP 2 lookup checks OK: 1000 successes, 0 fails, 1383.55 lookups/sec
- - STEP 2 lookups completed in: lap 8: 1.193059 seconds
-=== TEST 1/10: test1 PASSED in 0.000 seconds ===
-
-
-=== RUNNING TEST 2/10: test2 ===
-WORLD VOLUME BEFORE: 72056357089509375
- - SPLIT test 1/10 passed.
- - SPLIT test 2/10 passed.
- - SPLIT test 3/10 passed.
- - SPLIT test 4/10 passed.
- - SPLIT test 5/10 passed.
- - SPLIT test 6/10 passed.
- - SPLIT test 7/10 passed.
- - SPLIT test 8/10 passed.
- - SPLIT test 9/10 passed.
- - SPLIT test 10/10 passed.
-WORLD VOLUME AFTER: 72056357089509375
-STARTING STEP : Now testing MERGE functionality...: lap 11: 0.072713 seconds
- - MERGE completed in: lap 12: 0.000808 seconds
-WORLD VOLUME AFTER MERGE: 72056357089509375
-Material AIR has 10 rows after MERGE tests.
-Material WATER has 0 rows after MERGE tests.
-Material LAVA has 0 rows after MERGE tests.
-Material GLASS has 0 rows after MERGE tests.
-Material STONE has 51 rows after MERGE tests.
-Material OBSIDIAN has 0 rows after MERGE tests.
-Material BEDROCK has 0 rows after MERGE tests.
-=== TEST 2/10: test2 PASSED in 0.002 seconds ===
-
-
-=== RUNNING TEST 3/10: test3 ===
-10 mines to be created at random positions.
-Performing MERGE to consolidate AIR rows... AIR rows before: 10 in merge iteration: 1
- No more AIR rows could be consolidated. Stopping MERGE.
-Material AIR has 10 rows after MERGE tests.
-  AIR row 0: p0=(267578, 862208, 63134), p1=(267583, 862213, 63139)
-  AIR row 1: p0=(479881, 814588, 51564), p1=(479886, 814593, 51569)
-  AIR row 2: p0=(363946, 598530, 1016), p1=(363951, 598535, 1021)
-  AIR row 3: p0=(57724, 515957, 36205), p1=(57729, 515962, 36210)
-  AIR row 4: p0=(511095, 820738, 39921), p1=(511100, 820743, 39926)
-  AIR row 5: p0=(662726, 319658, 15606), p1=(662731, 319663, 15611)
-  AIR row 6: p0=(105879, 961637, 24014), p1=(105884, 961642, 24019)
-  AIR row 7: p0=(655982, 353868, 52991), p1=(655987, 353873, 52996)
-  AIR row 8: p0=(514086, 298873, 54483), p1=(514091, 298878, 54488)
-  AIR row 9: p0=(551463, 706101, 35099), p1=(551468, 706106, 35104)
-Material WATER has 0 rows after MERGE tests.
-Material LAVA has 0 rows after MERGE tests.
-Material GLASS has 0 rows after MERGE tests.
-Material STONE has 51 rows after MERGE tests.
-Material OBSIDIAN has 0 rows after MERGE tests.
-Material BEDROCK has 0 rows after MERGE tests.
-air rows= 10 stone rows= 51
-=== TEST 3/10: test3 PASSED in 3.957 seconds ===
-
-
-=== RUNNING TEST 4/10: test4 ===
-WORLD VOLUME BEFORE: 72056357089509375
- - carved 10/50 boxes
- - carved 20/50 boxes
- - carved 30/50 boxes
- - carved 40/50 boxes
- - carved 50/50 boxes
-WORLD VOLUME AFTER: 72056357089509375
-AIR VOLUME: 652821 EXPECTED (sum boxes): 652821
-test4 OK: air_rows=50 stone_rows=250
-=== TEST 4/10: test4 PASSED in 0.641 seconds ===
-
-
-=== RUNNING TEST 5/10: test5 ===
-WORLD VOLUME BEFORE: 838860800
-Initial rows: stone_rows=1 air_rows=0
- - carved 10/30 boxes
- - carved 20/30 boxes
- - carved 30/30 boxes
-WORLD VOLUME AFTER: 838860800
-AIR VOLUME: 45297093
-test5 OK: air_rows=72 stone_rows=220
-=== TEST 5/10: test5 PASSED in 2.679 seconds ===
-
-
-=== RUNNING TEST 6/10: test6 ===
-=== TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
-test6: search() [tests=10]: lap 22: 0.000232 seconds
-test6: split1 (point split) [tests=10]: lap 24: 0.057659 seconds
-test6: split2 (region split) [tests=10]: lap 26: 0.135879 seconds
-test6: merge() [tests=10]: lap 28: 0.049238 seconds
-test6: remove() [tests=10]: lap 30: 2.4e-05 seconds
-test6: insert() [tests=10]: lap 32: 0.000441 seconds
-=== TEST6 DONE ===
-=== TEST 6/10: test6 PASSED in 0.000 seconds ===
-
-
-=== RUNNING TEST 7/10: test7 ===
-=== TEST7: RESOURCE / WAREHOUSE INVARIANTS ===
- - split() invariants OK (1000 cases)
- - Resource +/- semantics OK
- - Resources ingest/transfer OK
- - Warehouse give/take invariants OK
-=== TEST7 DONE ===
-=== TEST 7/10: test7 PASSED in 0.003 seconds ===
-
-
-=== RUNNING TEST 8/10: test8 ===
-=== TEST 8/10: test8 PASSED in 0.000 seconds ===
-
-
-=== RUNNING TEST 9/10: test9 ===
-=== TEST 9/10: test9 PASSED in 0.000 seconds ===
-
-
-=== RUNNING TEST 10/10: test10 ===
-=== TEST 10/10: test10 PASSED in 0.000 seconds ===
+=== RUNNING TEST 1/1: test8 ===
+Created 60 miners.
+=== TEST 1/1: test8 PASSED in 1.623 seconds ===
 
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 4179
+# Total lines in bundle: 4078
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T07:02:40
+# Generated at the time: 2026-01-31T07:09:04
 --- END OF FILE ---

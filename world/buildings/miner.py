@@ -60,6 +60,9 @@ class Miner:
         self.minepos = (x, y, z)    # update to next position
         return pos
     
+    def update(self, frame:int) -> None:
+        self.mine(frame=frame)
+    
     def mine(self, frame:int=None) -> None:
         if frame is None:
             raise ValueError("frame must be specified")
