@@ -22,6 +22,7 @@ class Miner:
         self.size:SIZE      = size
         self.seconds:int    = seconds
         self.floor:bool     = floor
+        print(f"Creating Miner id={Miner.id} at pos={self.pos} size={self.size} seconds={self.seconds} floor={self.floor}")
 
         self.init()
 
@@ -62,9 +63,8 @@ class Miner:
             pos1 = (pos[0] + 1, pos[1] + 1, pos[2] + 1)
             return pos, pos1
         else:
-            # floor mining: return a box to mine
             boxpos0:POS = (x0, y0, z)
-            boxpos1:POS = (x1, y1, z)
+            boxpos1:POS = (x1, y1, z + 1)
 
             z += 1
             if z > z1:
