@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T04:19:42
+#Time when generated: 2026-01-31T04:21:26
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -3626,7 +3626,9 @@ class ROWS:
     def get(self, mat:str=None, rid:int=None) -> NDARR:
         return self.array[self.mat.mid(name=mat)][rid]
 
-    def nrows(self, mat:str=None) -> int:
+    def nrows(self, mat:str=None, mid:int=None) -> int:
+        if mid is not None:
+            mat = self.mat.name(mid=mid)
         return self.arids[self.mat.mid(name=mat)]
 
     def splitrow(self, pos:POS=None, p2:POS=None, mat:str=None) -> REQS:
@@ -3941,32 +3943,20 @@ class ROWS:
 
 === RUNNING TEST 1/1: test6 ===
 === TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
-test6: search() [tests=10]: lap 3: 0.009864 seconds
-Traceback (most recent call last):
-  File "c:\VOXELS\tests\tests.py", line 19, in tests
-    test()
-    ~~~~^^
-  File "c:\VOXELS\tests\test6.py", line 55, in test6
-    rows.split(pos=pos, mat="AIR")
-    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 251, in split
-    return self.split1(pos=pos, mat=mat)
-           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 178, in split1
-    batch, arids = self.merge(rows=batch)
-                   ~~~~~~~~~~^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 426, in merge
-    return self.mergerows(rows=rows)
-           ~~~~~~~~~~~~~~^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 360, in mergerows
-    worst += self.nrows(mid=mid)
-             ~~~~~~~~~~^^^^^^^^^
-TypeError: ROWS.nrows() got an unexpected keyword argument 'mid'
+test6: search() [tests=10]: lap 3: 0.009039 seconds
+test6: split1 (point split) [tests=10]: lap 5: 0.084611 seconds
+test6: split2 (region split) [tests=10]: lap 7: 2.193053 seconds
+test6: merge() [tests=10]: lap 9: 0.145057 seconds
+test6: remove() [tests=10]: lap 11: 0.000466 seconds
+test6: insert() [tests=10]: lap 13: 0.000761 seconds
+=== TEST6 DONE ===
+=== TEST 1/1: test6 PASSED in 0.001 seconds ===
+
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3968
+# Total lines in bundle: 3958
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T04:19:42
+# Generated at the time: 2026-01-31T04:21:26
 --- END OF FILE ---

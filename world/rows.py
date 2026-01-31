@@ -133,7 +133,9 @@ class ROWS:
     def get(self, mat:str=None, rid:int=None) -> NDARR:
         return self.array[self.mat.mid(name=mat)][rid]
 
-    def nrows(self, mat:str=None) -> int:
+    def nrows(self, mat:str=None, mid:int=None) -> int:
+        if mid is not None:
+            mat = self.mat.name(mid=mid)
         return self.arids[self.mat.mid(name=mat)]
 
     def splitrow(self, pos:POS=None, p2:POS=None, mat:str=None) -> REQS:
