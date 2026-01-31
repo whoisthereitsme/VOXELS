@@ -10,6 +10,10 @@ from world.row import ROW
 from utils.bvh import BVH
 from utils.mdx import MDX
 from utils.types import POS, SIZE, NDARR, REQS, Row
+from utils.queue import Queue
+
+
+
 
 
 class ROWS:
@@ -31,8 +35,8 @@ class ROWS:
 
     def __init__(self)->None:
         self.mat = Materials()
-        self.bvh = BVH(rows=self)
-        self.mdx = MDX(rows=self)
+        self.bvh = Queue(cls=BVH(rows=self))
+        self.mdx = Queue(cls=MDX(rows=self))
 
         self.total = 0
         self.array, self.arids = self.reqs(n=ROWS.SIZE)
