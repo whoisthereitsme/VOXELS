@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T05:53:57
+#Time when generated: 2026-01-31T05:58:14
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -665,11 +665,11 @@ __all__ = [
 # FILE 11/42: tests/test1.py (START)
 ################################################################################
 
+# tests/test1.py
+
 from utils import *
 from world import *
 from bundle import *
-
-
 
 
 def test1() -> None:
@@ -682,16 +682,14 @@ def test1() -> None:
     """
     rows = ROWS()
 
-    # remove the default huge row
-    row0 = rows.array[MATERIALS.MID["STONE"]][0]
-    rows.remove(row=row0)
+    # remove the default huge row (STONE rid=0)
+    rows.remove(row=rows.get(mat="STONE", rid=0))
 
     # STEP 1 grid
     cell = 20
     nx = 40
     ny = 40
     nz = 40
-    n = nx * ny * nz
 
     timer.lap()
     for ix in range(nx):
@@ -720,7 +718,10 @@ def test1() -> None:
         )
         try:
             mat, rid, row = rows.search(pos=pos)
-            assert ROW.CONTAINS(row=row, pos=pos), f"pos={pos} not contained (mat={mat}, rid={rid}) p0={ROW.P0(row=row)} p1={ROW.P1(row=row)}"
+            assert ROW.CONTAINS(row=row, pos=pos), (
+                f"pos={pos} not contained (mat={mat}, rid={rid}) "
+                f"p0={ROW.P0(row=row)} p1={ROW.P1(row=row)}"
+            )
             succes += 1
         except Exception:
             fails += 1
@@ -732,23 +733,21 @@ def test1() -> None:
 
     # delete some rows (stress BVH remove/swap)
     print(" - Now deleting 10000 rows...")
-    for i in range(10000):
-        row = rows.array[MATERIALS.MID["STONE"]][rows.nrows(mat="STONE") - 1]
-        rows.remove(row=row)
+    for _ in range(10000):
+        rid_last = rows.nrows(mat="STONE") - 1
+        rows.remove(row=rows.get(mat="STONE", rid=rid_last))
     timer.print(msg=" - Deleted 10000 rows in")
 
-    # STEP 2 grid (new scale) — rebuild from scratch for clean bounds
-    # delete remaining STONE rows
+    # STEP 2 grid — rebuild from scratch for clean bounds
     while rows.nrows(mat="STONE") > 0:
-        row = rows.array[MATERIALS.MID["STONE"]][rows.nrows(mat="STONE") - 1]
-        rows.remove(row=row)
+        rid_last = rows.nrows(mat="STONE") - 1
+        rows.remove(row=rows.get(mat="STONE", rid=rid_last))
 
     print("STEP 2 : Rebuilding rows after deletion...")
     cell = 40
     nx = 20
     ny = 20
     nz = 20
-    n2 = nx * ny * nz
 
     timer.lap()
     for ix in range(nx):
@@ -776,13 +775,15 @@ def test1() -> None:
             random.randint(0, max_z),
         )
         mat, rid, row = rows.search(pos=pos)
-        assert ROW.CONTAINS(row=row, pos=pos), f"pos={pos} not contained (mat={mat}, rid={rid}) p0={ROW.P0(row=row)} p1={ROW.P1(row=row)}"
+        assert ROW.CONTAINS(row=row, pos=pos), (
+            f"pos={pos} not contained (mat={mat}, rid={rid}) "
+            f"p0={ROW.P0(row=row)} p1={ROW.P1(row=row)}"
+        )
         succes += 1
 
     assert fails == 0, f"BVH/grid lookup failures in STEP 2: {fails} (success={succes})"
     print(f" - STEP 2 lookup checks OK: {succes} successes, {fails} fails, {succes/timer.delta[-1]:.2f} lookups/sec")
     timer.print(msg=" - STEP 2 lookups completed in")
-
 
 ################################################################################
 # FILE 11/42: tests/test1.py (END)
@@ -807,12 +808,11 @@ def test10() -> None:
 # FILE 13/42: tests/test2.py (START)
 ################################################################################
 
+# tests/test2.py
+
 from utils import *
 from world import *
 from bundle import *
-
-
-
 
 
 def test2() -> None:
@@ -858,10 +858,10 @@ def test2() -> None:
         mat, rid, row = rows.search(pos=pos)
         assert mat == "AIR", f"expected AIR at {pos} after merge, got {mat}"
 
-    for i in range(len(rows.array)):
-        n = rows.nrows(mat=Materials.MID2name[i])
-        print(f"Material {Materials.MID2name[i]} has {n} rows after MERGE tests.")
-
+    for mid in range(len(rows.array)):
+        name = Materials.mid2name[mid]
+        n = rows.nrows(mat=name)
+        print(f"Material {name} has {n} rows after MERGE tests.")
 
 ################################################################################
 # FILE 13/42: tests/test2.py (END)
@@ -872,11 +872,11 @@ def test2() -> None:
 # FILE 14/42: tests/test3.py (START)
 ################################################################################
 
+# tests/test3.py
+
 from utils import *
 from world import *
 from bundle import *
-
-
 
 
 def test3() -> None:
@@ -907,7 +907,7 @@ def test3() -> None:
                     mine_points.append(pos)
                     rows.split(pos=pos, mat="AIR")
 
-    # merge attempts (like your original intent)
+    # merge attempts
     rowsbefore = rows.nrows(mat="AIR")
     for i in range(10):
         print("Performing MERGE to consolidate AIR rows... AIR rows before:", rows.nrows(mat="AIR"), "in merge iteration:", i + 1)
@@ -926,16 +926,16 @@ def test3() -> None:
         mat, rid, row = rows.search(pos=pos)
         assert mat == "AIR", f"expected AIR at {pos}, got {mat}"
 
-    for i in range(len(rows.array)):
-        n = rows.nrows(mat=Materials.MID2name[i])
-        print(f"Material {Materials.MID2name[i]} has {n} rows after MERGE tests.")
-        if Materials.MID2name[i] == "AIR":
-            for j in range(n):
-                row = rows.array[i][j]
-                print(f"  AIR row {j}: p0={ROW.P0(row=row)}, p1={ROW.P1(row=row)}")
+    for mid in range(len(rows.array)):
+        name = Materials.mid2name[mid]
+        n = rows.nrows(mat=name)
+        print(f"Material {name} has {n} rows after MERGE tests.")
+        if name == "AIR":
+            for rid in range(n):
+                r = rows.get(mat="AIR", rid=rid)
+                print(f"  AIR row {rid}: p0={ROW.P0(row=r)}, p1={ROW.P1(row=r)}")
 
     print(f"air rows= {rows.nrows(mat='AIR')}", f"stone rows= {rows.nrows(mat='STONE')}")
-
 
 ################################################################################
 # FILE 14/42: tests/test3.py (END)
@@ -946,10 +946,11 @@ def test3() -> None:
 # FILE 15/42: tests/test4.py (START)
 ################################################################################
 
+# tests/test4.py
+
 from utils import *
 from world import *
 from bundle import *
-
 
 
 def test4() -> None:
@@ -969,8 +970,6 @@ def test4() -> None:
     boxes: list[tuple[POS, POS]] = []
     total_air_vol = 0
 
-    # Make boxes disjoint by placing them on a coarse lattice
-    # Each "slot" is 64x64x64, and the carved box fits inside that slot.
     slot = 64
     for i in range(50):
         gx = random.randint(50, 2000) * slot
@@ -1031,11 +1030,11 @@ def test4() -> None:
 # FILE 16/42: tests/test5.py (START)
 ################################################################################
 
+# tests/test5.py
+
 from utils import *
 from world import *
 from bundle import *
-
-
 
 
 def test5() -> None:
@@ -1049,8 +1048,8 @@ def test5() -> None:
     """
     rows = ROWS()
 
-    row0 = rows.array[MATERIALS.MID["STONE"]][0]
-    rows.remove(row=row0)
+    # remove default huge STONE row
+    rows.remove(row=rows.get(mat="STONE", rid=0))
 
     cell = 64
     nx = 20
@@ -1130,7 +1129,6 @@ def test5() -> None:
 
     print("test5 OK:", f"air_rows={rows.nrows(mat='AIR')}", f"stone_rows={rows.nrows(mat='STONE')}")
 
-
 ################################################################################
 # FILE 16/42: tests/test5.py (END)
 ################################################################################
@@ -1140,11 +1138,11 @@ def test5() -> None:
 # FILE 17/42: tests/test6.py (START)
 ################################################################################
 
+# tests/test6.py
+
 from utils import *
 from world import *
 from bundle import *
-
-
 
 
 def test6() -> None:
@@ -1158,8 +1156,9 @@ def test6() -> None:
 
     def make_world() -> tuple[ROWS, int, int, int, int]:
         rows = ROWS()
-        row0 = rows.array[MATERIALS.MID["STONE"]][0]
-        rows.remove(row=row0)
+
+        # remove default huge STONE row
+        rows.remove(row=rows.get(mat="STONE", rid=0))
 
         cell = 64
         nx, ny, nz = 20, 20, 8
@@ -1229,8 +1228,8 @@ def test6() -> None:
     for _ in range(ntests):
         if rows.nrows(mat="STONE") <= 0:
             break
-        row = rows.array[MATERIALS.MID["STONE"]][rows.nrows(mat="STONE") - 1]
-        rows.remove(row=row)
+        rid_last = rows.nrows(mat="STONE") - 1
+        rows.remove(row=rows.get(mat="STONE", rid=rid_last))
     timer.print(msg=f"test6: remove() [tests={ntests}]")
 
     # 6) INSERT (small inserts)
@@ -1245,8 +1244,6 @@ def test6() -> None:
 
     print("=== TEST6 DONE ===")
 
-
-
 ################################################################################
 # FILE 17/42: tests/test6.py (END)
 ################################################################################
@@ -1256,28 +1253,20 @@ def test6() -> None:
 # FILE 18/42: tests/test7.py (START)
 ################################################################################
 
+# tests/test7.py
+
 from utils import *
 from world import *
-
 
 
 def test7() -> None:
     """
     test7:
     Bulletproof Resource/Resources/Warehouse invariants.
-
-    Covers:
-    - Resource.split() invariants (taken + leftover == original, bounds, value edge-cases)
-    - Resource +/- and in-place variants semantics
-    - Warehouse.give() returns leftover and respects capacity
-    - Warehouse.take() returns taken and updates stock
     """
-
     print("=== TEST7: RESOURCE / WAREHOUSE INVARIANTS ===")
 
-    # ------------------------------------------------------------
     # 1) Resource.split() invariants
-    # ------------------------------------------------------------
     for _ in range(1000):
         amount = random.randint(0, 10_000)
         value = random.randint(0, 12_000)
@@ -1298,9 +1287,7 @@ def test7() -> None:
 
     print(" - split() invariants OK (1000 cases)")
 
-    # ------------------------------------------------------------
     # 2) Resource arithmetic semantics (mutating)
-    # ------------------------------------------------------------
     a = Resource(mat="STONE", amount=50)
     b = Resource(mat="STONE", amount=20)
 
@@ -1328,7 +1315,7 @@ def test7() -> None:
     b = Resource(mat="STONE", amount=20)
     a0 = a.amount
     b0 = b.amount
-    a - b  # subtract up to available
+    a - b
     assert a.amount == 0
     assert b.amount == b0
 
@@ -1336,13 +1323,11 @@ def test7() -> None:
     b = Resource(mat="STONE", amount=20)
     a -= b
     assert a.amount == 0
-    assert b.amount == 10  # remaining demand
+    assert b.amount == 10
 
     print(" - Resource +/- semantics OK")
 
-    # ------------------------------------------------------------
     # 3) Resources ingest/transfer semantics
-    # ------------------------------------------------------------
     inv = Resources(rez=[])
     r1 = Resource(mat="STONE", amount=10)
     r2 = Resource(mat="STONE", amount=5)
@@ -1357,11 +1342,8 @@ def test7() -> None:
 
     print(" - Resources ingest/transfer OK")
 
-    # ------------------------------------------------------------
     # 4) Warehouse.give()/take() invariants
-    # ------------------------------------------------------------
-    # We'll fake rows/pos/size since Warehouse only uses size for capacity.
-    wh = Warehouse(rows=None, pos=(0, 0, 0), size=(2, 2, 2))  # cap = 2*2*2*64 = 512
+    wh = Warehouse(rows=None, pos=(0, 0, 0), size=(2, 2, 2))  # cap = 512
     assert wh.cap == 512
     assert wh.total() == 0
     assert wh.free() == 512
@@ -1371,9 +1353,8 @@ def test7() -> None:
 
     assert wh.get(mat="STONE").amount == 512
     assert leftover.mat == "STONE"
-    assert leftover.amount == 88  # 600 - 512
+    assert leftover.amount == 88
 
-    # take less than available
     req = Resource(mat="STONE", amount=200)
     taken = wh.take(requested=req)
 
@@ -1381,7 +1362,6 @@ def test7() -> None:
     assert taken.amount == 200
     assert wh.get(mat="STONE").amount == 312
 
-    # take more than available -> should take all remaining
     req2 = Resource(mat="STONE", amount=9999)
     taken2 = wh.take(requested=req2)
 
@@ -1389,7 +1369,6 @@ def test7() -> None:
     assert wh.get(mat="STONE").amount == 0
 
     print(" - Warehouse give/take invariants OK")
-
     print("=== TEST7 DONE ===")
 
 ################################################################################
@@ -4042,7 +4021,7 @@ Traceback (most recent call last):
   File "c:\VOXELS\tests\tests.py", line 19, in tests
     test()
     ~~~~^^
-  File "c:\VOXELS\tests\test6.py", line 43, in test6
+  File "c:\VOXELS\tests\test6.py", line 44, in test6
     rows, cell, max_x, max_y, max_z = make_world()
                                       ~~~~~~~~~~^^
   File "c:\VOXELS\tests\test6.py", line 18, in make_world
@@ -4058,7 +4037,7 @@ TypeError: BVH.insert() got an unexpected keyword argument 'row'
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 4060
+# Total lines in bundle: 4039
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T05:53:57
+# Generated at the time: 2026-01-31T05:58:14
 --- END OF FILE ---

@@ -1,8 +1,8 @@
+# tests/test1.py
+
 from utils import *
 from world import *
 from bundle import *
-
-
 
 
 def test1() -> None:
@@ -15,16 +15,14 @@ def test1() -> None:
     """
     rows = ROWS()
 
-    # remove the default huge row
-    row0 = rows.array[MATERIALS.MID["STONE"]][0]
-    rows.remove(row=row0)
+    # remove the default huge row (STONE rid=0)
+    rows.remove(row=rows.get(mat="STONE", rid=0))
 
     # STEP 1 grid
     cell = 20
     nx = 40
     ny = 40
     nz = 40
-    n = nx * ny * nz
 
     timer.lap()
     for ix in range(nx):
@@ -53,7 +51,10 @@ def test1() -> None:
         )
         try:
             mat, rid, row = rows.search(pos=pos)
-            assert ROW.CONTAINS(row=row, pos=pos), f"pos={pos} not contained (mat={mat}, rid={rid}) p0={ROW.P0(row=row)} p1={ROW.P1(row=row)}"
+            assert ROW.CONTAINS(row=row, pos=pos), (
+                f"pos={pos} not contained (mat={mat}, rid={rid}) "
+                f"p0={ROW.P0(row=row)} p1={ROW.P1(row=row)}"
+            )
             succes += 1
         except Exception:
             fails += 1
@@ -65,23 +66,21 @@ def test1() -> None:
 
     # delete some rows (stress BVH remove/swap)
     print(" - Now deleting 10000 rows...")
-    for i in range(10000):
-        row = rows.array[MATERIALS.MID["STONE"]][rows.nrows(mat="STONE") - 1]
-        rows.remove(row=row)
+    for _ in range(10000):
+        rid_last = rows.nrows(mat="STONE") - 1
+        rows.remove(row=rows.get(mat="STONE", rid=rid_last))
     timer.print(msg=" - Deleted 10000 rows in")
 
-    # STEP 2 grid (new scale) — rebuild from scratch for clean bounds
-    # delete remaining STONE rows
+    # STEP 2 grid — rebuild from scratch for clean bounds
     while rows.nrows(mat="STONE") > 0:
-        row = rows.array[MATERIALS.MID["STONE"]][rows.nrows(mat="STONE") - 1]
-        rows.remove(row=row)
+        rid_last = rows.nrows(mat="STONE") - 1
+        rows.remove(row=rows.get(mat="STONE", rid=rid_last))
 
     print("STEP 2 : Rebuilding rows after deletion...")
     cell = 40
     nx = 20
     ny = 20
     nz = 20
-    n2 = nx * ny * nz
 
     timer.lap()
     for ix in range(nx):
@@ -109,10 +108,12 @@ def test1() -> None:
             random.randint(0, max_z),
         )
         mat, rid, row = rows.search(pos=pos)
-        assert ROW.CONTAINS(row=row, pos=pos), f"pos={pos} not contained (mat={mat}, rid={rid}) p0={ROW.P0(row=row)} p1={ROW.P1(row=row)}"
+        assert ROW.CONTAINS(row=row, pos=pos), (
+            f"pos={pos} not contained (mat={mat}, rid={rid}) "
+            f"p0={ROW.P0(row=row)} p1={ROW.P1(row=row)}"
+        )
         succes += 1
 
     assert fails == 0, f"BVH/grid lookup failures in STEP 2: {fails} (success={succes})"
     print(f" - STEP 2 lookup checks OK: {succes} successes, {fails} fails, {succes/timer.delta[-1]:.2f} lookups/sec")
     timer.print(msg=" - STEP 2 lookups completed in")
-

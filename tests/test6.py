@@ -1,8 +1,8 @@
+# tests/test6.py
+
 from utils import *
 from world import *
 from bundle import *
-
-
 
 
 def test6() -> None:
@@ -16,8 +16,9 @@ def test6() -> None:
 
     def make_world() -> tuple[ROWS, int, int, int, int]:
         rows = ROWS()
-        row0 = rows.array[MATERIALS.MID["STONE"]][0]
-        rows.remove(row=row0)
+
+        # remove default huge STONE row
+        rows.remove(row=rows.get(mat="STONE", rid=0))
 
         cell = 64
         nx, ny, nz = 20, 20, 8
@@ -87,8 +88,8 @@ def test6() -> None:
     for _ in range(ntests):
         if rows.nrows(mat="STONE") <= 0:
             break
-        row = rows.array[MATERIALS.MID["STONE"]][rows.nrows(mat="STONE") - 1]
-        rows.remove(row=row)
+        rid_last = rows.nrows(mat="STONE") - 1
+        rows.remove(row=rows.get(mat="STONE", rid=rid_last))
     timer.print(msg=f"test6: remove() [tests={ntests}]")
 
     # 6) INSERT (small inserts)
@@ -102,5 +103,3 @@ def test6() -> None:
     timer.print(msg=f"test6: insert() [tests={ntests}]")
 
     print("=== TEST6 DONE ===")
-
-

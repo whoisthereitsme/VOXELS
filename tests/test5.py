@@ -1,8 +1,8 @@
+# tests/test5.py
+
 from utils import *
 from world import *
 from bundle import *
-
-
 
 
 def test5() -> None:
@@ -16,8 +16,8 @@ def test5() -> None:
     """
     rows = ROWS()
 
-    row0 = rows.array[MATERIALS.MID["STONE"]][0]
-    rows.remove(row=row0)
+    # remove default huge STONE row
+    rows.remove(row=rows.get(mat="STONE", rid=0))
 
     cell = 64
     nx = 20
@@ -96,4 +96,3 @@ def test5() -> None:
         assert mat == "AIR", f"expected AIR at {(x,y,z)}, got {mat}"
 
     print("test5 OK:", f"air_rows={rows.nrows(mat='AIR')}", f"stone_rows={rows.nrows(mat='STONE')}")
-

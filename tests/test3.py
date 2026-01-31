@@ -1,8 +1,8 @@
+# tests/test3.py
+
 from utils import *
 from world import *
 from bundle import *
-
-
 
 
 def test3() -> None:
@@ -33,7 +33,7 @@ def test3() -> None:
                     mine_points.append(pos)
                     rows.split(pos=pos, mat="AIR")
 
-    # merge attempts (like your original intent)
+    # merge attempts
     rowsbefore = rows.nrows(mat="AIR")
     for i in range(10):
         print("Performing MERGE to consolidate AIR rows... AIR rows before:", rows.nrows(mat="AIR"), "in merge iteration:", i + 1)
@@ -52,13 +52,13 @@ def test3() -> None:
         mat, rid, row = rows.search(pos=pos)
         assert mat == "AIR", f"expected AIR at {pos}, got {mat}"
 
-    for i in range(len(rows.array)):
-        n = rows.nrows(mat=Materials.MID2name[i])
-        print(f"Material {Materials.MID2name[i]} has {n} rows after MERGE tests.")
-        if Materials.MID2name[i] == "AIR":
-            for j in range(n):
-                row = rows.array[i][j]
-                print(f"  AIR row {j}: p0={ROW.P0(row=row)}, p1={ROW.P1(row=row)}")
+    for mid in range(len(rows.array)):
+        name = Materials.mid2name[mid]
+        n = rows.nrows(mat=name)
+        print(f"Material {name} has {n} rows after MERGE tests.")
+        if name == "AIR":
+            for rid in range(n):
+                r = rows.get(mat="AIR", rid=rid)
+                print(f"  AIR row {rid}: p0={ROW.P0(row=r)}, p1={ROW.P1(row=r)}")
 
     print(f"air rows= {rows.nrows(mat='AIR')}", f"stone rows= {rows.nrows(mat='STONE')}")
-

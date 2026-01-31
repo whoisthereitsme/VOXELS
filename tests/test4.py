@@ -1,7 +1,8 @@
+# tests/test4.py
+
 from utils import *
 from world import *
 from bundle import *
-
 
 
 def test4() -> None:
@@ -21,8 +22,6 @@ def test4() -> None:
     boxes: list[tuple[POS, POS]] = []
     total_air_vol = 0
 
-    # Make boxes disjoint by placing them on a coarse lattice
-    # Each "slot" is 64x64x64, and the carved box fits inside that slot.
     slot = 64
     for i in range(50):
         gx = random.randint(50, 2000) * slot

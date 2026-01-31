@@ -1,9 +1,8 @@
+# tests/test2.py
+
 from utils import *
 from world import *
 from bundle import *
-
-
-
 
 
 def test2() -> None:
@@ -49,7 +48,7 @@ def test2() -> None:
         mat, rid, row = rows.search(pos=pos)
         assert mat == "AIR", f"expected AIR at {pos} after merge, got {mat}"
 
-    for i in range(len(rows.array)):
-        n = rows.nrows(mat=Materials.MID2name[i])
-        print(f"Material {Materials.MID2name[i]} has {n} rows after MERGE tests.")
-
+    for mid in range(len(rows.array)):
+        name = Materials.mid2name[mid]
+        n = rows.nrows(mat=name)
+        print(f"Material {name} has {n} rows after MERGE tests.")
