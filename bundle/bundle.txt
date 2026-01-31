@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T06:11:15
+#Time when generated: 2026-01-31T06:15:26
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -3549,10 +3549,8 @@ class ROW:
 # FILE 42/42: world/rows.py (START)
 ################################################################################
 
-# world/rows.py
 from __future__ import annotations
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     pass
 
@@ -3566,14 +3564,20 @@ from utils.types import POS, SIZE, NDARR, REQS, Row
 
 class ROWS:
     """
-    PUBLIC:
-    - insert(p0, p1, mat, dirty=True, alive=True) -> Row
-    - remove(r:Row) -> None
-    - search(pos) -> Row
-    - get(mat, rid) -> Row
-    - split(pos, pos1=None, mat=...) -> REQS
-    - merge(rows=None) -> REQS
-    - volume(mat=None) -> int
+    PUBLIC (human interface):
+    - insert(p0:POS, p1:POS, mat:str, dirty:bool=True, alive:bool=True) -> Row
+    - split(pos:POS, pos1:POS=None, mat:str=None) -> REQS
+    - merge(rows:NDARR=None) -> REQS
+    - volume(mat:str=None) -> int
+    - get(mat:str, rid:int) -> Row
+    - search(pos:POS) -> Row
+
+    INTERNAL:
+    - slot(row:Row) -> NDARR
+    - set(row:Row, newrid:int=None, newmat:str=None) -> Row
+    - reset(row:Row) -> None
+    - remove(row:Row) -> None
+    - merge2(row0:Row, row1:Row) -> REQS
     """
 
     SIZE = 65536
@@ -3592,7 +3596,7 @@ class ROWS:
         self.p0 = (ROW.XMIN, ROW.YMIN, ROW.ZMIN)
         self.p1 = (ROW.XMAX, ROW.YMAX, ROW.ZMAX)
 
-        # world baseline
+        # default world row
         self.insert(p0=self.p0, p1=self.p1, mat="STONE")
         self.dim = self.size()
         self.vol = self.volume()
@@ -3602,18 +3606,24 @@ class ROWS:
     # ============================================================
 
     def reqs(self, n: int = None) -> REQS:
+        n = int(n) if n is not None else 0
         array = np.full((MATERIALS.NUM, n, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
         arids: dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}
         return (array, arids)
 
-    def newn(self, mat: str) -> int:
+    def newn(self, mat: str = None) -> int:
+        if mat is None:
+            raise ValueError("newn requires mat")
         mid = int(self.mat.mid(name=mat))
-        rid = int(self.arids[mid])
+        n = int(self.arids[mid])
         self.arids[mid] += 1
         self.total += 1
-        return rid
+        return int(n)
 
-    def deln(self, mid: int) -> int:
+    def deln(self, mat: str = None) -> int:
+        if mat is None:
+            raise ValueError("deln requires mat")
+        mid = int(self.mat.mid(name=mat))
         if self.arids[mid] <= 0:
             raise ValueError("no rows to free")
         self.arids[mid] -= 1
@@ -3631,81 +3641,113 @@ class ROWS:
     # Row helpers
     # ============================================================
 
-    def _rowview(self, mid: int, rid: int) -> NDARR:
-        return self.array[int(mid)][int(rid)]
-
-    def _wrap(self, mid: int, rid: int) -> Row:
-        return Row(mid=int(mid), rid=int(rid), row=self._rowview(mid, rid))
-
     def get(self, mat: str = None, rid: int = None) -> Row:
         if mat is None or rid is None:
             raise ValueError("get requires mat and rid")
         mid = int(self.mat.mid(name=mat))
         rid = int(rid)
-        return self._wrap(mid, rid)
+        return Row(mid=mid, rid=rid, row=self.array[mid][rid])
 
-    def set_into_slot(self, mid: int, rid: int, rowdata: NDARR) -> None:
-        slot = self._rowview(mid, rid)
-        slot[:] = rowdata
+    def slot(self, row: Row = None) -> NDARR:
+        if row is None:
+            raise ValueError("slot requires row")
+        return self.array[int(row.mid)][int(row.rid)]
 
-    def invalidate_slot(self, mid: int, rid: int) -> None:
-        self._rowview(mid, rid)[:] = ROW.ARRAY
+    def set(self, row: Row = None, newrid: int = None, newmat: str = None) -> Row:
+        """
+        Writes row.row into self.array at (row.mid,row.rid) after optional id updates.
+        Returns a Row wrapper pointing at the stored slot (view).
+        """
+        if row is None:
+            raise ValueError("set requires row")
+
+        mid = int(row.mid)
+        rid = int(row.rid)
+
+        if mid == int(ROW.SENTINEL) or rid == int(ROW.SENTINEL):
+            raise RuntimeError("set called on invalidated row")
+
+        if newrid is not None:
+            rid = int(newrid)
+            row.rid = rid
+            row.row[*ROW.IDS_RID] = np.uint64(rid)
+
+        if newmat is not None:
+            mid = int(self.mat.mid(name=newmat))
+            row.mid = mid
+            row.row[*ROW.IDS_MID] = np.uint64(mid)
+
+        slot = self.array[mid][rid]
+        slot[:] = row.row
+        return Row(mid=mid, rid=rid, row=slot)
+
+    def reset(self, row: Row = None) -> None:
+        if row is None:
+            raise ValueError("reset requires row")
+        self.slot(row=row)[:] = ROW.ARRAY
 
     # ============================================================
     # core ops
     # ============================================================
 
-    def insert(self, p0: POS = None, p1: POS = None, mat: str = None, dirty: bool = True, alive: bool = True) -> Row:
+    def insert(
+        self,
+        p0: POS = None,
+        p1: POS = None,
+        mat: str = None,
+        dirty: bool = True,
+        alive: bool = True,
+    ) -> Row:
         if mat is None:
             raise ValueError("insert requires mat")
-
         rid = self.newn(mat=mat)
-        mid = int(self.mat.mid(name=mat))
+        raw = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
 
-        rowdata = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
-        self.set_into_slot(mid, rid, rowdata)
+        mid = int(ROW.MID(row=raw))
+        rid = int(ROW.RID(row=raw))
+        stored = Row(mid=mid, rid=rid, row=self.array[mid][rid])
+        stored = self.set(row=stored)  # writes raw into slot
 
-        r = self._wrap(mid, rid)
-        self.bvh.insert(r)
-        self.mdx.insert(r)
-        return r
+        self.bvh.insert(row=stored)
+        self.mdx.insert(row=stored)
+        return stored
 
-    def remove(self, r: Row) -> None:
-        if r is None:
-            raise ValueError("remove requires Row")
+    def remove(self, row: Row = None) -> None:
+        if row is None:
+            raise ValueError("remove requires row")
 
-        mid = int(r.mid)
-        rid = int(r.rid)
+        mid = int(row.mid)
+        rid = int(row.rid)
+        mat_name = self.mat.name(mid=mid)
 
         n = self.nrows(mid=mid)
         last = n - 1
 
-        # 1) remove target from indices
-        self.bvh.remove(r)
-        self.mdx.remove(r)
+        # remove target from indices
+        self.bvh.remove(row=row)
+        self.mdx.remove(row=row)
 
-        # 2) if not last, move last into rid
         if rid != last:
-            moved = self._wrap(mid, last)
+            # moved is the last slot (copy its data, then overwrite rid slot)
+            moved_slot = self.array[mid][last].copy()
+            moved = Row(mid=mid, rid=last, row=self.array[mid][last])
 
-            # remove moved entry using its ORIGINAL identity
-            self.bvh.remove(moved)
-            self.mdx.remove(moved)
+            # remove moved's *old identity* from indices
+            self.bvh.remove(row=moved)
+            self.mdx.remove(row=moved)
 
-            # copy bytes of last into rid
-            moved_data = moved.row.copy()  # important: copy buffer
-            moved_data[*ROW.IDS_RID] = np.uint64(rid)
+            # overwrite rid slot with moved data, fixing rid inside payload
+            moved_slot[*ROW.IDS_RID] = np.uint64(rid)
+            self.array[mid][rid][:] = moved_slot
 
-            self.set_into_slot(mid, rid, moved_data)
+            # reinsert moved under new identity
+            moved_new = Row(mid=mid, rid=rid, row=self.array[mid][rid])
+            self.bvh.insert(row=moved_new)
+            self.mdx.insert(row=moved_new)
 
-            # reinsert with NEW identity (mid same, rid changed)
-            moved_new = self._wrap(mid, rid)
-            self.bvh.insert(moved_new)
-            self.mdx.insert(moved_new)
-
-        # 3) invalidate last and decrement
-        self.invalidate_slot(mid, last)
-        self.deln(mid=mid)
+        # invalidate last
+        self.array[mid][last][:] = ROW.ARRAY
+        self.deln(mat=mat_name)
 
     # ============================================================
     # queries
@@ -3724,27 +3766,29 @@ class ROWS:
         mid = int(self.mat.mid(name=mat))
         total = 0
         n = self.nrows(mid=mid)
-        arr = self.array[mid]
         for rid in range(n):
-            total += ROW.VOLUME(row=arr[rid])
+            total += ROW.VOLUME(row=self.array[mid][rid])
         return total
 
     def search(self, pos: POS = None) -> Row:
-        return self.bvh.search(pos)
+        if pos is None:
+            raise ValueError("search requires pos")
+        return self.bvh.search(pos=pos)  # BVH returns Row now
 
     # ============================================================
-    # split
+    # split (unchanged algorithmically; just Row objects at boundaries)
     # ============================================================
 
     def splitrow(self, pos: POS = None, p2: POS = None, mat: str = None) -> REQS:
         if pos is None or p2 is None or mat is None:
             raise ValueError("splitrow requires pos,p2,mat")
 
-        hit = self.search(pos=pos)
-        mat0 = self.mat.name(mid=int(hit.mid))
+        hit = self.search(pos=pos)                 # Row
+        mat0 = self.mat.name(mid=int(hit.mid))     # old mat name
+        hitrow = hit.row                           # NDARR view
 
-        r0 = ROW.P0(row=hit.row)
-        r1 = ROW.P1(row=hit.row)
+        r0 = ROW.P0(row=hitrow)
+        r1 = ROW.P1(row=hitrow)
 
         x0, y0, z0 = r0
         x3, y3, z3 = r1
@@ -3759,7 +3803,7 @@ class ROWS:
         ys = ((y0, y1), (y1, y2), (y2, y3))
         zs = ((z0, z1), (z1, z2), (z2, z3))
 
-        out, arids = self.reqs(n=27)
+        array, arids = self.reqs(n=27)
 
         for i, (X0, X1) in enumerate(xs):
             for j, (Y0, Y1) in enumerate(ys):
@@ -3770,14 +3814,14 @@ class ROWS:
                     center = (i == 1 and j == 1 and k == 1)
                     use_mat = mat if center else mat0
 
-                    newr = self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=use_mat)
-                    mid_new = int(newr.mid)
+                    newrow = self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=use_mat)  # Row
+                    mid_new = int(newrow.mid)
 
-                    out[mid_new][arids[mid_new]] = newr.row
+                    array[mid_new][arids[mid_new]] = newrow.row
                     arids[mid_new] += 1
 
-        self.remove(hit)
-        return (out, arids)
+        self.remove(row=hit)
+        return (array, arids)
 
     def split1(self, pos: POS = None, mat: str = None) -> REQS:
         if pos is None or mat is None:
@@ -3788,15 +3832,15 @@ class ROWS:
         return (merged, marids)
 
     def split2(self, p0: POS = None, p1: POS = None, mat: str = None) -> REQS:
-        if p0 is None or p1 is None or mat is None:
-            raise ValueError("split2 requires p0,p1,mat")
-
-        def intersect(a0: POS, a1: POS, b0: POS, b1: POS):
+        def intersect(a0: POS = None, a1: POS = None, b0: POS = None, b1: POS = None) -> tuple[POS, POS] | None:
             q0 = (max(a0[0], b0[0]), max(a0[1], b0[1]), max(a0[2], b0[2]))
             q1 = (min(a1[0], b1[0]), min(a1[1], b1[1]), min(a1[2], b1[2]))
             if q0[0] >= q1[0] or q0[1] >= q1[1] or q0[2] >= q1[2]:
                 return None
             return (q0, q1)
+
+        if p0 is None or p1 is None or mat is None:
+            raise ValueError("split2 requires p0,p1,mat")
 
         p0, p1 = ROW.SORT(p0=p0, p1=p1)
         if p0[0] >= p1[0] or p0[1] >= p1[1] or p0[2] >= p1[2]:
@@ -3804,11 +3848,11 @@ class ROWS:
 
         acc: list[list[NDARR]] = [[] for _ in range(MATERIALS.NUM)]
 
-        hit = self.search(pos=p0)
+        hit = self.search(pos=p0)  # Row
         r0 = ROW.P0(row=hit.row)
         r1 = ROW.P1(row=hit.row)
 
-        hitbox = intersect(p0, p1, r0, r1)
+        hitbox = intersect(a0=p0, a1=p1, b0=r0, b1=r1)
         if hitbox is None:
             return self.reqs(n=0)
 
@@ -3839,16 +3883,16 @@ class ROWS:
                 for i in range(a[mid]):
                     acc[mid].append(b[mid][i])
 
-        out_arids = {mid: len(acc[mid]) for mid in range(MATERIALS.NUM)}
+        out_arids: dict[int, int] = {mid: len(acc[mid]) for mid in range(MATERIALS.NUM)}
         n = max(out_arids.values()) if out_arids else 0
-        out, arids = self.reqs(n=n)
+        array, arids = self.reqs(n=n)
 
         for mid in range(MATERIALS.NUM):
             arids[mid] = out_arids[mid]
-            for i, rr in enumerate(acc[mid]):
-                out[mid][i] = rr
+            for i, r in enumerate(acc[mid]):
+                array[mid][i] = r
 
-        return (out, arids)
+        return (array, arids)
 
     def split(self, pos: POS = None, pos1: POS = None, mat: str = None) -> REQS:
         if mat is None:
@@ -3863,40 +3907,41 @@ class ROWS:
         return self.split1(pos=pos1, mat=mat)
 
     # ============================================================
-    # merge
+    # merge (kept compatible with your current NDARR batch design)
+    # NOTE: merge logic still uses mdx.search(mid,rid,axis) which returns Loc (mid,rid)
     # ============================================================
 
-    def merge2(self, r0: Row = None, r1: Row = None) -> REQS:
-        if r0 is None or r1 is None:
+    def merge2(self, row0: Row = None, row1: Row = None) -> REQS:
+        if row0 is None or row1 is None:
             return self.reqs(n=0)
 
-        mid = int(r0.mid)
-        if int(r1.mid) != mid:
+        mid = int(row0.mid)
+        if int(row1.mid) != mid:
             return self.reqs(n=0)
 
-        touch = ROW.MERGE(row0=r0.row, row1=r1.row)
+        touch = ROW.MERGE(row0=row0.row, row1=row1.row)
         if touch == (False, False, False):
             return self.reqs(n=0)
 
-        p0 = ROW.SORT(p0=ROW.P0(row=r0.row), p1=ROW.P0(row=r1.row))[0]
-        p1 = ROW.SORT(p0=ROW.P1(row=r0.row), p1=ROW.P1(row=r1.row))[1]
+        p0 = ROW.SORT(p0=ROW.P0(row=row0.row), p1=ROW.P0(row=row1.row))[0]
+        p1 = ROW.SORT(p0=ROW.P1(row=row0.row), p1=ROW.P1(row=row1.row))[1]
 
-        # remove higher rid first (swap-safe)
-        if int(r0.rid) > int(r1.rid):
-            hi, lo = r0, r1
+        # remove bigger rid first (swap-safe)
+        if int(row0.rid) > int(row1.rid):
+            hi, lo = row0, row1
         else:
-            hi, lo = r1, r0
+            hi, lo = row1, row0
 
-        self.remove(hi)
-        self.remove(lo)
+        self.remove(row=hi)
+        self.remove(row=lo)
 
         mat_name = self.mat.name(mid=mid)
-        newr = self.insert(p0=p0, p1=p1, mat=mat_name)
+        newrow = self.insert(p0=p0, p1=p1, mat=mat_name)
 
-        out, arids = self.reqs(n=1)
-        out[mid][0] = newr.row
+        array, arids = self.reqs(n=1)
+        array[mid][0] = newrow.row
         arids[mid] = 1
-        return (out, arids)
+        return (array, arids)
 
     def mergeax(self, mat: str = None, axis: int = None) -> REQS:
         if axis is None:
@@ -3906,13 +3951,13 @@ class ROWS:
 
         mid = int(self.mat.mid(name=mat))
         start_n = self.nrows(mid=mid)
-        out, arids = self.reqs(n=start_n)
+        array, arids = self.reqs(n=start_n)
 
-        extra = list(range(self.arids[mid] - 1, -1, -1))
+        extra: list[int] = list(range(self.arids[mid] - 1, -1, -1))
         seen: set[int] = set()
 
         while extra:
-            rid = extra.pop()
+            rid = int(extra.pop())
             if rid < 0 or rid >= self.arids[mid]:
                 continue
             if rid in seen:
@@ -3927,22 +3972,22 @@ class ROWS:
             if pmid != mid or prid < 0 or prid >= self.arids[mid]:
                 continue
 
-            r0 = self._wrap(mid, rid)
-            r1 = self._wrap(mid, prid)
+            row0 = Row(mid=mid, rid=rid, row=self.array[mid][rid])
+            row1 = Row(mid=mid, rid=prid, row=self.array[mid][prid])
 
-            created, carids = self.merge2(r0=r0, r1=r1)
+            created, carids = self.merge2(row0=row0, row1=row1)
             if carids[mid] > 0:
-                out[mid][arids[mid]] = created[mid][0]
+                array[mid][arids[mid]] = created[mid][0]
                 arids[mid] += 1
 
                 new_rid = self.arids[mid] - 1
-                extra.append(new_rid)
+                extra.append(int(new_rid))
 
                 if rid < self.arids[mid]:
                     seen.discard(rid)
                     extra.append(rid)
 
-        return (out, arids)
+        return (array, arids)
 
     def mergemat(self, mat: str = None) -> REQS:
         if mat is None:
@@ -3950,7 +3995,7 @@ class ROWS:
 
         mid = int(self.mat.mid(name=mat))
         start_n = self.nrows(mid=mid)
-        out, arids = self.reqs(n=start_n)
+        array, arids = self.reqs(n=start_n)
 
         for ax in range(3):
             while True:
@@ -3958,24 +4003,12 @@ class ROWS:
                 if carids[mid] <= 0:
                     break
                 for i in range(carids[mid]):
-                    out[mid][arids[mid]] = created[mid][i]
+                    array[mid][arids[mid]] = created[mid][i]
                     arids[mid] += 1
 
-        return (out, arids)
-
-    def mergeall(self) -> REQS:
-        out, arids = self.reqs(n=self.total)
-        for mat in self.mat.names():
-            created, carids = self.mergemat(mat=mat)
-            for mid in range(MATERIALS.NUM):
-                for i in range(carids[mid]):
-                    out[mid][arids[mid]] = created[mid][i]
-                    arids[mid] += 1
-        return (out, arids)
+        return (array, arids)
 
     def mergerows(self, rows: NDARR = None) -> REQS:
-        # Keeping your existing approach; can be optimized later.
-        # This function expects "rows" as an NDARR bundle of rowdata.
         if rows is None:
             return self.reqs(n=0)
 
@@ -3990,7 +4023,7 @@ class ROWS:
         for mid in mids_present:
             worst += self.nrows(mid=mid)
 
-        out, arids = self.reqs(n=worst)
+        array, arids = self.reqs(n=worst)
 
         while True:
             merged_this_round = 0
@@ -4021,17 +4054,17 @@ class ROWS:
                     if pmid != mid or prid < 0 or prid >= self.arids[mid]:
                         continue
 
-                    r0 = self._wrap(mid, rid)
-                    r1 = self._wrap(mid, prid)
+                    row0 = Row(mid=mid, rid=rid, row=self.array[mid][rid])
+                    row1 = Row(mid=mid, rid=prid, row=self.array[mid][prid])
 
-                    created, carids = self.merge2(r0=r0, r1=r1)
+                    created, carids = self.merge2(row0=row0, row1=row1)
                     if carids[mid] > 0:
-                        out[mid][arids[mid]] = created[mid][0]
+                        array[mid][arids[mid]] = created[mid][0]
                         arids[mid] += 1
                         merged_this_round += 1
 
                         new_rid = self.arids[mid] - 1
-                        extra.append((mid, new_rid))
+                        extra.append((mid, int(new_rid)))
 
                         seen.discard((mid, rid))
                         extra.append((mid, rid))
@@ -4039,7 +4072,17 @@ class ROWS:
             if merged_this_round == 0:
                 break
 
-        return (out, arids)
+        return (array, arids)
+
+    def mergeall(self) -> REQS:
+        array, arids = self.reqs(n=self.total)
+        for mat in self.mat.names():
+            created, carids = self.mergemat(mat=mat)
+            for mid in range(MATERIALS.NUM):
+                for i in range(carids[mid]):
+                    array[mid][arids[mid]] = created[mid][i]
+                    arids[mid] += 1
+        return (array, arids)
 
     def merge(self, rows: NDARR = None) -> REQS:
         if rows is None:
@@ -4072,15 +4115,20 @@ Traceback (most recent call last):
   File "c:\VOXELS\tests\test6.py", line 44, in test6
     rows, cell, max_x, max_y, max_z = make_world()
                                       ~~~~~~~~~~^^
-  File "c:\VOXELS\tests\test6.py", line 21, in make_world
-    rows.remove(row=rows.get(mat="STONE", rid=0))
-    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: ROWS.remove() got an unexpected keyword argument 'row'
+  File "c:\VOXELS\tests\test6.py", line 18, in make_world
+    rows = ROWS()
+  File "c:\VOXELS\world\rows.py", line 49, in __init__
+    self.insert(p0=self.p0, p1=self.p1, mat="STONE")
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 160, in insert
+    self.bvh.insert(row=stored)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^
+TypeError: BVH.insert() got an unexpected keyword argument 'row'
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 4082
+# Total lines in bundle: 4130
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T06:11:15
+# Generated at the time: 2026-01-31T06:15:26
 --- END OF FILE ---
