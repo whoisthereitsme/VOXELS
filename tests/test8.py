@@ -10,7 +10,7 @@ def test8() -> None:
         x = random.randint(a=1000, b=999000)
         y = random.randint(a=1000, b=999000)
         z = random.randint(a=1000, b=9000)
-        miner = Miner(rows=rows, pos=(x, y, z), size=(10, 10, 50000), seconds=1, floor=True)
+        miner = Miner(rows=rows, pos=(x, y, z), size=(20, 20, 50000), seconds=1, floor=True)
 
         miners.append(miner)
     print(f"Created {len(miners)} miners.")

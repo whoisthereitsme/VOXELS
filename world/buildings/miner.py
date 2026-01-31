@@ -30,8 +30,7 @@ class Miner:
     def init(self) -> None:
         self.id:int         = self.getid()
         self.nframes:int    = self.seconds * 60 if not self.floor else self.seconds * 60 * (self.size[0] * self.size[1])
-        self.nframes += random.randint(-0.5*self.nframes, 0.5*self.nframes)  # add jitter
-        self.frame:int      = self.getframe()
+        self.nframes += int(random.randint(-int(0.5*self.nframes), int(0.5*self.nframes)))  # add jitter
 
         self.minepos0:POS    = self.pos
         self.minepos1:POS    = (self.pos[0]+self.size[0]-1, self.pos[1]+self.size[1]-1, self.pos[2]+self.size[2]-1)
@@ -42,9 +41,6 @@ class Miner:
         Miner.id += 1
         return id
     
-    def getframe(self) -> int:
-        frame:int = self.id % self.nframes
-        return frame
     
     def getnext(self) -> tuple[POS, POS]:
         x0, y0, z0 = self.minepos0
@@ -81,7 +77,7 @@ class Miner:
     def mine(self, frame:int=None) -> None:
         if frame is None:
             raise ValueError("frame must be specified")
-        if frame % self.nframes == self.frame:  # every nframes frames
+        if frame % self.nframes == 0:  # every nframes frames
             pos0, pos1 = self.getnext()
             self.rows.split(pos=pos0, pos1=pos1, mat="AIR")
         else:
