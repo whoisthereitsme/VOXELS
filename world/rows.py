@@ -195,19 +195,19 @@ class ROWS:
     # split
     # ============================================================
 
-    def splitrow(self, pos:POS=None, p2:POS=None, mat:str=None)->REQS:
-        if pos is None or p2 is None or mat is None:
-            raise ValueError("splitrow requires pos,p2,mat")
+    def splitrow(self, p0:POS=None, p1:POS=None, mat:str=None)->REQS:
+        if p0 is None or p1 is None or mat is None:
+            raise ValueError("splitrow requires p0,p1,mat")
 
-        mat0, _, hitrow = self.search(pos=pos)
+        mat0, _, hitrow = self.search(pos=p0)
 
         r0 = ROW.P0(row=hitrow)
         r1 = ROW.P1(row=hitrow)
 
         x0,y0,z0 = r0
         x3,y3,z3 = r1
-        x1,y1,z1 = pos
-        x2,y2,z2 = p2
+        x1,y1,z1 = p0
+        x2,y2,z2 = p1
 
         x1=max(x0,min(x1,x3)); x2=max(x0,min(x2,x3))
         y1=max(y0,min(y1,y3)); y2=max(y0,min(y2,y3))
@@ -241,11 +241,12 @@ class ROWS:
 
         return (array, arids)
 
-    def split1(self, pos:POS=None, mat:str=None)->REQS:
+    def split1(self, pos:POS=None, pos1:POS=None, mat:str=None)->REQS:
         if pos is None or mat is None:
             raise ValueError("split1 requires pos,mat")
-        p2 = (pos[0]+1, pos[1]+1, pos[2]+1)
-        batch, _ = self.splitrow(pos=pos, p2=p2, mat=mat)
+        if pos1 is None:
+            pos1 = (pos[0]+1, pos[1]+1, pos[2]+1) # single point split
+        batch, _ = self.splitrow(p0=pos, p1=pos1, mat=mat)
         merged, marids = self.merge(rows=batch)
         return (merged, marids)
 
@@ -257,6 +258,7 @@ class ROWS:
                 return None
             return (q0,q1)
 
+
         if p0 is None or p1 is None or mat is None:
             raise ValueError("split2 requires p0,p1,mat")
 
@@ -266,16 +268,21 @@ class ROWS:
 
         acc:list[list[NDARR]] = [[] for _ in range(MATERIALS.NUM)]
 
-        _, _, hitrow = self.search(pos=p0)
-        r0 = ROW.P0(row=hitrow)
-        r1 = ROW.P1(row=hitrow)
+        _, _, hitrow1 = self.search(pos=p0)
+        _, _, hitrow2 = self.search(pos=p1)
+        r0 = ROW.P0(row=hitrow1)
+        r1 = ROW.P1(row=hitrow1)
+        r2 = ROW.P0(row=hitrow2)
+        r3 = ROW.P1(row=hitrow2)
+        if r0 == r2 and r1 == r3:
+            return self.split1(pos=p0, pos1=p1, mat=mat) # this is the case where both hits are the same row -> so only one split needed
 
         hit = intersect(a0=p0, a1=p1, b0=r0, b1=r1)
         if hit is None:
             return self.reqs(n=0)
 
         q0,q1 = hit
-        batch,_ = self.splitrow(pos=q0, p2=q1, mat=mat)
+        batch,_ = self.splitrow(p0=q0, p1=q1, mat=mat)
         merged,marids = self.merge(rows=batch)
 
         for mid in range(MATERIALS.NUM):
