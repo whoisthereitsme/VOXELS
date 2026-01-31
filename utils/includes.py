@@ -32,7 +32,6 @@ import traceback
 import stat
 
 
-
 # my own modules (utils)
 from .types import POS, SIZE
 
@@ -80,6 +79,4 @@ __all__ = [
     "stat",
 ]
 
-
-timer.print(msg=f"utils/includes.py: {len(__all__)} modules loaded in")
-timer.reset()
+# END OF FILE

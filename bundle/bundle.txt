@@ -1,12 +1,12 @@
-#Time when generated: 2026-01-30T20:46:59
+#Time when generated: 2026-01-31T01:12:20
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
-Files included: 33
+Files included: 42
 
 
 ################################################################################
-# FILE 1/33: __init__.py (START)
+# FILE 1/42: __init__.py (START)
 ################################################################################
 
 import utils
@@ -17,12 +17,12 @@ __all__ = world.__all__ + utils.__all__ + bundle.__all__
 
 
 ################################################################################
-# FILE 1/33: __init__.py (END)
+# FILE 1/42: __init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 2/33: __main__.py (START)
+# FILE 2/42: __main__.py (START)
 ################################################################################
 
 from main import main
@@ -31,12 +31,12 @@ if __name__ == "__main__":
     main()
 
 ################################################################################
-# FILE 2/33: __main__.py (END)
+# FILE 2/42: __main__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 3/33: all/__init__.py (START)
+# FILE 3/42: all/__init__.py (START)
 ################################################################################
 
 from bundle import *
@@ -59,12 +59,12 @@ for name in __all__:
     print(f" - {name}")
 
 ################################################################################
-# FILE 3/33: all/__init__.py (END)
+# FILE 3/42: all/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 4/33: bundle/__init__.py (START)
+# FILE 4/42: bundle/__init__.py (START)
 ################################################################################
 
 from .bundle import *
@@ -76,12 +76,12 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 4/33: bundle/__init__.py (END)
+# FILE 4/42: bundle/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 5/33: bundle/bundle.py (START)
+# FILE 5/42: bundle/bundle.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -344,12 +344,12 @@ class Bundle:
 
 
 ################################################################################
-# FILE 5/33: bundle/bundle.py (END)
+# FILE 5/42: bundle/bundle.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 6/33: bundle/github.py (START)
+# FILE 6/42: bundle/github.py (START)
 ################################################################################
 
 import base64
@@ -562,12 +562,12 @@ class GitHub:
 
 
 ################################################################################
-# FILE 6/33: bundle/github.py (END)
+# FILE 6/42: bundle/github.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 7/33: credentials/__init__.py (START)
+# FILE 7/42: credentials/__init__.py (START)
 ################################################################################
 
 from .environ import Environ
@@ -577,12 +577,12 @@ __all__ = [
 ]   
 
 ################################################################################
-# FILE 7/33: credentials/__init__.py (END)
+# FILE 7/42: credentials/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 8/33: credentials/environ.py (START)
+# FILE 8/42: credentials/environ.py (START)
 ################################################################################
 
 
@@ -603,12 +603,12 @@ class Environ:
 
 
 ################################################################################
-# FILE 8/33: credentials/environ.py (END)
+# FILE 8/42: credentials/environ.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 9/33: main.py (START)
+# FILE 9/42: main.py (START)
 ################################################################################
 
 from all import *
@@ -618,15 +618,15 @@ from all import *
 
 
 if __name__ == "__main__":
-    tests(tests=[test6])  # Run only test6 for demonstration
+    tests(tests=[test7])  # Run only test7 for demonstration
 
 ################################################################################
-# FILE 9/33: main.py (END)
+# FILE 9/42: main.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 10/33: tests/__init__.py (START)
+# FILE 10/42: tests/__init__.py (START)
 ################################################################################
 
 
@@ -636,6 +636,10 @@ from .test3 import test3
 from .test4 import test4
 from .test5 import test5
 from .test6 import test6
+from .test7 import test7
+from .test8 import test8
+from .test9 import test9
+from .test10 import test10
 from .tests import tests
 
 __all__ = [
@@ -645,16 +649,20 @@ __all__ = [
     "test4",
     "test5",
     "test6",
+    "test7",
+    "test8",
+    "test9",
+    "test10",
     "tests",
 ]
 
 ################################################################################
-# FILE 10/33: tests/__init__.py (END)
+# FILE 10/42: tests/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 11/33: tests/test1.py (START)
+# FILE 11/42: tests/test1.py (START)
 ################################################################################
 
 from utils import *
@@ -777,12 +785,26 @@ def test1() -> None:
 
 
 ################################################################################
-# FILE 11/33: tests/test1.py (END)
+# FILE 11/42: tests/test1.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 12/33: tests/test2.py (START)
+# FILE 12/42: tests/test10.py (START)
+################################################################################
+
+
+
+def test10() -> None:
+    pass
+
+################################################################################
+# FILE 12/42: tests/test10.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 13/42: tests/test2.py (START)
 ################################################################################
 
 from utils import *
@@ -842,12 +864,12 @@ def test2() -> None:
 
 
 ################################################################################
-# FILE 12/33: tests/test2.py (END)
+# FILE 13/42: tests/test2.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 13/33: tests/test3.py (START)
+# FILE 14/42: tests/test3.py (START)
 ################################################################################
 
 from utils import *
@@ -916,12 +938,12 @@ def test3() -> None:
 
 
 ################################################################################
-# FILE 13/33: tests/test3.py (END)
+# FILE 14/42: tests/test3.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 14/33: tests/test4.py (START)
+# FILE 15/42: tests/test4.py (START)
 ################################################################################
 
 from utils import *
@@ -1001,12 +1023,12 @@ def test4() -> None:
     print("test4 OK:", f"air_rows={rows.nrows(mat='AIR')}", f"stone_rows={rows.nrows(mat='STONE')}")
 
 ################################################################################
-# FILE 14/33: tests/test4.py (END)
+# FILE 15/42: tests/test4.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 15/33: tests/test5.py (START)
+# FILE 16/42: tests/test5.py (START)
 ################################################################################
 
 from utils import *
@@ -1110,12 +1132,12 @@ def test5() -> None:
 
 
 ################################################################################
-# FILE 15/33: tests/test5.py (END)
+# FILE 16/42: tests/test5.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 16/33: tests/test6.py (START)
+# FILE 17/42: tests/test6.py (START)
 ################################################################################
 
 from utils import *
@@ -1226,12 +1248,191 @@ def test6() -> None:
 
 
 ################################################################################
-# FILE 16/33: tests/test6.py (END)
+# FILE 17/42: tests/test6.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 17/33: tests/tests.py (START)
+# FILE 18/42: tests/test7.py (START)
+################################################################################
+
+from utils import *
+from world import *
+
+
+
+def test7() -> None:
+    """
+    test7:
+    Bulletproof Resource/Resources/Warehouse invariants.
+
+    Covers:
+    - Resource.split() invariants (taken + leftover == original, bounds, value edge-cases)
+    - Resource +/- and in-place variants semantics
+    - Warehouse.give() returns leftover and respects capacity
+    - Warehouse.take() returns taken and updates stock
+    """
+
+    print("=== TEST7: RESOURCE / WAREHOUSE INVARIANTS ===")
+
+    # ------------------------------------------------------------
+    # 1) Resource.split() invariants
+    # ------------------------------------------------------------
+    for _ in range(1000):
+        amount = random.randint(0, 10_000)
+        value = random.randint(0, 12_000)
+
+        r = Resource(mat="STONE", amount=amount)
+        original = r.copy()
+
+        part1, leftover = r.split(value=value)  # [taken, leftover]
+
+        assert part1.mat == original.mat
+        assert leftover.mat == original.mat
+
+        assert 0 <= part1.amount <= original.amount
+        assert 0 <= leftover.amount <= original.amount
+
+        assert part1.amount == min(value, original.amount)
+        assert part1.amount + leftover.amount == original.amount
+
+    print(" - split() invariants OK (1000 cases)")
+
+    # ------------------------------------------------------------
+    # 2) Resource arithmetic semantics (mutating)
+    # ------------------------------------------------------------
+    a = Resource(mat="STONE", amount=50)
+    b = Resource(mat="STONE", amount=20)
+
+    a0 = a.amount
+    b0 = b.amount
+    a + b
+    assert a.amount == a0 + b0
+    assert b.amount == b0
+
+    a = Resource(mat="STONE", amount=50)
+    b = Resource(mat="STONE", amount=20)
+    a += b
+    assert a.amount == 70
+    assert b.amount == 0
+
+    a = Resource(mat="STONE", amount=50)
+    b = Resource(mat="STONE", amount=20)
+    a0 = a.amount
+    b0 = b.amount
+    a - b
+    assert a.amount == a0 - b0
+    assert b.amount == b0
+
+    a = Resource(mat="STONE", amount=10)
+    b = Resource(mat="STONE", amount=20)
+    a0 = a.amount
+    b0 = b.amount
+    a - b  # subtract up to available
+    assert a.amount == 0
+    assert b.amount == b0
+
+    a = Resource(mat="STONE", amount=10)
+    b = Resource(mat="STONE", amount=20)
+    a -= b
+    assert a.amount == 0
+    assert b.amount == 10  # remaining demand
+
+    print(" - Resource +/- semantics OK")
+
+    # ------------------------------------------------------------
+    # 3) Resources ingest/transfer semantics
+    # ------------------------------------------------------------
+    inv = Resources(rez=[])
+    r1 = Resource(mat="STONE", amount=10)
+    r2 = Resource(mat="STONE", amount=5)
+
+    inv + r1
+    assert inv.get(mat="STONE").amount == 10
+    assert r1.amount == 10
+
+    inv += r2
+    assert inv.get(mat="STONE").amount == 15
+    assert r2.amount == 0
+
+    print(" - Resources ingest/transfer OK")
+
+    # ------------------------------------------------------------
+    # 4) Warehouse.give()/take() invariants
+    # ------------------------------------------------------------
+    # We'll fake rows/pos/size since Warehouse only uses size for capacity.
+    wh = Warehouse(rows=None, pos=(0, 0, 0), size=(2, 2, 2))  # cap = 2*2*2*64 = 512
+    assert wh.cap == 512
+    assert wh.total() == 0
+    assert wh.free() == 512
+
+    incoming = Resource(mat="STONE", amount=600)
+    leftover = wh.give(incoming=incoming)
+
+    assert wh.get(mat="STONE").amount == 512
+    assert leftover.mat == "STONE"
+    assert leftover.amount == 88  # 600 - 512
+
+    # take less than available
+    req = Resource(mat="STONE", amount=200)
+    taken = wh.take(requested=req)
+
+    assert taken.mat == "STONE"
+    assert taken.amount == 200
+    assert wh.get(mat="STONE").amount == 312
+
+    # take more than available -> should take all remaining
+    req2 = Resource(mat="STONE", amount=9999)
+    taken2 = wh.take(requested=req2)
+
+    assert taken2.amount == 312
+    assert wh.get(mat="STONE").amount == 0
+
+    print(" - Warehouse give/take invariants OK")
+
+    print("=== TEST7 DONE ===")
+
+################################################################################
+# FILE 18/42: tests/test7.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 19/42: tests/test8.py (START)
+################################################################################
+
+
+
+
+
+
+def test8() -> None:
+    pass
+
+################################################################################
+# FILE 19/42: tests/test8.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 20/42: tests/test9.py (START)
+################################################################################
+
+
+
+
+
+
+def test9() -> None:
+    pass
+
+################################################################################
+# FILE 20/42: tests/test9.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 21/42: tests/tests.py (START)
 ################################################################################
 
 from utils import *
@@ -1261,12 +1462,12 @@ def tests(tests:list=None) -> None:
             pass
 
 ################################################################################
-# FILE 17/33: tests/tests.py (END)
+# FILE 21/42: tests/tests.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 18/33: TODO.md (START)
+# FILE 22/42: TODO.md (START)
 ################################################################################
 
 
@@ -1282,28 +1483,32 @@ def tests(tests:list=None) -> None:
 # TODO: 
 
 ################################################################################
-# FILE 18/33: TODO.md (END)
+# FILE 22/42: TODO.md (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 19/33: utils/__init__.py (START)
+# FILE 23/42: utils/__init__.py (START)
 ################################################################################
 
 from .request import Request
+
 from .includes import *
 from .includes import __all__ as inc
+
 __all__ = [
     "Request",
-] + inc
+]
+
+__all__.extend(inc)
 
 ################################################################################
-# FILE 19/33: utils/__init__.py (END)
+# FILE 23/42: utils/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 20/33: utils/bvh.py (START)
+# FILE 24/42: utils/bvh.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1618,12 +1823,12 @@ class BVH:
 
 
 ################################################################################
-# FILE 20/33: utils/bvh.py (END)
+# FILE 24/42: utils/bvh.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 21/33: utils/event.py (START)
+# FILE 25/42: utils/event.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1656,12 +1861,12 @@ class Handler:
 
 
 ################################################################################
-# FILE 21/33: utils/event.py (END)
+# FILE 25/42: utils/event.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 22/33: utils/includes.py (START)
+# FILE 26/42: utils/includes.py (START)
 ################################################################################
 
 from __future__ import annotations  # MUST BE FIRST
@@ -1696,7 +1901,6 @@ import pygame
 import moderngl
 import traceback
 import stat
-
 
 
 # my own modules (utils)
@@ -1746,17 +1950,15 @@ __all__ = [
     "stat",
 ]
 
-
-timer.print(msg=f"utils/includes.py: {len(__all__)} modules loaded in")
-timer.reset()
+# END OF FILE
 
 ################################################################################
-# FILE 22/33: utils/includes.py (END)
+# FILE 26/42: utils/includes.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 23/33: utils/mdx.py (START)
+# FILE 27/42: utils/mdx.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -1899,12 +2101,12 @@ class MDX:
         return search(faces=faces, bucks=bucks)
 
 ################################################################################
-# FILE 23/33: utils/mdx.py (END)
+# FILE 27/42: utils/mdx.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 24/33: utils/request.py (START)
+# FILE 28/42: utils/request.py (START)
 ################################################################################
 
 import time
@@ -1961,12 +2163,12 @@ class Request:
             raise RuntimeError(f"[ERROR] unexpected error for {self.url}\n{e!r}") from e
 
 ################################################################################
-# FILE 24/33: utils/request.py (END)
+# FILE 28/42: utils/request.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 25/33: utils/schedule.py (START)
+# FILE 29/42: utils/schedule.py (START)
 ################################################################################
 
 import threading
@@ -2130,12 +2332,12 @@ if __name__ == "__main__":
     sched.stop()
 
 ################################################################################
-# FILE 25/33: utils/schedule.py (END)
+# FILE 29/42: utils/schedule.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 26/33: utils/timer.py (START)
+# FILE 30/42: utils/timer.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -2226,12 +2428,12 @@ class Timer:
 now = Timer.now # now: now() returns the current time in nanoseconds
 
 ################################################################################
-# FILE 26/33: utils/timer.py (END)
+# FILE 30/42: utils/timer.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 27/33: utils/types.py (START)
+# FILE 31/42: utils/types.py (START)
 ################################################################################
 
 from typing import TypeAlias
@@ -2244,17 +2446,20 @@ __all__ = [
 ]
 
 ################################################################################
-# FILE 27/33: utils/types.py (END)
+# FILE 31/42: utils/types.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 28/33: world/__init__.py (START)
+# FILE 32/42: world/__init__.py (START)
 ################################################################################
 
 
 from .buildings import *
 from .buildings import __all__ as allbuildings
+
+from .resources import *
+from .resources import __all__ as allresources
 
 from .rows import ROWS
 from .row import ROW
@@ -2269,30 +2474,107 @@ __all__ = [
 ] 
 
 __all__.extend(allbuildings)
+__all__.extend(allresources)
 
 ################################################################################
-# FILE 28/33: world/__init__.py (END)
+# FILE 32/42: world/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 29/33: world/buildings/__init__.py (START)
+# FILE 33/42: world/buildings/__init__.py (START)
 ################################################################################
 
 
 from .miner import Miner
+from .factory import Factory
+from .warehouse import Warehouse
+
+
 
 __all__ = [
     "Miner",    
+    "Factory",
+    "Warehouse",
 ]
 
 ################################################################################
-# FILE 29/33: world/buildings/__init__.py (END)
+# FILE 33/42: world/buildings/__init__.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 30/33: world/buildings/miner.py (START)
+# FILE 34/42: world/buildings/factory.py (START)
+################################################################################
+
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from world.rows import ROWS
+
+
+
+from .warehouse import Warehouse
+from utils.types import POS
+
+
+
+class Recipe:
+    def __init__(self, ins:dict[str,int]=None, outs:dict[str,int]=None, ticks:int=0) -> None:
+        self.ins:dict[str,int] = ins if ins is not None else {}
+        self.outs:dict[str,int] = outs if outs is not None else {}
+
+        self.ticks:int = ticks
+
+        self.init()
+
+    def init(self) -> None:
+        self.tick = 0
+
+    def ready(self) -> Recipe|None:
+        self.tick += 1
+        if self.tick >= self.ticks:
+            self.tick = 0
+            return self
+        return None    
+
+
+
+class Factory:    
+    def __init__(self, rows:ROWS=None, pos:POS=None, recipe:Recipe=None, warehouse:Warehouse=None) -> None:
+        self.rows:ROWS      = rows
+        self.pos:POS        = pos 
+        self.recipe:Recipe  = recipe
+        self.warehouse:Warehouse = warehouse
+
+    def update(self) -> None:
+        if self.canproduce():
+            self.produce(self.recipe)
+
+    def canproduce(self) -> bool:
+        canproduce = False
+        if self.recipe.ready():
+            if self.enoughmats():
+                canproduce = True
+        return canproduce
+    
+    def enoughmats(self, mat:str=None, amount:int=None) -> bool:
+        enough: bool = True
+        for mat, amount in self.recipe.ins.items():
+            if self.warehouse.rows.materials.get(mat, 0) < amount:
+                enough = False
+                break
+        return enough
+              
+            
+
+################################################################################
+# FILE 34/42: world/buildings/factory.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 35/42: world/buildings/miner.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -2366,12 +2648,90 @@ class Miner:
     
 
 ################################################################################
-# FILE 30/33: world/buildings/miner.py (END)
+# FILE 35/42: world/buildings/miner.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 31/33: world/materials.py (START)
+# FILE 36/42: world/buildings/warehouse.py (START)
+################################################################################
+
+from __future__ import annotations
+from typing import TYPE_CHECKING, TypeAlias
+
+if TYPE_CHECKING:
+    from world.rows import ROWS
+    from utils.types import SIZE, POS
+
+
+
+from world.resources import Resource, Resources
+
+
+class Warehouse:
+    def __init__(self, rows:ROWS=None, pos:POS=None, size:SIZE=None) -> None:
+        self.rows:ROWS = rows
+        self.pos:POS = pos
+        self.size:SIZE = size
+        self.init()
+
+    def init(self) -> None:
+        self.cap:int = self.size[0] * self.size[1] * self.size[2] * 64
+        self.rez: Resources = Resources()
+
+    def total(self) -> int:
+        return self.rez.total()
+
+    def free(self) -> int:
+        return self.cap - self.total()
+
+    def fits(self, res:Resource=None) -> bool:
+        if res is None:
+            raise ValueError("[VALUE ERROR] Warehouse.fits(): res is None")
+        res.validate()
+        return self.free() >= res.amount
+    
+    def get(self, mat:str=None) -> Resource:
+        if mat is None:
+            raise ValueError("[VALUE ERROR] Warehouse.get(): mat is None")
+        return self.rez.get(mat=mat)
+
+    def has(self, res:Resource=None) -> tuple[Resource, Resource]:
+        if res is None:
+            raise ValueError("[VALUE ERROR] Warehouse.has(): res is None")
+        res.validate()
+        available = self.rez.rez.get(res.mat, Resource(mat=res.mat, amount=0)).copy()
+        want = res.copy()
+        return available, want
+    
+    def split(self, request:Resource=None) -> tuple[Resource, Resource]:
+        if request is None:
+            raise ValueError("[VALUE ERROR] Warehouse.split(): request is None")
+        request.validate()
+        requested, stock = self.get(mat=request.mat).split(value=request.amount) # part1 is what we give, part2 is what remains
+        return requested, stock
+
+    def give(self, incoming:Resource=None) -> Resource:
+        if incoming is None:
+            raise ValueError("[VALUE ERROR] Warehouse.give(): incoming is None")
+        incoming.validate()
+        give, notgive = incoming.split(value=self.free() if self.free() > 0 else 0)  # <-- unpack order matters!
+        self.rez += give   # transfer stored into warehouse (stored becomes 0)
+        return notgive      # what could NOT be stored
+
+    def take(self, requested:Resource=None) -> Resource:
+        if requested is None:
+            raise ValueError("[VALUE ERROR] Warehouse.take(): requested is None")
+        requested.validate()
+        return self.split(request=requested)[0] # what we can provide
+
+################################################################################
+# FILE 36/42: world/buildings/warehouse.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 37/42: world/materials.py (START)
 ################################################################################
 
 
@@ -2469,12 +2829,314 @@ class Materials:
 
 
 ################################################################################
-# FILE 31/33: world/materials.py (END)
+# FILE 37/42: world/materials.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 32/33: world/row.py (START)
+# FILE 38/42: world/resources/__init__.py (START)
+################################################################################
+
+from .resource import Resource, RESOURCELIKE
+from .resources import Resources
+
+__all__ = [
+    "Resource",
+    "Resources",
+    "RESOURCELIKE",
+]
+
+################################################################################
+# FILE 38/42: world/resources/__init__.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 39/42: world/resources/resource.py (START)
+################################################################################
+
+from __future__ import annotations
+from typing import TYPE_CHECKING, TypeAlias
+if TYPE_CHECKING:
+    from.resources import Resources
+
+
+
+
+
+RESOURCELIKE: TypeAlias = "Resource | Resources | list[Resource] | tuple[Resource, ...] | set[Resource] | dict[str, Resource] | None"
+
+
+class Resource:
+    def __init__(self, mat:str=None, amount:int=0) -> None:
+        self.mat:str = mat
+        self.amount:int = amount
+        self.validate()
+
+    def validate(self) -> Resource:
+        if self.mat is None:
+            raise ValueError("[VALUE ERROR] Resource.validate(): mat is None")
+        if self.amount < 0:
+            raise ValueError(f"[VALUE ERROR] Resource.validate(): amount out of bounds: {self.amount}")
+        return self
+
+    def compatible(self, other:Resource=None) -> bool:
+        if isinstance(other, Resource):
+            self.validate()
+            other.validate()
+            if self.mat == other.mat:
+                return True
+        raise ValueError(f"[VALUE ERROR] Resource.compatible(): incompatible resources: {self} vs {other}")
+
+    def copy(self) -> Resource:
+        return Resource(mat=self.mat, amount=self.amount)
+
+    def __copy__(self) -> Resource:
+        return self.copy()
+
+    def __deepcopy__(self, memo) -> Resource:
+        return self.copy()
+
+    # ------------------------------------------------------------
+    # Semantics requested:
+    #
+    # a + b  : b does NOT mutate, a DOES mutate (adds b.amount)
+    # a += b : transfer; a increases, b becomes 0
+    #
+    # a - b  : b does NOT mutate, a DOES mutate (subtract up to b.amount)
+    # a -= b : transfer-like; a decreases, b becomes "remaining" demand
+    #          (b ends up 0 if a had enough, else b keeps leftover)
+    # ------------------------------------------------------------
+
+    def __add__(self, other:Resource=None) -> Resource:
+        if self.compatible(other=other):
+            self.amount += other.amount
+        return self.validate()
+
+    def __iadd__(self, other:Resource=None) -> Resource:
+        if self.compatible(other=other):
+            self.amount += other.amount
+            other.amount = 0
+            other.validate()
+        return self.validate()
+
+    def __sub__(self, other:Resource=None) -> Resource:
+        if self.compatible(other=other):
+            take = other.amount
+            if self.amount < take:
+                take = self.amount
+            self.amount -= take
+        return self.validate()
+
+    def __isub__(self, other:Resource=None) -> Resource:
+        if self.compatible(other=other):
+            take = other.amount
+            if self.amount < take:
+                take = self.amount
+            self.amount -= take
+            other.amount -= take
+            other.validate()
+        return self.validate()
+
+    # ---------------- comparisons (same-material only) ----------------
+
+    def __lt__(self, other:Resource=None) -> bool:
+        if self.compatible(other=other):
+            return self.amount < other.amount
+        return False
+
+    def __le__(self, other:Resource=None) -> bool:
+        if self.compatible(other=other):
+            return self.amount <= other.amount
+        return False
+
+    def __gt__(self, other:Resource=None) -> bool:
+        if self.compatible(other=other):
+            return self.amount > other.amount
+        return False
+
+    def __ge__(self, other:Resource=None) -> bool:
+        if self.compatible(other=other):
+            return self.amount >= other.amount
+        return False
+
+    def __eq__(self, other:object=None) -> bool:
+        if not isinstance(other, Resource):
+            return False
+        if self.mat != other.mat:
+            return False
+        return self.amount == other.amount
+
+    def __ne__(self, other:object=None) -> bool:
+        return not self.__eq__(other)
+
+    # ---------------- misc ----------------
+
+    def __int__(self) -> int:
+        return self.amount
+
+    def __bool__(self) -> bool:
+        self.validate()
+        return True
+
+    def __repr__(self) -> str:
+        return f"Resource(mat={self.mat}, amount={self.amount})"
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
+    def sort(self, others:list[Resource]=None, reverse:bool=False) -> list[Resource]:
+        if others is None:
+            others = []
+        for o in others:
+            self.compatible(other=o)
+        return sorted([self] + others, reverse=reverse)
+
+    def split(self, value:int=None) -> list[Resource]:
+        self.validate()
+        if value is None or value < 0:
+            raise ValueError(f"[VALUE ERROR] Resource.split(): invalid split value: {value}")
+
+        take = min(value, self.amount)
+        part1 = Resource(mat=self.mat, amount=take)
+        self = self - part1
+        return [part1, self]   # [before split, after split]
+    
+
+################################################################################
+# FILE 39/42: world/resources/resource.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 40/42: world/resources/resources.py (START)
+################################################################################
+
+from __future__ import annotations
+from typing import TYPE_CHECKING, TypeAlias
+if TYPE_CHECKING:
+    pass
+
+from .resource import Resource, RESOURCELIKE    
+
+
+class Resources:
+    def __init__(self, rez:RESOURCELIKE=None) -> None:
+        self.rez: dict[str, Resource] = {}
+        self.ingest(rez=rez)
+
+    def tolist(self, rez:RESOURCELIKE=None) -> list[Resource]:
+        if rez is None:
+            return self.list()
+
+        if isinstance(rez, Resource):
+            return [rez]
+
+        if isinstance(rez, Resources):
+            return rez.list()
+
+        if isinstance(rez, list):
+            return rez
+
+        if isinstance(rez, tuple):
+            return list(rez)
+
+        if isinstance(rez, set):
+            return list(rez)
+
+        if isinstance(rez, dict):
+            # copy values into new Resources (do NOT mutate originals)
+            return [Resource(mat=r.mat, amount=r.amount) for r in rez.values()]
+
+        raise ValueError(f"[VALUE ERROR] Resources.tolist(): invalid type: {type(rez)}")
+
+    def get(self, mat:str=None) -> Resource:
+        if mat is None:
+            raise ValueError("[VALUE ERROR] Resources.get(): mat is None")
+        if mat not in self.rez:
+            self.rez[mat] = Resource(mat=mat, amount=0)
+        return self.rez[mat]
+
+    def ingest(self, rez:RESOURCELIKE=None) -> None:
+        for r in self.tolist(rez=rez):
+            r.validate()
+            cur = self.get(mat=r.mat)
+            cur + r  # mutates cur only; r unchanged
+
+    def transfer(self, rez:RESOURCELIKE=None) -> None:
+        for r in self.tolist(rez=rez):
+            r.validate()
+            cur = self.get(mat=r.mat)
+            cur += r  # transfer; r becomes 0
+
+    def total(self) -> int:
+        total = 0
+        for r in self.tolist():
+            total += r.amount
+        return total
+
+    def list(self) -> list[Resource]:
+        return list(self.rez.values())
+
+    def copy(self) -> Resources:
+        return Resources(rez=[r.copy() for r in self.tolist()])
+
+    def __copy__(self) -> Resources:
+        return self.copy()
+
+    def __deepcopy__(self, memo) -> Resources:
+        return self.copy()
+
+    # ------------------------------------------------------------
+    # Semantics requested (for containers):
+    #
+    # a + b  : b does NOT mutate, a DOES mutate (adds)
+    # a += b : transfer; a increases, b becomes 0 (per material)
+    #
+    # a - b  : b does NOT mutate, a DOES mutate (subtract up to b.amount)
+    # a -= b : transfer-like; a decreases, b becomes remaining demand
+    # ------------------------------------------------------------
+
+    def __add__(self, other:RESOURCELIKE=None) -> Resources:
+        self.ingest(rez=other)
+        return self
+
+    def __iadd__(self, other:RESOURCELIKE=None) -> Resources:
+        self.transfer(rez=other)
+        return self
+
+    def __sub__(self, other:RESOURCELIKE=None) -> Resources:
+        for r in self.tolist(rez=other):
+            r.validate()
+            cur = self.get(mat=r.mat)
+            cur - r  # mutates cur only; r unchanged
+        return self
+
+    def __isub__(self, other:RESOURCELIKE=None) -> Resources:
+        for r in self.tolist(rez=other):
+            r.validate()
+            cur = self.get(mat=r.mat)
+            cur -= r  # mutates both: cur decreases, r becomes remaining demand
+        return self
+
+    def __bool__(self) -> bool:
+        for r in self.list():
+            bool(r)
+        return True
+
+    def __repr__(self) -> str:
+        return f"Resources({self.list()})"
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
+################################################################################
+# FILE 40/42: world/resources/resources.py (END)
+################################################################################
+
+
+################################################################################
+# FILE 41/42: world/row.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -2722,12 +3384,12 @@ class ROW:
     
 
 ################################################################################
-# FILE 32/33: world/row.py (END)
+# FILE 41/42: world/row.py (END)
 ################################################################################
 
 
 ################################################################################
-# FILE 33/33: world/rows.py (START)
+# FILE 42/42: world/rows.py (START)
 ################################################################################
 
 from __future__ import annotations
@@ -3183,7 +3845,7 @@ class ROWS:
 
 
 ################################################################################
-# FILE 33/33: world/rows.py (END)
+# FILE 42/42: world/rows.py (END)
 ################################################################################
 
 
@@ -3192,22 +3854,20 @@ class ROWS:
 ################################################################################
 
 
-=== RUNNING TEST 1/1: test6 ===
-=== TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
-test6: search() [tests=10]: lap 3: 0.000105 seconds
-test6: split1 (point split) [tests=10]: lap 5: 0.042782 seconds
-test6: split2 (region split) [tests=10]: lap 7: 0.07271 seconds
-test6: merge() [tests=10]: lap 9: 0.046908 seconds
-test6: remove() [tests=10]: lap 11: 4.4e-05 seconds
-test6: insert() [tests=10]: lap 13: 0.000489 seconds
-=== TEST6 DONE ===
-=== TEST 1/1: test6 PASSED in 0.000 seconds ===
+=== RUNNING TEST 1/1: test7 ===
+=== TEST7: RESOURCE / WAREHOUSE INVARIANTS ===
+ - split() invariants OK (1000 cases)
+ - Resource +/- semantics OK
+ - Resources ingest/transfer OK
+ - Warehouse give/take invariants OK
+=== TEST7 DONE ===
+=== TEST 1/1: test7 PASSED in 0.003 seconds ===
 
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3209
-# Total files in bundle: 33
-# Generated at the time: 2026-01-30T20:46:59
+# Total lines in bundle: 3869
+# Total files in bundle: 42
+# Generated at the time: 2026-01-31T01:12:20
 --- END OF FILE ---
