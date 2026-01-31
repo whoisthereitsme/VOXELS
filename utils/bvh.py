@@ -83,10 +83,6 @@ class BVH:
             (self.z1[n]-self.z0[n])
         )
 
-    # ============================================================
-    # insertion logic
-    # ============================================================
-
     def insert(self, row:Row=None)->None:
         mid,rid,row = int(row.mid),int(row.rid),row.row
         x0,y0,z0 = ROW.P0(row=row)
@@ -190,10 +186,6 @@ class BVH:
                 self.right[grand] = sibling
             self.parent[sibling] = grand
             self.fixupwards(grand)
-
-    # ============================================================
-    # search
-    # ============================================================
 
     def search(self, pos:POS)->Row:
         if self.root == -1:

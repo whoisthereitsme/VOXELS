@@ -484,8 +484,30 @@ class ROWS:
             return self.mergeall()
         return self.mergerows(rows=rows)
 
+    def stats(self)->dict[str,int|float]:
+        sizes = []
+        for mid in range(MATERIALS.NUM):
+            mat = self.mat.name(mid=mid)
+            rows = self.nrows(mid=mid)
+            for rid in range(self.arids[mid]):
+                sizes.append((rows, mat, ROW.VOLUME(row=self.array[mid][rid])))
+        volume = self.volume()
+        stats = []
+        for r, m, s in sizes:
+            stats.append({
+                "mat": m,
+                "rows": r,
+                "vol": int(s),
+                "perc": (s / volume * 100) if volume > 0 else 0.0,
+            })
+        string = "ROWS STATS:\n"
+        string += f"  TOTAL VOLUME: {volume}\n"
+        for entry in stats:
+            string += f"  MAT={entry['mat']:10s} ROWS={entry['rows']:6d} VOL={entry['vol']:12d} PERC={entry['perc']:6.2f}%\n"
+        return string
+
     def __repr__(self)->str:
-        return self.__str__()
+        return self.stats()
 
     def __str__(self)->str:
-        return f"ROWS(shape={self.shape}, gbytes={self.gbytes:.3f}, total={self.total})"
+        return self.stats()

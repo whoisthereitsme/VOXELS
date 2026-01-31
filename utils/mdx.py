@@ -10,23 +10,15 @@ if TYPE_CHECKING:
 from world.row import ROW
 from utils.types import NDARR, Row
 
-
-# Location identity in the world arrays
-Loc = Tuple[int, int]  # (mid, rid)
-
-# A face key (one plane of an AABB):
-# axis X: (mid, y0, y1, z0, z1, x_face)
-# axis Y: (mid, x0, x1, z0, z1, y_face)
-# axis Z: (mid, x0, x1, y0, y1, z_face)
+LOC = Tuple[int, int]  # (mid, rid)
 FACE = Tuple[int, int, int, int, int, int]
-
-BUCK = DefaultDict[FACE, Set[Loc]]  # face_key -> set of Locs
+BUCK = DefaultDict[FACE, Set[LOC]]  # face_key -> set of LOCs
 FACES = Tuple[FACE, FACE]           # (pos_face, neg_face) for search order
 BUCKS = Tuple[BUCK, BUCK]           # (neg_bucket, pos_bucket)
 
 
 @dataclass(slots=True)
-class RowFaces:
+class Faces:
     x0: FACE
     x1: FACE
     y0: FACE
@@ -35,8 +27,6 @@ class RowFaces:
     z1: FACE
 
     def faces_for_axis(self, ax: int) -> FACES:
-        # Return in "search order": try +face first then -face,
-        # matching merge logic that usually wants touching faces.
         if ax == 0:
             return (self.x1, self.x0)
         if ax == 1:
@@ -59,13 +49,10 @@ class MDX:
     def init(self) -> None:
         self.neg: Tuple[BUCK, BUCK, BUCK] = (defaultdict(set), defaultdict(set), defaultdict(set))
         self.pos: Tuple[BUCK, BUCK, BUCK] = (defaultdict(set), defaultdict(set), defaultdict(set))
-        self._faces: Dict[Loc, RowFaces] = {}
+        self._faces: Dict[LOC, Faces] = {}
 
-    # ============================================================
-    # face building
-    # ============================================================
 
-    def _build_faces(self, mid: int, row: NDARR) -> RowFaces:
+    def _build_faces(self, mid: int, row: NDARR) -> Faces:
         x0, y0, z0 = ROW.P0(row=row)
         x1, y1, z1 = ROW.P1(row=row)
 
@@ -78,32 +65,27 @@ class MDX:
         fz0: FACE = (mid, x0, x1, y0, y1, z0)
         fz1: FACE = (mid, x0, x1, y0, y1, z1)
 
-        return RowFaces(x0=fx0, x1=fx1, y0=fy0, y1=fy1, z0=fz0, z1=fz1)
+        return Faces(x0=fx0, x1=fx1, y0=fy0, y1=fy1, z0=fz0, z1=fz1)
 
-    # ============================================================
-    # insert / remove
-    # ============================================================
 
     def insert(self, row: Row=None) -> None:
         mid, rid, row = int(row.mid), int(row.rid), row.row
-        loc: Loc = (mid, rid)
+        loc: LOC = (mid, rid)
 
         faces = self._build_faces(mid=mid, row=row)
         self._faces[loc] = faces
 
-        # X axis
         self.neg[self.AX_X][faces.x0].add(loc)
         self.pos[self.AX_X][faces.x1].add(loc)
-        # Y axis
         self.neg[self.AX_Y][faces.y0].add(loc)
         self.pos[self.AX_Y][faces.y1].add(loc)
-        # Z axis
         self.neg[self.AX_Z][faces.z0].add(loc)
         self.pos[self.AX_Z][faces.z1].add(loc)
 
+
     def remove(self, row: Row=None) -> None:
         mid, rid = int(row.mid), int(row.rid)
-        loc: Loc = (mid, rid)
+        loc: LOC = (mid, rid)
 
         faces = self._faces.pop(loc, None)
         if faces is None:
@@ -119,7 +101,7 @@ class MDX:
         self._discard(self.pos[self.AX_Z], faces.z1, loc)
 
     @staticmethod
-    def _discard(m: BUCK, key: FACE, loc: Loc) -> None:
+    def _discard(m: BUCK, key: FACE, loc: LOC) -> None:
         s = m.get(key)
         if not s:
             return
@@ -127,9 +109,6 @@ class MDX:
         if not s:
             del m[key]
 
-    # ============================================================
-    # adjacency search
-    # ============================================================
 
     def search(self, r: Row, axis: int) -> Optional[Row]:
         """
@@ -142,7 +121,7 @@ class MDX:
             raise ValueError("axis must be 0,1,2")
 
         mid, rid = int(r.mid), int(r.rid)
-        loc: Loc = (mid, rid)
+        loc: LOC = (mid, rid)
 
         faces = self._faces.get(loc)
         if faces is None:
