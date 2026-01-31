@@ -16,7 +16,7 @@ def test6() -> None:
 
     def make_world() -> tuple[ROWS, int, int, int, int]:
         rows = ROWS()
-        row0 = rows.array[MATERIALS.IDX["STONE"]][0]
+        row0 = rows.array[MATERIALS.MID["STONE"]][0]
         rows.remove(row=row0)
 
         cell = 64
@@ -87,7 +87,7 @@ def test6() -> None:
     for _ in range(ntests):
         if rows.nrows(mat="STONE") <= 0:
             break
-        row = rows.array[MATERIALS.IDX["STONE"]][rows.nrows(mat="STONE") - 1]
+        row = rows.array[MATERIALS.MID["STONE"]][rows.nrows(mat="STONE") - 1]
         rows.remove(row=row)
     timer.print(msg=f"test6: remove() [tests={ntests}]")
 

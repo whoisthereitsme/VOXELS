@@ -16,7 +16,7 @@ def test1() -> None:
     rows = ROWS()
 
     # remove the default huge row
-    row0 = rows.array[MATERIALS.IDX["STONE"]][0]
+    row0 = rows.array[MATERIALS.MID["STONE"]][0]
     rows.remove(row=row0)
 
     # STEP 1 grid
@@ -66,14 +66,14 @@ def test1() -> None:
     # delete some rows (stress BVH remove/swap)
     print(" - Now deleting 10000 rows...")
     for i in range(10000):
-        row = rows.array[MATERIALS.IDX["STONE"]][rows.nrows(mat="STONE") - 1]
+        row = rows.array[MATERIALS.MID["STONE"]][rows.nrows(mat="STONE") - 1]
         rows.remove(row=row)
     timer.print(msg=" - Deleted 10000 rows in")
 
     # STEP 2 grid (new scale) — rebuild from scratch for clean bounds
     # delete remaining STONE rows
     while rows.nrows(mat="STONE") > 0:
-        row = rows.array[MATERIALS.IDX["STONE"]][rows.nrows(mat="STONE") - 1]
+        row = rows.array[MATERIALS.MID["STONE"]][rows.nrows(mat="STONE") - 1]
         rows.remove(row=row)
 
     print("STEP 2 : Rebuilding rows after deletion...")

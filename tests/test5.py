@@ -16,7 +16,7 @@ def test5() -> None:
     """
     rows = ROWS()
 
-    row0 = rows.array[MATERIALS.IDX["STONE"]][0]
+    row0 = rows.array[MATERIALS.MID["STONE"]][0]
     rows.remove(row=row0)
 
     cell = 64

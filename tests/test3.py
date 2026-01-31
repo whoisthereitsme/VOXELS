@@ -53,9 +53,9 @@ def test3() -> None:
         assert mat == "AIR", f"expected AIR at {pos}, got {mat}"
 
     for i in range(len(rows.array)):
-        n = rows.nrows(mat=Materials.idx2name[i])
-        print(f"Material {Materials.idx2name[i]} has {n} rows after MERGE tests.")
-        if Materials.idx2name[i] == "AIR":
+        n = rows.nrows(mat=Materials.MID2name[i])
+        print(f"Material {Materials.MID2name[i]} has {n} rows after MERGE tests.")
+        if Materials.MID2name[i] == "AIR":
             for j in range(n):
                 row = rows.array[i][j]
                 print(f"  AIR row {j}: p0={ROW.P0(row=row)}, p1={ROW.P1(row=row)}")

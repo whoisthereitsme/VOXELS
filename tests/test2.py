@@ -50,6 +50,6 @@ def test2() -> None:
         assert mat == "AIR", f"expected AIR at {pos} after merge, got {mat}"
 
     for i in range(len(rows.array)):
-        n = rows.nrows(mat=Materials.idx2name[i])
-        print(f"Material {Materials.idx2name[i]} has {n} rows after MERGE tests.")
+        n = rows.nrows(mat=Materials.MID2name[i])
+        print(f"Material {Materials.MID2name[i]} has {n} rows after MERGE tests.")
 

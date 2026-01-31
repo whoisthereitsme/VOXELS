@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T04:15:40
+#Time when generated: 2026-01-31T04:17:54
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -683,7 +683,7 @@ def test1() -> None:
     rows = ROWS()
 
     # remove the default huge row
-    row0 = rows.array[MATERIALS.IDX["STONE"]][0]
+    row0 = rows.array[MATERIALS.MID["STONE"]][0]
     rows.remove(row=row0)
 
     # STEP 1 grid
@@ -733,14 +733,14 @@ def test1() -> None:
     # delete some rows (stress BVH remove/swap)
     print(" - Now deleting 10000 rows...")
     for i in range(10000):
-        row = rows.array[MATERIALS.IDX["STONE"]][rows.nrows(mat="STONE") - 1]
+        row = rows.array[MATERIALS.MID["STONE"]][rows.nrows(mat="STONE") - 1]
         rows.remove(row=row)
     timer.print(msg=" - Deleted 10000 rows in")
 
     # STEP 2 grid (new scale) — rebuild from scratch for clean bounds
     # delete remaining STONE rows
     while rows.nrows(mat="STONE") > 0:
-        row = rows.array[MATERIALS.IDX["STONE"]][rows.nrows(mat="STONE") - 1]
+        row = rows.array[MATERIALS.MID["STONE"]][rows.nrows(mat="STONE") - 1]
         rows.remove(row=row)
 
     print("STEP 2 : Rebuilding rows after deletion...")
@@ -859,8 +859,8 @@ def test2() -> None:
         assert mat == "AIR", f"expected AIR at {pos} after merge, got {mat}"
 
     for i in range(len(rows.array)):
-        n = rows.nrows(mat=Materials.idx2name[i])
-        print(f"Material {Materials.idx2name[i]} has {n} rows after MERGE tests.")
+        n = rows.nrows(mat=Materials.MID2name[i])
+        print(f"Material {Materials.MID2name[i]} has {n} rows after MERGE tests.")
 
 
 ################################################################################
@@ -927,9 +927,9 @@ def test3() -> None:
         assert mat == "AIR", f"expected AIR at {pos}, got {mat}"
 
     for i in range(len(rows.array)):
-        n = rows.nrows(mat=Materials.idx2name[i])
-        print(f"Material {Materials.idx2name[i]} has {n} rows after MERGE tests.")
-        if Materials.idx2name[i] == "AIR":
+        n = rows.nrows(mat=Materials.MID2name[i])
+        print(f"Material {Materials.MID2name[i]} has {n} rows after MERGE tests.")
+        if Materials.MID2name[i] == "AIR":
             for j in range(n):
                 row = rows.array[i][j]
                 print(f"  AIR row {j}: p0={ROW.P0(row=row)}, p1={ROW.P1(row=row)}")
@@ -1049,7 +1049,7 @@ def test5() -> None:
     """
     rows = ROWS()
 
-    row0 = rows.array[MATERIALS.IDX["STONE"]][0]
+    row0 = rows.array[MATERIALS.MID["STONE"]][0]
     rows.remove(row=row0)
 
     cell = 64
@@ -1158,7 +1158,7 @@ def test6() -> None:
 
     def make_world() -> tuple[ROWS, int, int, int, int]:
         rows = ROWS()
-        row0 = rows.array[MATERIALS.IDX["STONE"]][0]
+        row0 = rows.array[MATERIALS.MID["STONE"]][0]
         rows.remove(row=row0)
 
         cell = 64
@@ -1229,7 +1229,7 @@ def test6() -> None:
     for _ in range(ntests):
         if rows.nrows(mat="STONE") <= 0:
             break
-        row = rows.array[MATERIALS.IDX["STONE"]][rows.nrows(mat="STONE") - 1]
+        row = rows.array[MATERIALS.MID["STONE"]][rows.nrows(mat="STONE") - 1]
         rows.remove(row=row)
     timer.print(msg=f"test6: remove() [tests={ntests}]")
 
@@ -3941,22 +3941,32 @@ class ROWS:
 
 === RUNNING TEST 1/1: test6 ===
 === TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
+test6: search() [tests=10]: lap 3: 0.011328 seconds
 Traceback (most recent call last):
   File "c:\VOXELS\tests\tests.py", line 19, in tests
     test()
     ~~~~^^
-  File "c:\VOXELS\tests\test6.py", line 43, in test6
-    rows, cell, max_x, max_y, max_z = make_world()
-                                      ~~~~~~~~~~^^
-  File "c:\VOXELS\tests\test6.py", line 19, in make_world
-    row0 = rows.array[MATERIALS.IDX["STONE"]][0]
-                      ^^^^^^^^^^^^^
-AttributeError: type object 'MATERIALS' has no attribute 'IDX'
+  File "c:\VOXELS\tests\test6.py", line 55, in test6
+    rows.split(pos=pos, mat="AIR")
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 251, in split
+    return self.split1(pos=pos, mat=mat)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 177, in split1
+    batch, arids = self.splitrow(pos=pos, p2=p2, mat=mat)
+                   ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 172, in splitrow
+    self.remove(row=row)
+    ~~~~~~~~~~~^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 107, in remove
+    self.array[mid][index][*ROW.IDS_ID] = np.uint64(index)
+                            ^^^^^^^^^^
+AttributeError: type object 'ROW' has no attribute 'IDS_ID'. Did you mean: 'IDS_MID'?
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3958
+# Total lines in bundle: 3968
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T04:15:40
+# Generated at the time: 2026-01-31T04:17:54
 --- END OF FILE ---
