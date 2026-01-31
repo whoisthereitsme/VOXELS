@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T02:18:05
+#Time when generated: 2026-01-31T02:19:02
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -1536,8 +1536,8 @@ class BVH:
         self.right: list[int] = []
         self.parent: list[int] = []
 
-        self.x0, self.y0, self.z0 = [], [], []
-        self.x1, self.y1, self.z1 = [], [], []
+        self.x0 = self.y0 = self.z0 = []
+        self.x1 = self.y1 = self.z1 = []
 
         self.lmid: list[int] = []
         self.lrid: list[int] = []
@@ -3797,7 +3797,7 @@ Traceback (most recent call last):
     self.bvh = BVH(rows=self)
                ~~~^^^^^^^^^^^
   File "c:\VOXELS\utils\bvh.py", line 26, in __init__
-    self.x0, self.y0, self.z0 = [], [], []
+    self.x0 = self.y0 = self.z0 = []
     ^^^^^^^
 AttributeError: 'BVH' object has no attribute 'x0' and no __dict__ for setting new attributes
 
@@ -3806,5 +3806,5 @@ AttributeError: 'BVH' object has no attribute 'x0' and no __dict__ for setting n
 ################################################################################
 # Total lines in bundle: 3806
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T02:18:05
+# Generated at the time: 2026-01-31T02:19:02
 --- END OF FILE ---
