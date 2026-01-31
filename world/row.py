@@ -68,7 +68,7 @@ class ROW:
     IDS_DZ = (2, 2)
 
     # METADATA — stored in row 3 (NOT FOR DIRECT USE)
-    IDS_ID    = (3, 0)
+    IDS_RID    = (3, 0)
     IDS_MID   = (3, 1)
     IDS_FLAGS = (3, 2)
 
@@ -89,6 +89,78 @@ class ROW:
     """
     PRIVATE VARIABLES END 
     """
+
+    @staticmethod
+    def X0(row:NDARR=None) -> int:
+        """
+        PUBLIC!
+        RETURN: x0 position
+        """
+        return row[*ROW.IDS_X0]
+    
+    @staticmethod
+    def Y0(row:NDARR=None) -> int:
+        """
+        PUBLIC!
+        RETURN: y0 position
+        """
+        return row[*ROW.IDS_Y0]
+    
+    @staticmethod
+    def Z0(row:NDARR=None) -> int:
+        """
+        PUBLIC!
+        RETURN: z0 position
+        """
+        return row[*ROW.IDS_Z0]
+    
+    @staticmethod
+    def X1(row:NDARR=None) -> int:
+        """
+        PUBLIC!
+        RETURN: x1 position
+        """
+        return row[*ROW.IDS_X1]
+    
+    @staticmethod
+    def Y1(row:NDARR=None) -> int:
+        """
+        PUBLIC!
+        RETURN: y1 position
+        """
+        return row[*ROW.IDS_Y1]
+    
+    @staticmethod
+    def Z1(row:NDARR=None) -> int:
+        """
+        PUBLIC!
+        RETURN: z1 position
+        """
+        return row[*ROW.IDS_Z1]
+    
+    @staticmethod
+    def DX(row:NDARR=None) -> int:
+        """
+        PUBLIC!
+        RETURN: dx size
+        """
+        return row[*ROW.IDS_DX]
+    
+    @staticmethod
+    def DY(row:NDARR=None) -> int:
+        """
+        PUBLIC!
+        RETURN: dy size
+        """
+        return row[*ROW.IDS_DY]
+    
+    @staticmethod
+    def DZ(row:NDARR=None) -> int:
+        """
+        PUBLIC!
+        RETURN: dz size
+        """
+        return row[*ROW.IDS_DZ]
     
     @staticmethod # get min position (x0, y0, z0)  
     def P0(row:NDARR=None) -> POS:
@@ -96,15 +168,14 @@ class ROW:
         PUBLIC!
         RETURN: (x0, y0, z0) == p0
         """
-        return (int(row[*ROW.IDS_X0]), int(row[*ROW.IDS_Y0]), int(row[*ROW.IDS_Z0]))
-    
+        return (ROW.X0(row=row), ROW.Y0(row=row), ROW.Z0(row=row))
     @staticmethod # get max position (x1, y1, z1)
     def P1(row:NDARR=None) -> POS:
         """
         PUBLIC!
         RETURN: (x1, y1, z1) == p1
         """
-        return (int(row[*ROW.IDS_X1]), int(row[*ROW.IDS_Y1]), int(row[*ROW.IDS_Z1]))
+        return (ROW.X1(row=row), ROW.Y1(row=row), ROW.Z1(row=row))
     
     @staticmethod # get size (dx, dy, dz)
     def SIZE(row:NDARR=None) -> SIZE:
@@ -112,7 +183,7 @@ class ROW:
         PUBLIC!
         RETURN: (dx, dy, dz) == size
         """
-        return (int(row[*ROW.IDS_DX]), int(row[*ROW.IDS_DY]), int(row[*ROW.IDS_DZ]))
+        return (ROW.DX(row=row), ROW.DY(row=row), ROW.DZ(row=row))
     
     @staticmethod # get material id
     def MID(row:NDARR=None) -> int:
@@ -120,7 +191,7 @@ class ROW:
         PUBLIC!
         RETURN: material id integer (Material ID)
         """
-        return int(row[*ROW.IDS_MID])
+        return row[*ROW.IDS_MID]
     
     @staticmethod # get meterial string name
     def MAT(row:NDARR=None) -> str:
@@ -128,7 +199,7 @@ class ROW:
         PUBLIC!
         RETURN: material name string (Material Name)
         """
-        return Materials.id2name[ROW.MID(row=row)]
+        return Materials.name(mid=ROW.MID(row=row))
     
     @staticmethod # get row id
     def RID(row:NDARR=None) -> int:
@@ -136,7 +207,7 @@ class ROW:
         PUBLIC!
         RETURN: row unique id integer (Row ID)
         """
-        return int(row[*ROW.IDS_ID])
+        return row[*ROW.IDS_RID]
     
     @staticmethod # get flags
     def FLAGS(row:NDARR=None) -> tuple[bool, bool, bool, bool, bool]:
@@ -144,7 +215,7 @@ class ROW:
         PUBLIC!
         RETURN: tuple of flags (dirty, alive, solid, destructable, visible)
         """
-        flags: int = int(row[*ROW.IDS_FLAGS])
+        flags: int = row[*ROW.IDS_FLAGS]
         dirty, alive, solid, destr, visib = ROW.DECODE(flags=flags)
         return (dirty, alive, solid, destr, visib)
     
@@ -306,7 +377,7 @@ class ROW:
         copy[*ROW.IDS_DY]    = np.uint64(p1[1] - p0[1])
         copy[*ROW.IDS_DZ]    = np.uint64(p1[2] - p0[2])
         # METADATA
-        copy[*ROW.IDS_ID]    = np.uint64(rid)       # stores now the row index within material array instead of global unique id
+        copy[*ROW.IDS_RID]    = np.uint64(rid)       # stores now the row index within material array instead of global unique id
         copy[*ROW.IDS_MID]   = np.uint64(mat.mid)  # material id
         copy[*ROW.IDS_FLAGS] = np.uint64(flags)
 
