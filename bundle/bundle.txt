@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T04:02:07
+#Time when generated: 2026-01-31T04:03:50
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2734,18 +2734,17 @@ class Materials:
             raise ValueError("Provide exactly one of mid or idx")
         return self.mid2name[mid] if mid is not None else self.idx2name[idx]
     
-    def mat(self, name:str=None, mid:int=None, idx:int=None) -> Material:
+    def mat(self, mat:str=None, mid:int=None, idx:int=None) -> Material:
         """
         PUBLIC:
         -> Get the Material object given either the material name, mid, or idx.
-        -> Provide exactly one of name, mid, or idx.
+        -> Provide exactly one of mat, mid, or idx.
         """
         if mid is not None:
-            name = self.mid2name.get(mid, None)
+            mat = self.mid2name.get(mid)
         if idx is not None:
-            name = self.idx2name.get(idx, None)
-        mat:Material = getattr(self, name)  # to avoid unused method warning
-        return mat  # to avoid unused method warning
+            mat = self.idx2name.get(idx)
+        return getattr(self, mat)
         
         if name is not None:
             return Material(name=name)
@@ -3888,15 +3887,12 @@ Traceback (most recent call last):
   File "c:\VOXELS\world\row.py", line 292, in new
     mat: Material = mats.mat(name=mat)
                     ~~~~~~~~^^^^^^^^^^
-  File "c:\VOXELS\world\materials.py", line 129, in mat
-    mat:Material = getattr(self, name)  # to avoid unused method warning
-                   ~~~~~~~^^^^^^^^^^^^
-AttributeError: 'Materials' object has no attribute 'STONE'
+TypeError: Materials.mat() got an unexpected keyword argument 'name'
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3898
+# Total lines in bundle: 3894
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T04:02:07
+# Generated at the time: 2026-01-31T04:03:50
 --- END OF FILE ---
