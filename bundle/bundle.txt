@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T04:04:39
+#Time when generated: 2026-01-31T04:05:36
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -2741,10 +2741,10 @@ class Materials:
         -> Provide exactly one of mat, mid, or idx.
         """
         if mid is not None:
-            mat = self.mid2name.get(mid)
+            mat: str = self.mid2name.get(mid)
         if idx is not None:
-            mat = self.idx2name.get(idx)
-        return getattr(self, mat)
+            mat: str = self.idx2name.get(idx)
+        return getattr(self, mat.lower())
         
         if name is not None:
             return Material(name=name)
@@ -3882,19 +3882,18 @@ Traceback (most recent call last):
   File "c:\VOXELS\world\rows.py", line 54, in __init__
     self.insert(p0=self.p0, p1=self.p1, mat="STONE")
     ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 85, in insert
-    row = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
-  File "c:\VOXELS\world\row.py", line 292, in new
-    mat: Material = mats.mat(mat=mat)
-                    ~~~~~~~~^^^^^^^^^
-  File "c:\VOXELS\world\materials.py", line 129, in mat
-    return getattr(self, mat)
-AttributeError: 'Materials' object has no attribute 'STONE'
+  File "c:\VOXELS\world\rows.py", line 87, in insert
+    self.bvh.insert(row=row)
+    ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "c:\VOXELS\utils\bvh.py", line 65, in insert
+    mid = self.rows.mat.name2idx[row[*ROW.IDS_MAT]]
+                                      ^^^^^^^^^^^
+AttributeError: type object 'ROW' has no attribute 'IDS_MAT'. Did you mean: 'IDS_MID'?
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3896
+# Total lines in bundle: 3895
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T04:04:39
+# Generated at the time: 2026-01-31T04:05:36
 --- END OF FILE ---

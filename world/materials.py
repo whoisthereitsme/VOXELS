@@ -123,10 +123,10 @@ class Materials:
         -> Provide exactly one of mat, mid, or idx.
         """
         if mid is not None:
-            mat = self.mid2name.get(mid)
+            mat: str = self.mid2name.get(mid)
         if idx is not None:
-            mat = self.idx2name.get(idx)
-        return getattr(self, mat)
+            mat: str = self.idx2name.get(idx)
+        return getattr(self, mat.lower())
         
         if name is not None:
             return Material(name=name)
