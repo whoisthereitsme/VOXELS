@@ -84,8 +84,8 @@ class MDX:
     # insert / remove
     # ============================================================
 
-    def insert(self, r: Row) -> None:
-        mid, rid, row = int(r.mid), int(r.rid), r.row
+    def insert(self, row: Row=None) -> None:
+        mid, rid, row = int(row.mid), int(row.rid), row.row
         loc: Loc = (mid, rid)
 
         faces = self._build_faces(mid=mid, row=row)
@@ -101,8 +101,8 @@ class MDX:
         self.neg[self.AX_Z][faces.z0].add(loc)
         self.pos[self.AX_Z][faces.z1].add(loc)
 
-    def remove(self, r: Row) -> None:
-        mid, rid = int(r.mid), int(r.rid)
+    def remove(self, row: Row=None) -> None:
+        mid, rid = int(row.mid), int(row.rid)
         loc: Loc = (mid, rid)
 
         faces = self._faces.pop(loc, None)

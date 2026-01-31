@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T06:16:43
+#Time when generated: 2026-01-31T06:17:11
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -1944,8 +1944,8 @@ class MDX:
     # insert / remove
     # ============================================================
 
-    def insert(self, r: Row) -> None:
-        mid, rid, row = int(r.mid), int(r.rid), r.row
+    def insert(self, row: Row=None) -> None:
+        mid, rid, row = int(row.mid), int(row.rid), row.row
         loc: Loc = (mid, rid)
 
         faces = self._build_faces(mid=mid, row=row)
@@ -1961,8 +1961,8 @@ class MDX:
         self.neg[self.AX_Z][faces.z0].add(loc)
         self.pos[self.AX_Z][faces.z1].add(loc)
 
-    def remove(self, r: Row) -> None:
-        mid, rid = int(r.mid), int(r.rid)
+    def remove(self, row: Row=None) -> None:
+        mid, rid = int(row.mid), int(row.rid)
         loc: Loc = (mid, rid)
 
         faces = self._faces.pop(loc, None)
@@ -4108,6 +4108,8 @@ class ROWS:
 
 === RUNNING TEST 1/1: test6 ===
 === TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
+c:\VOXELS\world\row.py:229: RuntimeWarning: overflow encountered in scalar multiply
+  return dx * dy * dz
 Traceback (most recent call last):
   File "c:\VOXELS\tests\tests.py", line 19, in tests
     test()
@@ -4115,20 +4117,52 @@ Traceback (most recent call last):
   File "c:\VOXELS\tests\test6.py", line 44, in test6
     rows, cell, max_x, max_y, max_z = make_world()
                                       ~~~~~~~~~~^^
-  File "c:\VOXELS\tests\test6.py", line 18, in make_world
-    rows = ROWS()
-  File "c:\VOXELS\world\rows.py", line 49, in __init__
-    self.insert(p0=self.p0, p1=self.p1, mat="STONE")
-    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 161, in insert
-    self.mdx.insert(row=stored)
+  File "c:\VOXELS\tests\test6.py", line 31, in make_world
+    rows.insert(
+    ~~~~~~~~~~~^
+        p0=(x0, y0, z0),
+        ^^^^^^^^^^^^^^^^
+        p1=(x0 + cell, y0 + cell, z0 + cell),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        mat="STONE",
+        ^^^^^^^^^^^^
+    )
+    ^
+  File "c:\VOXELS\world\rows.py", line 160, in insert
+    self.bvh.insert(row=stored)
     ~~~~~~~~~~~~~~~^^^^^^^^^^^^
-TypeError: MDX.insert() got an unexpected keyword argument 'row'
+  File "c:\VOXELS\utils\bvh.py", line 105, in insert
+    self.root = self.insertnode(self.root, leaf)
+                ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\utils\bvh.py", line 130, in insertnode
+    self.left[root] = self.insertnode(l, leaf)
+                      ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "c:\VOXELS\utils\bvh.py", line 130, in insertnode
+    self.left[root] = self.insertnode(l, leaf)
+                      ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "c:\VOXELS\utils\bvh.py", line 130, in insertnode
+    self.left[root] = self.insertnode(l, leaf)
+                      ~~~~~~~~~~~~~~~^^^^^^^^^
+  [Previous line repeated 989 more times]
+  File "c:\VOXELS\utils\bvh.py", line 126, in insertnode
+    cost_l = self.area(self.merge_cost(l, leaf))
+                       ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "c:\VOXELS\utils\bvh.py", line 140, in merge_cost
+    return self.newnode(
+           ~~~~~~~~~~~~^
+        min(self.x0[a], self.x0[b]),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+        max(self.z1[a], self.z1[b])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+RecursionError: maximum recursion depth exceeded
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 4130
+# Total lines in bundle: 4164
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T06:16:43
+# Generated at the time: 2026-01-31T06:17:11
 --- END OF FILE ---
