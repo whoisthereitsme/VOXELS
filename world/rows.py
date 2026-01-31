@@ -174,13 +174,11 @@ class ROWS:
         self.mdx.remove(mat=mat_name, rid=rid)
 
         if rid != last:
-            moved = self.array[mid][last].copy()   # 🔑 COPY, NOT VIEW
-
-            # remove moved using ORIGINAL identity
-            self.bvh.remove(mat=mat_name, rid=last)
-            self.mdx.remove(mat=mat_name, rid=last)
-
-            # write moved into rid slot
+            moved = self.array[mid][last]
+            moved_mid = mid
+            moved_rid = last
+            self.bvh.remove(mat=mat_name, rid=moved_rid)
+            self.mdx.remove(mat=mat_name, rid=moved_rid)
             moved[*ROW.IDS_RID] = np.uint64(rid)
             self.array[mid][rid][:] = moved
 
