@@ -87,8 +87,8 @@ class BVH:
     # insertion logic
     # ============================================================
 
-    def insert(self, r:Row)->None:
-        mid,rid,row = int(r.mid),int(r.rid),r.row
+    def insert(self, row:Row=None)->None:
+        mid,rid,row = int(row.mid),int(row.rid),row.row
         x0,y0,z0 = ROW.P0(row=row)
         x1,y1,z1 = ROW.P1(row=row)
 
@@ -162,8 +162,8 @@ class BVH:
     # removal
     # ============================================================
 
-    def remove(self, r:Row)->None:
-        mid,rid = int(r.mid),int(r.rid)
+    def remove(self, row:Row=None)->None:
+        mid,rid = int(row.mid),int(row.rid)
         node = self.lidx.pop((mid,rid),None)
         if node is None:
             return

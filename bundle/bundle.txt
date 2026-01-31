@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T06:15:26
+#Time when generated: 2026-01-31T06:16:43
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -1579,8 +1579,8 @@ class BVH:
     # insertion logic
     # ============================================================
 
-    def insert(self, r:Row)->None:
-        mid,rid,row = int(r.mid),int(r.rid),r.row
+    def insert(self, row:Row=None)->None:
+        mid,rid,row = int(row.mid),int(row.rid),row.row
         x0,y0,z0 = ROW.P0(row=row)
         x1,y1,z1 = ROW.P1(row=row)
 
@@ -1654,8 +1654,8 @@ class BVH:
     # removal
     # ============================================================
 
-    def remove(self, r:Row)->None:
-        mid,rid = int(r.mid),int(r.rid)
+    def remove(self, row:Row=None)->None:
+        mid,rid = int(row.mid),int(row.rid)
         node = self.lidx.pop((mid,rid),None)
         if node is None:
             return
@@ -4120,15 +4120,15 @@ Traceback (most recent call last):
   File "c:\VOXELS\world\rows.py", line 49, in __init__
     self.insert(p0=self.p0, p1=self.p1, mat="STONE")
     ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 160, in insert
-    self.bvh.insert(row=stored)
+  File "c:\VOXELS\world\rows.py", line 161, in insert
+    self.mdx.insert(row=stored)
     ~~~~~~~~~~~~~~~^^^^^^^^^^^^
-TypeError: BVH.insert() got an unexpected keyword argument 'row'
+TypeError: MDX.insert() got an unexpected keyword argument 'row'
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
 # Total lines in bundle: 4130
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T06:15:26
+# Generated at the time: 2026-01-31T06:16:43
 --- END OF FILE ---
