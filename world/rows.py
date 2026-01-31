@@ -168,26 +168,31 @@ class ROWS:
 
         last=n-1
 
-        # remove target from indices
-        self.bvh.remove(row=row)
-        self.mdx.remove(row=row)
+        # ALWAYS remove target using captured ids
+        self.bvh.remove(mat=mat_name,rid=rid)
+        self.mdx.remove(mat=mat_name,rid=rid)
 
         if rid!=last:
             moved=self.array[mid][last]
 
-            # remove moved (old location) from indices
-            self.bvh.remove(row=moved)
-            self.mdx.remove(row=moved)
+            moved_mid=mid
+            moved_rid=last
 
-            # copy moved into rid slot + fix its RID field, then reinsert
+            # remove moved using its ORIGINAL ids
+            self.bvh.remove(mat=mat_name,rid=moved_rid)
+            self.mdx.remove(mat=mat_name,rid=moved_rid)
+
+            # overwrite + fix RID
             moved2=self.set(row=moved,newrid=rid)
+
             self.bvh.insert(row=moved2)
             self.mdx.insert(row=moved2)
 
-        # clear last slot + decrement count
+        # now it is safe to invalidate memory
         self.reset(row=self.array[mid][last])
         self.deln(mat=mat_name)
         return self
+
 
     # ============================================================
     # queries

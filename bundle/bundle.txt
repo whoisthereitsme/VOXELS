@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T05:37:55
+#Time when generated: 2026-01-31T05:39:51
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -3663,26 +3663,31 @@ class ROWS:
 
         last=n-1
 
-        # remove target from indices
-        self.bvh.remove(row=row)
-        self.mdx.remove(row=row)
+        # ALWAYS remove target using captured ids
+        self.bvh.remove(mat=mat_name,rid=rid)
+        self.mdx.remove(mat=mat_name,rid=rid)
 
         if rid!=last:
             moved=self.array[mid][last]
 
-            # remove moved (old location) from indices
-            self.bvh.remove(row=moved)
-            self.mdx.remove(row=moved)
+            moved_mid=mid
+            moved_rid=last
 
-            # copy moved into rid slot + fix its RID field, then reinsert
+            # remove moved using its ORIGINAL ids
+            self.bvh.remove(mat=mat_name,rid=moved_rid)
+            self.mdx.remove(mat=mat_name,rid=moved_rid)
+
+            # overwrite + fix RID
             moved2=self.set(row=moved,newrid=rid)
+
             self.bvh.insert(row=moved2)
             self.mdx.insert(row=moved2)
 
-        # clear last slot + decrement count
+        # now it is safe to invalidate memory
         self.reset(row=self.array[mid][last])
         self.deln(mat=mat_name)
         return self
+
 
     # ============================================================
     # queries
@@ -4040,13 +4045,6 @@ class ROWS:
 === RUNNING TEST 1/1: test6 ===
 === TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
 Traceback (most recent call last):
-  File "c:\VOXELS\utils\bvh.py", line 119, in remove
-    found = self.lidx.pop((mid, rid))
-KeyError: (18446744073709551615, 18446744073709551615)
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
   File "c:\VOXELS\tests\tests.py", line 19, in tests
     test()
     ~~~~^^
@@ -4056,32 +4054,32 @@ Traceback (most recent call last):
   File "c:\VOXELS\tests\test6.py", line 36, in make_world
     rows.merge()
     ~~~~~~~~~~^^
-  File "c:\VOXELS\world\rows.py", line 525, in merge
+  File "c:\VOXELS\world\rows.py", line 530, in merge
     return self.mergeall()
            ~~~~~~~~~~~~~^^
-  File "c:\VOXELS\world\rows.py", line 516, in mergeall
+  File "c:\VOXELS\world\rows.py", line 521, in mergeall
     created,carids=self.mergemat(mat=mat)
                    ~~~~~~~~~~~~~^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 438, in mergemat
+  File "c:\VOXELS\world\rows.py", line 443, in mergemat
     created,carids=self.mergeax(mat=mat,axis=ax)
                    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 414, in mergeax
+  File "c:\VOXELS\world\rows.py", line 419, in mergeax
     created,carids=self.merge2(row0=row0,row1=row1)
                    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 372, in merge2
+  File "c:\VOXELS\world\rows.py", line 377, in merge2
     self.remove(row=lo)
     ~~~~~~~~~~~^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 179, in remove
-    self.bvh.remove(row=moved)
-    ~~~~~~~~~~~~~~~^^^^^^^^^^^
-  File "c:\VOXELS\utils\bvh.py", line 121, in remove
-    raise KeyError("[ERROR] BVH.remove() failed: row not found in BVH")
-KeyError: '[ERROR] BVH.remove() failed: row not found in BVH'
+  File "c:\VOXELS\world\rows.py", line 186, in remove
+    moved2=self.set(row=moved,newrid=rid)
+  File "c:\VOXELS\world\rows.py", line 134, in set
+    slot=self.array[mid][rid]
+         ~~~~~~~~~~^^^^^
+OverflowError: int too big to convert
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 4083
+# Total lines in bundle: 4081
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T05:37:55
+# Generated at the time: 2026-01-31T05:39:51
 --- END OF FILE ---
