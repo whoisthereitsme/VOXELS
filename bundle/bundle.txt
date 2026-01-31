@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T09:19:44
+#Time when generated: 2026-01-31T09:32:33
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -1704,7 +1704,7 @@ class BVH:
             self.parent[sibling] = grand
             self.fixupwards(grand)
 
-    def search(self, pos:POS)->Row:
+    def search(self, pos:POS=None)->Row:
         if self.root == -1:
             raise LookupError("BVH empty")
 
@@ -2036,7 +2036,7 @@ if TYPE_CHECKING:
     from utils.types import Row
     from utils.mdx import MDX
     from utils.bvh import BVH
-
+    from utils.types import POS
 
 
 from queue import SimpleQueue
@@ -2048,15 +2048,28 @@ import threading
 class Queue:
     def __init__(self, cls:MDX|BVH=None, lock:threading.Lock=None) -> None:
         self.cls: MDX|BVH = cls
-        self.lock = lock
 
         self.init()
+        self.start()
 
     def init(self) -> None:
         self.queueinsert: SimpleQueue = SimpleQueue()
         self.queueremove: SimpleQueue = SimpleQueue()
-        threading.Thread(target=self.runinsert, daemon=True).start()
-        threading.Thread(target=self.runremove, daemon=True).start()
+        self.queuesearch: SimpleQueue = SimpleQueue()
+        self.queueanswer: SimpleQueue = SimpleQueue()
+        self.threadinsert = threading.Thread(target=self.runinsert, daemon=True)
+        self.threadremove = threading.Thread(target=self.runremove, daemon=True)
+        self.threadsearch = threading.Thread(target=self.runsearch, daemon=True)
+
+    def start(self) -> None:    
+        self.threadinsert.start()
+        self.threadremove.start()
+        self.threadsearch.start()
+
+    def stop(self) -> None:    
+        self.threadinsert.join()
+        self.threadremove.join()
+        self.threadsearch.join()
 
     def runinsert(self) -> None:
          while True:
@@ -2066,17 +2079,30 @@ class Queue:
          while True:
             self.cls.remove(row=self.queueremove.get())
 
+    def runsearch(self) -> None:
+         while True:
+            self.queueanswer.put(self.cls.search(pos=self.queuesearch.get()))
+            
     def insert(self, row:Row=None) -> None:
         self.queueinsert.put(row)
 
     def remove(self, row:Row=None) -> None:
         self.queueremove.put(row)
 
-    def add(self, row:Row=None, insert:bool=False, remove:bool=False) -> None:
-        if insert==True:
+    def search(self, pos:POS=None) -> any:
+        self.queuesearch.put(pos)
+        return self.queueanswer.get()
+
+    def add(self, row:Row=None, pos:POS=None, insert:bool=False, remove:bool=False) -> None:
+        if row is not None and insert==True:
             self.insert(row=row)
-        if remove==True:
+        if row is not None and remove==True:
             self.remove(row=row)
+        if pos is not None and insert==False and remove==False:
+            self.search(pos=pos)
+
+    def get(self) -> Row:
+        return self.queueanswer.get()
 
 # and then i ROWS 
 # self.bvh = Queue(cls=self.bvh)
@@ -4157,308 +4183,310 @@ class ROWS:
 
 
 === RUNNING TEST 1/1: test8 ===
-Creating Miner id=0 at pos=(143452, 359739, 3007) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=1 at pos=(73663, 305378, 7590) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=2 at pos=(863826, 771815, 4100) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=3 at pos=(746396, 787825, 5765) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=4 at pos=(905078, 614351, 7373) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=5 at pos=(744497, 57240, 6922) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=6 at pos=(823480, 707573, 8341) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=7 at pos=(820037, 291050, 4075) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=8 at pos=(898175, 681761, 5566) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=9 at pos=(797823, 393546, 5874) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=10 at pos=(389650, 974491, 4566) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=11 at pos=(633580, 286629, 4215) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=12 at pos=(443495, 801097, 1693) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=13 at pos=(367047, 278010, 2442) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=14 at pos=(429863, 189224, 3860) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=15 at pos=(760630, 396223, 6585) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=16 at pos=(592565, 603000, 8746) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=17 at pos=(225207, 618337, 7437) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=18 at pos=(728254, 106347, 1837) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=19 at pos=(956461, 778626, 2848) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=20 at pos=(591094, 507835, 6176) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=21 at pos=(858283, 153718, 3262) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=22 at pos=(883840, 482202, 4569) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=23 at pos=(854318, 331708, 1460) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=24 at pos=(691105, 975959, 3575) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=25 at pos=(843106, 854627, 8120) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=26 at pos=(257214, 993858, 6101) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=27 at pos=(886359, 792756, 7895) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=28 at pos=(90891, 961229, 3564) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=29 at pos=(391472, 59605, 4513) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=30 at pos=(475650, 312771, 3983) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=31 at pos=(324344, 377592, 8132) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=32 at pos=(361499, 339905, 7143) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=33 at pos=(978189, 649043, 4125) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=34 at pos=(608576, 386801, 4996) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=35 at pos=(690592, 867493, 3970) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=36 at pos=(23297, 61445, 5742) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=37 at pos=(828657, 980510, 7900) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=38 at pos=(166220, 514092, 5893) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=39 at pos=(641058, 472739, 2782) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=40 at pos=(129922, 795353, 7265) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=41 at pos=(749539, 578702, 7669) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=42 at pos=(35637, 124298, 4321) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=43 at pos=(38811, 550618, 2688) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=44 at pos=(340590, 597747, 5059) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=45 at pos=(65454, 904747, 2726) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=46 at pos=(737953, 431095, 2768) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=47 at pos=(466182, 184783, 8876) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=48 at pos=(925768, 253292, 6461) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=49 at pos=(280437, 70622, 8983) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=50 at pos=(516293, 176783, 7971) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=51 at pos=(132714, 320221, 8505) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=52 at pos=(293497, 11423, 2816) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=53 at pos=(928353, 338124, 2896) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=54 at pos=(28254, 490577, 1725) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=55 at pos=(88434, 880491, 3045) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=56 at pos=(758827, 285411, 4629) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=57 at pos=(980373, 37355, 6553) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=58 at pos=(650025, 968213, 2390) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=59 at pos=(14266, 209749, 4849) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=60 at pos=(864245, 688483, 3078) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=61 at pos=(595770, 10472, 3896) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=62 at pos=(748493, 965189, 3769) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=63 at pos=(590524, 205705, 7801) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=64 at pos=(203888, 725522, 3811) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=65 at pos=(898042, 810176, 5582) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=66 at pos=(774463, 873593, 4693) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=67 at pos=(477125, 522704, 1055) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=68 at pos=(787353, 300131, 7345) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=69 at pos=(269013, 762647, 8029) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=70 at pos=(32683, 138961, 6147) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=71 at pos=(357269, 540414, 8955) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=72 at pos=(45711, 706638, 7350) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=73 at pos=(654985, 887725, 6389) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=74 at pos=(228500, 843687, 6165) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=75 at pos=(247801, 960414, 5645) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=76 at pos=(216504, 348893, 1632) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=77 at pos=(664878, 650077, 6718) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=78 at pos=(593691, 473941, 4379) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=79 at pos=(616761, 722548, 5793) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=80 at pos=(810920, 323688, 3193) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=81 at pos=(654487, 934818, 1972) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=82 at pos=(510760, 950124, 1815) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=83 at pos=(523703, 911038, 5519) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=84 at pos=(395391, 732643, 2192) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=85 at pos=(343777, 952580, 3330) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=86 at pos=(200492, 67986, 2168) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=87 at pos=(795275, 715268, 4115) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=88 at pos=(755371, 55491, 1208) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=89 at pos=(353182, 444936, 3217) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=90 at pos=(617228, 486027, 5412) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=91 at pos=(792464, 55170, 4463) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=92 at pos=(488036, 117792, 4816) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=93 at pos=(620872, 239341, 2054) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=94 at pos=(557706, 170353, 4540) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=95 at pos=(591146, 90077, 2111) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=96 at pos=(499837, 718560, 1025) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=97 at pos=(949375, 450792, 2523) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=98 at pos=(454390, 434620, 8721) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=99 at pos=(996963, 305388, 6955) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=100 at pos=(60308, 574535, 8340) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=101 at pos=(106752, 145741, 4597) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=102 at pos=(516754, 35027, 5427) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=103 at pos=(66767, 708558, 4368) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=104 at pos=(677606, 318633, 1834) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=105 at pos=(878211, 347091, 2031) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=106 at pos=(897632, 901366, 3888) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=107 at pos=(745828, 353432, 2543) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=108 at pos=(405153, 343437, 7350) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=109 at pos=(67400, 722460, 1289) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=110 at pos=(218650, 699060, 7487) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=111 at pos=(173650, 953283, 2090) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=112 at pos=(547330, 114067, 6958) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=113 at pos=(319259, 508549, 6087) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=114 at pos=(962802, 187506, 6204) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=115 at pos=(589030, 940487, 8745) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=116 at pos=(337786, 219911, 7202) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=117 at pos=(411535, 439261, 5416) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=118 at pos=(911172, 848778, 4952) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=119 at pos=(652085, 116201, 2753) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=120 at pos=(614427, 622777, 4463) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=121 at pos=(841561, 428081, 4105) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=122 at pos=(99203, 810116, 8162) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=123 at pos=(511007, 979647, 5756) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=124 at pos=(144253, 564669, 1636) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=125 at pos=(335252, 840876, 8775) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=126 at pos=(811689, 38094, 3664) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=127 at pos=(570482, 236158, 1065) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=128 at pos=(435950, 601220, 6697) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=129 at pos=(167990, 560674, 3582) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=130 at pos=(75985, 614364, 6576) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=131 at pos=(600753, 929073, 4825) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=132 at pos=(854363, 904815, 3352) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=133 at pos=(778342, 682212, 1012) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=134 at pos=(910966, 672720, 2211) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=135 at pos=(495473, 380677, 4492) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=136 at pos=(1740, 808034, 5899) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=137 at pos=(662482, 445308, 6678) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=138 at pos=(440604, 879680, 1979) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=139 at pos=(838722, 886079, 3290) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=140 at pos=(740360, 579139, 8645) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=141 at pos=(689632, 508061, 6301) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=142 at pos=(955632, 261365, 2369) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=143 at pos=(289211, 651211, 2430) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=144 at pos=(412549, 208445, 7041) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=145 at pos=(932925, 325947, 6882) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=146 at pos=(341548, 53046, 3958) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=147 at pos=(398735, 878177, 6746) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=148 at pos=(754110, 515227, 4465) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=149 at pos=(834973, 749084, 8126) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=150 at pos=(665105, 616126, 2850) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=151 at pos=(275963, 813811, 1107) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=152 at pos=(813633, 611592, 4130) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=153 at pos=(899781, 666882, 2128) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=154 at pos=(500057, 201402, 8798) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=155 at pos=(772988, 665224, 2123) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=156 at pos=(680068, 315759, 6123) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=157 at pos=(335064, 820895, 1083) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=158 at pos=(695356, 284438, 8390) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=159 at pos=(964251, 209129, 3451) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=160 at pos=(325195, 945466, 1364) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=161 at pos=(888157, 644882, 8159) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=162 at pos=(218683, 579046, 4641) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=163 at pos=(673159, 790444, 4583) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=164 at pos=(146939, 527836, 6405) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=165 at pos=(881603, 154496, 2232) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=166 at pos=(163373, 967226, 7875) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=167 at pos=(758878, 677046, 5889) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=168 at pos=(867809, 894766, 5655) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=169 at pos=(234340, 887839, 5176) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=170 at pos=(279360, 693260, 1236) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=171 at pos=(78565, 631539, 4268) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=172 at pos=(557833, 871997, 6773) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=173 at pos=(238606, 956818, 6880) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=174 at pos=(856956, 486485, 1796) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=175 at pos=(600031, 786211, 5332) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=176 at pos=(578289, 133846, 5521) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=177 at pos=(439937, 25166, 8361) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=178 at pos=(127477, 541937, 4226) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=179 at pos=(752681, 598672, 2227) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=180 at pos=(614189, 879149, 7015) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=181 at pos=(557200, 646572, 7161) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=182 at pos=(630994, 867295, 3061) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=183 at pos=(278223, 412645, 3626) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=184 at pos=(327677, 791510, 1805) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=185 at pos=(198159, 325625, 3549) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=186 at pos=(377198, 696644, 5439) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=187 at pos=(318084, 310939, 8986) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=188 at pos=(15781, 414754, 5649) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=189 at pos=(471288, 70744, 3446) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=190 at pos=(868653, 378841, 7065) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=191 at pos=(782936, 401107, 1492) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=192 at pos=(340365, 381107, 1553) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=193 at pos=(894133, 890062, 8319) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=194 at pos=(235422, 213309, 8767) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=195 at pos=(635152, 826270, 4595) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=196 at pos=(785587, 655628, 7213) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=197 at pos=(316460, 383104, 4336) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=198 at pos=(195276, 797784, 2401) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=199 at pos=(207640, 498319, 6035) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=200 at pos=(397423, 3518, 6235) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=201 at pos=(184251, 580429, 1705) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=202 at pos=(290888, 779246, 4381) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=203 at pos=(391586, 810515, 6554) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=204 at pos=(430597, 308335, 6277) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=205 at pos=(90727, 813374, 8619) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=206 at pos=(641876, 249906, 4113) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=207 at pos=(102503, 124645, 6544) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=208 at pos=(515509, 554654, 1787) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=209 at pos=(360779, 831183, 2716) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=210 at pos=(421136, 623620, 2580) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=211 at pos=(388402, 365287, 7913) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=212 at pos=(812144, 289929, 7344) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=213 at pos=(476232, 656458, 5268) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=214 at pos=(245238, 318027, 3713) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=215 at pos=(613612, 852724, 1339) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=216 at pos=(407155, 894873, 1955) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=217 at pos=(554812, 138029, 1324) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=218 at pos=(79288, 413024, 1707) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=219 at pos=(446113, 927688, 8237) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=220 at pos=(779330, 366987, 3766) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=221 at pos=(103575, 892548, 4056) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=222 at pos=(467315, 742728, 8249) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=223 at pos=(312837, 920634, 6119) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=224 at pos=(127625, 905954, 6148) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=225 at pos=(339258, 300106, 4113) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=226 at pos=(936592, 487930, 8993) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=227 at pos=(294334, 786492, 8954) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=228 at pos=(14249, 732217, 4327) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=229 at pos=(153970, 945764, 3059) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=230 at pos=(524163, 609505, 2180) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=231 at pos=(733649, 281827, 7372) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=232 at pos=(167156, 116695, 6437) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=233 at pos=(326562, 174703, 4189) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=234 at pos=(890610, 212058, 1781) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=235 at pos=(801130, 58886, 4717) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=236 at pos=(532456, 524267, 8261) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=237 at pos=(363882, 559090, 3412) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=238 at pos=(238197, 17751, 3097) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=239 at pos=(367545, 886442, 4989) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=240 at pos=(963370, 625895, 4048) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=241 at pos=(217730, 589203, 4179) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=242 at pos=(665603, 626060, 4635) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=243 at pos=(108952, 86232, 5805) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=244 at pos=(192440, 101852, 3424) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=245 at pos=(316711, 815289, 8641) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=246 at pos=(445952, 931420, 6951) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=247 at pos=(195063, 751713, 4677) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=248 at pos=(537310, 90657, 1702) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=249 at pos=(204071, 533145, 7188) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=250 at pos=(43536, 542801, 5117) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=251 at pos=(529474, 186023, 5889) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=252 at pos=(907561, 619374, 5234) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=253 at pos=(268768, 14295, 8391) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=254 at pos=(703240, 164798, 8397) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=255 at pos=(191434, 606561, 3818) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=256 at pos=(292317, 259192, 7620) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=257 at pos=(638972, 136869, 2676) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=258 at pos=(234328, 629725, 4698) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=259 at pos=(312762, 195029, 4553) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=260 at pos=(551686, 864404, 5481) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=261 at pos=(491499, 194995, 2454) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=262 at pos=(972898, 721709, 7484) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=263 at pos=(895790, 63745, 8323) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=264 at pos=(241669, 514552, 3047) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=265 at pos=(760898, 229992, 3967) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=266 at pos=(900160, 217887, 5153) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=267 at pos=(763066, 431190, 8280) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=268 at pos=(158670, 338356, 8559) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=269 at pos=(470782, 516328, 6485) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=270 at pos=(686111, 903481, 3922) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=271 at pos=(797746, 624667, 1893) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=272 at pos=(41447, 196736, 8247) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=273 at pos=(669185, 255329, 2136) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=274 at pos=(287501, 346323, 7122) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=275 at pos=(762966, 958493, 3382) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=276 at pos=(707543, 453809, 3086) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=277 at pos=(290781, 879874, 5805) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=278 at pos=(76419, 842472, 5871) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=279 at pos=(188375, 959348, 5384) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=280 at pos=(805677, 815270, 8626) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=281 at pos=(151966, 24184, 5736) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=282 at pos=(385264, 975246, 6673) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=283 at pos=(156830, 950966, 7568) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=284 at pos=(816997, 704298, 8856) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=285 at pos=(839397, 12686, 2891) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=286 at pos=(378036, 246009, 2688) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=287 at pos=(824771, 991772, 3921) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=288 at pos=(734163, 805594, 2939) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=289 at pos=(754200, 654189, 5365) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=290 at pos=(93337, 721429, 2378) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=291 at pos=(567512, 412351, 2350) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=292 at pos=(900410, 882673, 8345) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=293 at pos=(728719, 578361, 5545) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=294 at pos=(243025, 426741, 6865) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=295 at pos=(431682, 604142, 2763) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=296 at pos=(610509, 886977, 5818) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=297 at pos=(671078, 915178, 4375) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=298 at pos=(61376, 761050, 4770) size=(20, 20, 50000) seconds=1 floor=True
-Creating Miner id=299 at pos=(499695, 44496, 5282) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=0 at pos=(833404, 395591, 5374) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=1 at pos=(204676, 169948, 6372) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=2 at pos=(554760, 70104, 4606) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=3 at pos=(363727, 316900, 7201) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=4 at pos=(832182, 940603, 5894) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=5 at pos=(554481, 507773, 4885) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=6 at pos=(896988, 119943, 5004) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=7 at pos=(721291, 526971, 7930) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=8 at pos=(586470, 212761, 6141) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=9 at pos=(796433, 218922, 8484) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=10 at pos=(129751, 993398, 4973) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=11 at pos=(959174, 319557, 5130) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=12 at pos=(898828, 4468, 8874) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=13 at pos=(147821, 387292, 5127) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=14 at pos=(790100, 917200, 6560) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=15 at pos=(308608, 70850, 2666) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=16 at pos=(272853, 460660, 2654) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=17 at pos=(19651, 1464, 8286) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=18 at pos=(633977, 305224, 3136) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=19 at pos=(781765, 952900, 5709) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=20 at pos=(504878, 952537, 7748) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=21 at pos=(786788, 861110, 6551) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=22 at pos=(812990, 439301, 5550) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=23 at pos=(897304, 26551, 2624) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=24 at pos=(319225, 326659, 6889) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=25 at pos=(225369, 779534, 8323) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=26 at pos=(524384, 637314, 6697) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=27 at pos=(261595, 354062, 3637) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=28 at pos=(462832, 308411, 6466) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=29 at pos=(786111, 167896, 7630) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=30 at pos=(904445, 729924, 5820) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=31 at pos=(983339, 640264, 4022) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=32 at pos=(596062, 253227, 6882) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=33 at pos=(637472, 730289, 8975) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=34 at pos=(351033, 529491, 5168) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=35 at pos=(187650, 854781, 4505) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=36 at pos=(155321, 977146, 3428) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=37 at pos=(195020, 286009, 3525) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=38 at pos=(172263, 697431, 2609) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=39 at pos=(109473, 362880, 8587) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=40 at pos=(80819, 154981, 5981) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=41 at pos=(620662, 969603, 7983) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=42 at pos=(47713, 299851, 3760) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=43 at pos=(937783, 964439, 5337) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=44 at pos=(266096, 895070, 8551) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=45 at pos=(378216, 66739, 6851) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=46 at pos=(952488, 54198, 1061) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=47 at pos=(966955, 750572, 5123) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=48 at pos=(60397, 638639, 2938) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=49 at pos=(126686, 626799, 1210) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=50 at pos=(407056, 353900, 4071) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=51 at pos=(220147, 451525, 4383) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=52 at pos=(576487, 141066, 5031) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=53 at pos=(795114, 905927, 4574) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=54 at pos=(465136, 788165, 4323) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=55 at pos=(192562, 162298, 7992) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=56 at pos=(738698, 257303, 2755) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=57 at pos=(282743, 40048, 3194) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=58 at pos=(272474, 900169, 2701) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=59 at pos=(101372, 381617, 4814) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=60 at pos=(879582, 529372, 1195) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=61 at pos=(893520, 985576, 5166) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=62 at pos=(216966, 976121, 7210) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=63 at pos=(646765, 328161, 4001) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=64 at pos=(52844, 751414, 1858) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=65 at pos=(74838, 328662, 1279) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=66 at pos=(155811, 553701, 5354) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=67 at pos=(382553, 780233, 4168) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=68 at pos=(873776, 2142, 4253) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=69 at pos=(147637, 891727, 4877) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=70 at pos=(524232, 474402, 3091) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=71 at pos=(983373, 26564, 4364) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=72 at pos=(565528, 474272, 6699) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=73 at pos=(552282, 647256, 1390) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=74 at pos=(105198, 259759, 6252) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=75 at pos=(203355, 143524, 4186) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=76 at pos=(659866, 878247, 6283) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=77 at pos=(854783, 706645, 2042) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=78 at pos=(766362, 809400, 7465) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=79 at pos=(53063, 998554, 4713) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=80 at pos=(82447, 552227, 2066) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=81 at pos=(49107, 225401, 7973) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=82 at pos=(549612, 852569, 6331) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=83 at pos=(994240, 787613, 1694) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=84 at pos=(647177, 630706, 6835) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=85 at pos=(638571, 346400, 6830) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=86 at pos=(706641, 832139, 8858) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=87 at pos=(73547, 987454, 2902) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=88 at pos=(128534, 758300, 4647) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=89 at pos=(863429, 558448, 5704) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=90 at pos=(267768, 684251, 5223) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=91 at pos=(45745, 305965, 5536) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=92 at pos=(252395, 888357, 6964) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=93 at pos=(382739, 455681, 5723) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=94 at pos=(605152, 524296, 5879) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=95 at pos=(944576, 13130, 8794) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=96 at pos=(817869, 540784, 5276) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=97 at pos=(480014, 875087, 5255) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=98 at pos=(786755, 523745, 8772) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=99 at pos=(41656, 694183, 5031) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=100 at pos=(346267, 542106, 4902) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=101 at pos=(749143, 218318, 4731) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=102 at pos=(424115, 732756, 5059) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=103 at pos=(640803, 639005, 3693) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=104 at pos=(997425, 12558, 1313) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=105 at pos=(492707, 359849, 7654) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=106 at pos=(883412, 436708, 1948) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=107 at pos=(520222, 493069, 7579) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=108 at pos=(293132, 883628, 4453) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=109 at pos=(619472, 639832, 1776) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=110 at pos=(176389, 282688, 1363) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=111 at pos=(280145, 63960, 5670) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=112 at pos=(428042, 832811, 6936) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=113 at pos=(184671, 529675, 7627) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=114 at pos=(881403, 702295, 3212) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=115 at pos=(289809, 163388, 6702) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=116 at pos=(628735, 630801, 6932) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=117 at pos=(263856, 735387, 5841) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=118 at pos=(433112, 34342, 7369) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=119 at pos=(842339, 573460, 8923) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=120 at pos=(297285, 788654, 8714) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=121 at pos=(981538, 616019, 8942) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=122 at pos=(408922, 866380, 2218) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=123 at pos=(247076, 927950, 5094) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=124 at pos=(468791, 556357, 1883) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=125 at pos=(105203, 965521, 7995) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=126 at pos=(583965, 123550, 7805) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=127 at pos=(439688, 860080, 1408) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=128 at pos=(784915, 425430, 3325) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=129 at pos=(616839, 625426, 4818) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=130 at pos=(736298, 219223, 3299) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=131 at pos=(270777, 366208, 6390) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=132 at pos=(469274, 711307, 6696) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=133 at pos=(144203, 48829, 8717) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=134 at pos=(448055, 13386, 1219) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=135 at pos=(204556, 303112, 8701) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=136 at pos=(276743, 911081, 4392) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=137 at pos=(771936, 364968, 4141) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=138 at pos=(806171, 686394, 4172) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=139 at pos=(318509, 466127, 2725) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=140 at pos=(603333, 136756, 1181) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=141 at pos=(579949, 110743, 3865) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=142 at pos=(123333, 939562, 3888) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=143 at pos=(962058, 820990, 7567) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=144 at pos=(513296, 671263, 4513) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=145 at pos=(450606, 147521, 2207) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=146 at pos=(779666, 288837, 4292) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=147 at pos=(695338, 412995, 7468) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=148 at pos=(635209, 10568, 3077) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=149 at pos=(294446, 625384, 3118) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=150 at pos=(468053, 284592, 3454) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=151 at pos=(481514, 723904, 2994) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=152 at pos=(576540, 617494, 2659) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=153 at pos=(280742, 767360, 7950) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=154 at pos=(298488, 343206, 1800) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=155 at pos=(573529, 218324, 7704) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=156 at pos=(749618, 266898, 7037) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=157 at pos=(715857, 683377, 7990) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=158 at pos=(306943, 557205, 3956) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=159 at pos=(823454, 612688, 8162) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=160 at pos=(411479, 965332, 7640) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=161 at pos=(800281, 233543, 6911) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=162 at pos=(782963, 979484, 6583) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=163 at pos=(20106, 198039, 5681) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=164 at pos=(939811, 314543, 7330) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=165 at pos=(585472, 576690, 8669) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=166 at pos=(169415, 495171, 7153) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=167 at pos=(195792, 86517, 8731) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=168 at pos=(498149, 765540, 2711) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=169 at pos=(968143, 714763, 6820) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=170 at pos=(261933, 247983, 2940) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=171 at pos=(610291, 374270, 6952) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=172 at pos=(661314, 981080, 7554) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=173 at pos=(564904, 27907, 8140) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=174 at pos=(895413, 409538, 4985) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=175 at pos=(673275, 628307, 3037) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=176 at pos=(990568, 435842, 8957) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=177 at pos=(906997, 853581, 5960) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=178 at pos=(26040, 934784, 6046) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=179 at pos=(419645, 379634, 2139) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=180 at pos=(913437, 967615, 3186) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=181 at pos=(501273, 835087, 4172) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=182 at pos=(434544, 751852, 8650) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=183 at pos=(689833, 684503, 8605) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=184 at pos=(801523, 73250, 5189) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=185 at pos=(701066, 365411, 5069) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=186 at pos=(414631, 341743, 5737) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=187 at pos=(779519, 736916, 4136) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=188 at pos=(367338, 861258, 3441) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=189 at pos=(359691, 413762, 4094) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=190 at pos=(624424, 327643, 5009) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=191 at pos=(847722, 679322, 1449) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=192 at pos=(58060, 320255, 7775) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=193 at pos=(769321, 159136, 3914) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=194 at pos=(561689, 366220, 4109) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=195 at pos=(420991, 3172, 6629) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=196 at pos=(918355, 512690, 6453) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=197 at pos=(563080, 512161, 7085) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=198 at pos=(495215, 514924, 8838) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=199 at pos=(251058, 57947, 2052) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=200 at pos=(254013, 946720, 2855) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=201 at pos=(789008, 740266, 8111) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=202 at pos=(454778, 902241, 4044) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=203 at pos=(110353, 269468, 4013) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=204 at pos=(415757, 69551, 2686) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=205 at pos=(748463, 852633, 6898) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=206 at pos=(748630, 579193, 1108) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=207 at pos=(694516, 523483, 6908) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=208 at pos=(827374, 579758, 4916) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=209 at pos=(722582, 929324, 8345) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=210 at pos=(556959, 515860, 8261) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=211 at pos=(778916, 198555, 2339) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=212 at pos=(715284, 646367, 5397) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=213 at pos=(639022, 159992, 1740) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=214 at pos=(513634, 420032, 1066) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=215 at pos=(148271, 91520, 1043) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=216 at pos=(102100, 688744, 8837) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=217 at pos=(163131, 879260, 4543) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=218 at pos=(872742, 727473, 3468) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=219 at pos=(173797, 542680, 8834) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=220 at pos=(587638, 638846, 4882) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=221 at pos=(404193, 194774, 6866) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=222 at pos=(537628, 25385, 5297) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=223 at pos=(763129, 449352, 5741) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=224 at pos=(49319, 396111, 8682) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=225 at pos=(740043, 922193, 3129) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=226 at pos=(802680, 397532, 5558) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=227 at pos=(366524, 266892, 5914) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=228 at pos=(385828, 707294, 2479) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=229 at pos=(909553, 585662, 1389) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=230 at pos=(702671, 203870, 4313) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=231 at pos=(962620, 180841, 7989) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=232 at pos=(987933, 302157, 1335) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=233 at pos=(326521, 444144, 8858) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=234 at pos=(331641, 876237, 3664) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=235 at pos=(930759, 359814, 8503) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=236 at pos=(355248, 532754, 8637) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=237 at pos=(563496, 613493, 2150) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=238 at pos=(561171, 127004, 1236) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=239 at pos=(95060, 940115, 5614) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=240 at pos=(962073, 985032, 8768) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=241 at pos=(778294, 979146, 2673) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=242 at pos=(160350, 148037, 2672) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=243 at pos=(99054, 48140, 1182) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=244 at pos=(727120, 493174, 6821) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=245 at pos=(106820, 971694, 1407) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=246 at pos=(128796, 220528, 4544) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=247 at pos=(150652, 978399, 1888) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=248 at pos=(722863, 54428, 2733) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=249 at pos=(568776, 881981, 2786) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=250 at pos=(493015, 993023, 1269) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=251 at pos=(19311, 732478, 1113) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=252 at pos=(805635, 418756, 6712) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=253 at pos=(252737, 465408, 8658) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=254 at pos=(971316, 163047, 1644) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=255 at pos=(969940, 891609, 6603) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=256 at pos=(577442, 647524, 3951) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=257 at pos=(117636, 888233, 6627) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=258 at pos=(325325, 507384, 7068) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=259 at pos=(731635, 822818, 1736) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=260 at pos=(303690, 720150, 1076) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=261 at pos=(103246, 451858, 8871) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=262 at pos=(817261, 318270, 1223) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=263 at pos=(685979, 429938, 1004) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=264 at pos=(593422, 847468, 7162) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=265 at pos=(670329, 506547, 1381) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=266 at pos=(197483, 836856, 2816) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=267 at pos=(983997, 940033, 4503) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=268 at pos=(905715, 386303, 8305) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=269 at pos=(443217, 32839, 7984) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=270 at pos=(858394, 17112, 8286) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=271 at pos=(924150, 178128, 3025) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=272 at pos=(348058, 884483, 1264) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=273 at pos=(89051, 594313, 4711) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=274 at pos=(379132, 356303, 7472) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=275 at pos=(969448, 496059, 1080) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=276 at pos=(272076, 55613, 3725) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=277 at pos=(826202, 689792, 1659) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=278 at pos=(698447, 346844, 5891) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=279 at pos=(810190, 720153, 8557) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=280 at pos=(901064, 69550, 6723) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=281 at pos=(902117, 283773, 2133) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=282 at pos=(685985, 78061, 1646) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=283 at pos=(826327, 515416, 8656) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=284 at pos=(758183, 565578, 3849) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=285 at pos=(490469, 331836, 7612) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=286 at pos=(341525, 944645, 6791) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=287 at pos=(157545, 607118, 3232) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=288 at pos=(940875, 204991, 2460) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=289 at pos=(946873, 987265, 8965) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=290 at pos=(161187, 886717, 3929) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=291 at pos=(984003, 764770, 7984) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=292 at pos=(548900, 962935, 5955) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=293 at pos=(575763, 415469, 4020) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=294 at pos=(811316, 881253, 7556) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=295 at pos=(338566, 87388, 3939) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=296 at pos=(88005, 396268, 6467) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=297 at pos=(89819, 42149, 6768) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=298 at pos=(880486, 967849, 2191) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=299 at pos=(952547, 559653, 4141) size=(20, 20, 50000) seconds=1 floor=True
 Created 300 miners.
 Simulating 1200 seconds of mining...
+c:\VOXELS\utils\bvh.py:81: RuntimeWarning: overflow encountered in scalar multiply
+  (self.x1[n]-self.x0[n]) *
 Traceback (most recent call last):
   File "c:\VOXELS\tests\tests.py", line 19, in tests
     test()
@@ -4475,18 +4503,20 @@ Traceback (most recent call last):
   File "c:\VOXELS\world\rows.py", line 321, in split
     return self.split2(p0=pos, p1=pos1, mat=mat)
            ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 269, in split2
-    _, _, hitrow = self.search(pos=p0)
-                   ~~~~~~~~~~~^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 190, in search
-    hit:Row = self.bvh.search(pos=pos)               # BVH returns Row(mid,rid,row)
-              ^^^^^^^^^^^^^^^
-AttributeError: 'Queue' object has no attribute 'search'
+  File "c:\VOXELS\world\rows.py", line 279, in split2
+    merged,marids = self.merge(rows=batch)
+                    ~~~~~~~~~~^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 489, in merge
+    return self.mergerows(rows=rows)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 456, in mergerows
+    row1 = self.mdx.search(r=row0, axis=ax)   # FIXED call
+TypeError: Queue.search() got an unexpected keyword argument 'r'
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 4488
+# Total lines in bundle: 4518
 # Total files in bundle: 43
-# Generated at the time: 2026-01-31T09:19:44
+# Generated at the time: 2026-01-31T09:32:33
 --- END OF FILE ---

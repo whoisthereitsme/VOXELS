@@ -187,7 +187,7 @@ class BVH:
             self.parent[sibling] = grand
             self.fixupwards(grand)
 
-    def search(self, pos:POS)->Row:
+    def search(self, pos:POS=None)->Row:
         if self.root == -1:
             raise LookupError("BVH empty")
 
