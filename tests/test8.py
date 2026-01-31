@@ -15,7 +15,7 @@ def test8() -> None:
         miners.append(miner)
     print(f"Created {len(miners)} miners.")
 
-    duration = 120  # seconds
+    duration = 1200  # seconds
     print(f"Simulating {duration} seconds of mining...")
     t0 = time.time()
     for frame in range(duration * 60):
