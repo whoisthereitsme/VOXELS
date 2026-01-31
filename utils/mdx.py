@@ -73,7 +73,7 @@ class MDX:
         return ROWFACES(x0=kx0, x1=kx1, y0=ky0, y1=ky1, z0=kz0, z1=kz1)
 
     def insert(self, row:NDARR=None) -> None:
-        mid = self.rows.mat.name2idx[ROW.MAT(row=row)]
+        mid = ROW.MID(row=row)
         rid = ROW.RID(row=row)
         loc: Loc = (mid, rid)
         faces = self.faces(mid=mid, row=row)
@@ -87,7 +87,8 @@ class MDX:
         self.pos[self.AX_Z][faces.z1].add(loc)
 
     def remove(self, mat:str=None, rid:int=None) -> None:
-        mid = self.rows.mat.name2idx[mat]
+        row = self.rows.get(mat=mat, rid=rid)
+        mid = ROW.MID(row=row)
         loc: Loc = (mid, rid)
         faces: ROWFACES = self._faces.pop(loc, None)
         if faces is None:
