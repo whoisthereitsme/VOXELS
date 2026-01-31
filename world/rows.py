@@ -12,6 +12,12 @@ from utils.mdx import MDX
 from utils.types import POS, SIZE, NDARR, REQS
 
 
+from dataclasses import dataclass
+@dataclass(slots=True)
+class Row:
+    mid:int
+    rid:int
+    row:NDARR
 
 
 

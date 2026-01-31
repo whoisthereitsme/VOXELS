@@ -1,24 +1,28 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
-    from world.rows import ROWS
+    from world.rows import ROWS, Row
 
 from world.row import ROW
 from utils.types import POS, NDARR
 
 
-
-
 class BVH:
-    __slots__ = ("rows", "root", "left", "right", "parent", "x0", "y0", "z0", "x1", "y1", "z1", "lmid", "lrid", "lidx")
-    def __init__(self, rows:ROWS=None) -> None:
-        self.rows: ROWS = rows
+    __slots__ = ("rows", "root", "left", "right", "parent",
+                 "x0", "y0", "z0", "x1", "y1", "z1",
+                 "lmid", "lrid", "lidx")
+
+    def __init__(self, rows: "ROWS" = None) -> None:
+        self.rows: "ROWS" = rows
         self.root: int = -1
-        self.x0, self.y0, self.z0, self.x1, self.y1, self.z1, self.lmid, self.lrid, self.left, self.right, self.parent = [], [], [], [], [], [], [], [], [], [], []
+        self.x0, self.y0, self.z0, self.x1, self.y1, self.z1 = [], [], [], [], [], []
+        self.lmid, self.lrid, self.left, self.right, self.parent = [], [], [], [], []
         self.lidx: dict[tuple[int, int], int] = {}
 
-    def newnode(self, x0:int=None, y0:int=None, z0:int=None, x1:int=None, y1:int=None, z1:int=None, lmid:int=-1, lrid:int=-1, left:int=-1, right:int=-1, parent:int=-1) -> int:
+    def newnode(self, x0: int = None, y0: int = None, z0: int = None,
+                x1: int = None, y1: int = None, z1: int = None,
+                lmid: int = -1, lrid: int = -1,
+                left: int = -1, right: int = -1, parent: int = -1) -> int:
         i = len(self.left)
 
         self.left.append(left)
@@ -36,35 +40,38 @@ class BVH:
         self.lrid.append(lrid)
         return i
 
-
-    def volume(self, x0:int=None, y0:int=None, z0:int=None, x1:int=None, y1:int=None, z1:int=None) -> int:
+    def volume(self, x0: int = None, y0: int = None, z0: int = None,
+               x1: int = None, y1: int = None, z1: int = None) -> int:
         return (x1 - x0) * (y1 - y0) * (z1 - z0)
 
-    def mergedvolume(self, node:int=None, bx0:int=None, by0:int=None, bz0:int=None, bx1:int=None, by1:int=None, bz1:int=None) -> int:
+    def mergedvolume(self, node: int = None,
+                     bx0: int = None, by0: int = None, bz0: int = None,
+                     bx1: int = None, by1: int = None, bz1: int = None) -> int:
         ax0, ay0, az0 = self.x0[node], self.y0[node], self.z0[node]
         ax1, ay1, az1 = self.x1[node], self.y1[node], self.z1[node]
-
         x0, y0, z0 = min(ax0, bx0), min(ay0, by0), min(az0, bz0)
         x1, y1, z1 = max(ax1, bx1), max(ay1, by1), max(az1, bz1)
         return self.volume(x0=x0, y0=y0, z0=z0, x1=x1, y1=y1, z1=z1)
 
-    def fixupwards(self, node:int=None) -> None:
+    def fixupwards(self, node: int = None) -> None:
         while node != -1:
             l, r = self.left[node], self.right[node]
-
-            self.x0[node], self.y0[node], self.z0[node] = min(self.x0[l], self.x0[r]), min(self.y0[l], self.y0[r]), min(self.z0[l], self.z0[r])
-            self.x1[node], self.y1[node], self.z1[node] = max(self.x1[l], self.x1[r]), max(self.y1[l], self.y1[r]), max(self.z1[l], self.z1[r])
+            self.x0[node] = min(self.x0[l], self.x0[r])
+            self.y0[node] = min(self.y0[l], self.y0[r])
+            self.z0[node] = min(self.z0[l], self.z0[r])
+            self.x1[node] = max(self.x1[l], self.x1[r])
+            self.y1[node] = max(self.y1[l], self.y1[r])
+            self.z1[node] = max(self.z1[l], self.z1[r])
             node = self.parent[node]
 
+    # ------------------------------------------------------------
+    # Updated API: insert/remove accept Row
+    # ------------------------------------------------------------
 
-    def insert(self, mat:str=None, rid:int=None, row:NDARR=None) -> None:
-        if row is None:
-            mid = self.rows.mat.mid(name=mat)
-            row = self.rows.array[mid][rid]
-        else:
-            mid = ROW.MID(row=row)
-            rid = ROW.RID(row=row)
-            
+    def insert(self, r: "Row") -> None:
+        mid, rid = r.mid, r.rid
+        row = r.row
+
         x0, y0, z0 = ROW.P0(row=row)
         x1, y1, z1 = ROW.P1(row=row)
 
@@ -77,9 +84,10 @@ class BVH:
 
         self.root = self.insertnode(leaf=leaf_node)
 
-    def insertnode(self, leaf:int=None) -> int:
+    def insertnode(self, leaf: int = None) -> int:
         bx0, by0, bz0 = self.x0[leaf], self.y0[leaf], self.z0[leaf]
         bx1, by1, bz1 = self.x1[leaf], self.y1[leaf], self.z1[leaf]
+
         root = node = self.root
         while self.lmid[node] == -1:
             l, r = self.left[node], self.right[node]
@@ -92,7 +100,11 @@ class BVH:
 
         ax0, ay0, az0 = self.x0[leaf0], self.y0[leaf0], self.z0[leaf0]
         ax1, ay1, az1 = self.x1[leaf0], self.y1[leaf0], self.z1[leaf0]
-        parent1 = self.newnode(x0=min(ax0, bx0), y0=min(ay0, by0), z0=min(az0, bz0), x1=max(ax1, bx1), y1=max(ay1, by1), z1=max(az1, bz1))
+
+        parent1 = self.newnode(
+            x0=min(ax0, bx0), y0=min(ay0, by0), z0=min(az0, bz0),
+            x1=max(ax1, bx1), y1=max(ay1, by1), z1=max(az1, bz1)
+        )
 
         self.left[parent1], self.right[parent1] = leaf0, leaf
         self.parent[leaf0] = self.parent[leaf] = parent1
@@ -109,11 +121,8 @@ class BVH:
         self.fixupwards(node=parent0)
         return root
 
-    def remove(self, mat:str=None, rid:int=None, row:NDARR=None) -> None:
-        if row is not None:
-            mid, rid = ROW.MID(row=row), ROW.RID(row=row)
-        else:
-            mid = self.rows.mat.mid(name=mat)
+    def remove(self, r: "Row") -> None:
+        mid, rid = r.mid, r.rid
 
         try:
             found = self.lidx.pop((mid, rid))
@@ -139,7 +148,7 @@ class BVH:
             self.parent[sibling] = grand
             self.fixupwards(grand)
 
-    def search(self, pos:POS=None) -> tuple[str, int, "NDARR"]:
+    def search(self, pos: POS = None) -> tuple[str, int, "Row"]:
         if self.root == -1:
             raise LookupError("[ERROR] BVH.search() failed: empty BVH")
 
@@ -159,10 +168,11 @@ class BVH:
 
             mid = lm[n]
             if mid != -1:
-                row = self.rows.array[mid][lr[n]]
+                rid = lr[n]
+                row = self.rows.array[mid][rid]
                 if ROW.CONTAINS(row=row, pos=pos):
                     mat = self.rows.mat.name(mid=mid)
-                    return mat, lr[n], row
+                    return mat, rid, self.rows.wrap(mid, rid)
                 continue
 
             l, r = l0[n], r0[n]
@@ -171,19 +181,4 @@ class BVH:
             if r != -1 and (x0[r] <= x < x1[r] and y0[r] <= y < y1[r] and z0[r] <= z < z1[r]):
                 stack.append(r)
 
-        raise LookupError("[ERROR] BVH.search() failed: point not found (partition invariant violated or BVH not updated)")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        raise LookupError("[ERROR] BVH.search() failed: point not found")

@@ -1,22 +1,19 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, DefaultDict, Dict, Optional, Set, Tuple
-
-
 if TYPE_CHECKING:
-    from world.rows import ROWS
-    
-
+    from world.rows import ROWS, Row
 
 from collections import defaultdict
 from dataclasses import dataclass
 from world.row import ROW
-from .types import NDARR
+from utils.types import NDARR
 
 Loc = Tuple[int, int]  # (mid, rid)
-FACE = Tuple[int, int, int, int, int, int]  # (mid, a0, a1, b0, b1, face_coord)
-BUCK = DefaultDict[FACE, Set[Loc]]  # face_key -> set of (mid, rid)
-FACES = Tuple[FACE, FACE]  # (max_face, min_face)  # our faces, in search order
-BUCKS = Tuple[BUCK, BUCK]  # (neg_bucket, pos_bucket)
+FACE = Tuple[int, int, int, int, int, int]
+BUCK = DefaultDict[FACE, Set[Loc]]
+FACES = Tuple[FACE, FACE]
+BUCKS = Tuple[BUCK, BUCK]
+
 
 @dataclass
 class ROWFACES:
@@ -39,9 +36,9 @@ class ROWFACES:
     def zfaces(self) -> FACES:
         return (self.z1, self.z0)
 
-    def faces(self, ax:int=None) -> FACES:
+    def faces(self, ax: int = None) -> FACES:
         if ax not in [0, 1, 2]:
-            raise ValueError("[VALUE ERROR] ROWFACES.faces() ax must be 0,1,2. provided axis:", ax)
+            raise ValueError("[VALUE ERROR] ROWFACES.faces() ax must be 0,1,2.")
         return (self.xfaces, self.yfaces, self.zfaces)[ax]
 
 
@@ -51,7 +48,7 @@ class MDX:
     AX_Z = 2
     ALLAXIS = (AX_X, AX_Y, AX_Z)
 
-    def __init__(self, rows:ROWS=None) -> None:
+    def __init__(self, rows: "ROWS" = None) -> None:
         self.rows = rows
         self.init()
 
@@ -60,7 +57,7 @@ class MDX:
         self.pos: Tuple[BUCK, ...] = (defaultdict(set), defaultdict(set), defaultdict(set))
         self._faces: Dict[Loc, ROWFACES] = {}
 
-    def faces(self, mid:int=None, row:NDARR=None) -> ROWFACES:
+    def faces(self, mid: int = None, row: NDARR = None) -> ROWFACES:
         x0, y0, z0 = ROW.P0(row=row)
         x1, y1, z1 = ROW.P1(row=row)
 
@@ -72,9 +69,12 @@ class MDX:
         kz1: FACE = (mid, x0, x1, y0, y1, z1)
         return ROWFACES(x0=kx0, x1=kx1, y0=ky0, y1=ky1, z0=kz0, z1=kz1)
 
-    def insert(self, row:NDARR=None) -> None:
-        mid = ROW.MID(row=row)
-        rid = ROW.RID(row=row)
+    # ------------------------------------------------------------
+    # Updated API: insert/remove accept Row
+    # ------------------------------------------------------------
+
+    def insert(self, r: "Row") -> None:
+        mid, rid, row = r.mid, r.rid, r.row
         loc: Loc = (mid, rid)
         faces = self.faces(mid=mid, row=row)
         self._faces[loc] = faces
@@ -86,31 +86,30 @@ class MDX:
         self.neg[self.AX_Z][faces.z0].add(loc)
         self.pos[self.AX_Z][faces.z1].add(loc)
 
-    def remove(self, mat:str=None, rid:int=None, row:NDARR=None) -> None:
-        if row is None and mat is not None and rid is not None:
-            row = self.rows.get(mat=mat, rid=rid)
-        mid = ROW.MID(row=row)
+    def remove(self, r: "Row") -> None:
+        mid, rid = r.mid, r.rid
         loc: Loc = (mid, rid)
         faces: ROWFACES = self._faces.pop(loc, None)
         if faces is None:
             return
 
-        self.discard(m=self.neg[self.AX_X], key=faces.x0, loc=loc)
-        self.discard(m=self.pos[self.AX_X], key=faces.x1, loc=loc)
-        self.discard(m=self.neg[self.AX_Y], key=faces.y0, loc=loc)
-        self.discard(m=self.pos[self.AX_Y], key=faces.y1, loc=loc)
-        self.discard(m=self.neg[self.AX_Z], key=faces.z0, loc=loc)
-        self.discard(m=self.pos[self.AX_Z], key=faces.z1, loc=loc)
+        self._discard(self.neg[self.AX_X], faces.x0, loc)
+        self._discard(self.pos[self.AX_X], faces.x1, loc)
+        self._discard(self.neg[self.AX_Y], faces.y0, loc)
+        self._discard(self.pos[self.AX_Y], faces.y1, loc)
+        self._discard(self.neg[self.AX_Z], faces.z0, loc)
+        self._discard(self.pos[self.AX_Z], faces.z1, loc)
 
-    def discard(self, m:BUCK=None, key:FACE=None, loc:Loc=None) -> None:
-        s: Set[Loc] = m.get(key)
+    @staticmethod
+    def _discard(m: BUCK, key: FACE, loc: Loc) -> None:
+        s = m.get(key)
         if not s:
             return
         s.discard(loc)
         if not s:
             del m[key]
 
-    def search(self, mid:int=None, rid:int=None, axis:int=None) -> Optional[Loc]:
+    def search(self, mid: int = None, rid: int = None, axis: int = None) -> Optional[Loc]:
         if mid is None or rid is None or axis is None:
             raise ValueError("mid, rid, and axis must be provided")
         loc: Loc = (mid, rid)
@@ -118,10 +117,8 @@ class MDX:
         if rowfaces is None:
             return None
 
-        def search(faces:FACES=None, bucks:BUCKS=None) -> Optional[Loc]:
+        def search(faces: FACES, bucks: BUCKS) -> Optional[Loc]:
             for face, buck in zip(faces, bucks):
-                buck: BUCK = buck
-                face: FACE = face
                 candidates = buck.get(face)
                 if not candidates:
                     continue
@@ -130,7 +127,6 @@ class MDX:
                         return c
             return None
 
-        faces: FACES = rowfaces.faces(ax=axis) 
-        bucks: BUCKS = (self.neg[axis], self.pos[axis])
-
-        return search(faces=faces, bucks=bucks)
+        faces = rowfaces.faces(ax=axis)
+        bucks = (self.neg[axis], self.pos[axis])
+        return search(faces, bucks)
