@@ -86,8 +86,9 @@ class MDX:
         self.neg[self.AX_Z][faces.z0].add(loc)
         self.pos[self.AX_Z][faces.z1].add(loc)
 
-    def remove(self, mat:str=None, rid:int=None) -> None:
-        row = self.rows.get(mat=mat, rid=rid)
+    def remove(self, mat:str=None, rid:int=None, row:NDARR=None) -> None:
+        if row is None and mat is not None and rid is not None:
+            row = self.rows.get(mat=mat, rid=rid)
         mid = ROW.MID(row=row)
         loc: Loc = (mid, rid)
         faces: ROWFACES = self._faces.pop(loc, None)

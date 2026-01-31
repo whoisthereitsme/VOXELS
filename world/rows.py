@@ -79,6 +79,7 @@ class ROWS:
         arids: dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}
         return (array, arids)
 
+
     def insert(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -> NDARR:
         mid: int = self.mat.mid(name=mat)
         rid: int = self.newn(mat=mat)
@@ -88,27 +89,29 @@ class ROWS:
         self.mdx.insert(row=row)
         return row
 
-    def remove(self, index:int=None, mat:str=None, row:NDARR=None) -> NDARR:
-        if row is not None and index is None and mat is None:
+    def remove(self, rid:int=None, mat:str=None, row:NDARR=None) -> NDARR:
+        if row is not None and rid is None and mat is None:
             mat = ROW.MAT(row=row)
-            index = ROW.RID(row=row)
+            rid = ROW.RID(row=row)
+        if row is None and mat is not None and rid is not None:
+            row = self.get(mat=mat, rid=rid)
         mid = self.mat.mid(name=mat)
         n = self.nrows(mat=mat)
-        if index < 0 or index >= n:
+        if rid < 0 or rid >= n:
             raise IndexError("index out of range")
-        last = n - 1
-        self.bvh.remove(mat=mat, rid=index)
-        self.mdx.remove(mat=mat, rid=index)
+        rid0 = n - 1
+        self.bvh.remove(row=row)
+        self.mdx.remove(row=row)
+        if rid != rid0:
+            row0 = self.get(mat=mat, rid=rid0)
+            self.bvh.remove(row=row0)
+            self.mdx.remove(row=row0)
+            self.array[mid][rid] = row0
+            self.array[mid][rid][*ROW.IDS_RID] = np.uint64(rid)
+            self.bvh.insert(row=row)
+            self.mdx.insert(row=row)
 
-        if index != last:
-            self.bvh.remove(mat=mat, rid=last)
-            self.mdx.remove(mat=mat, rid=last)
-            self.array[mid][index] = self.array[mid][last]
-            self.array[mid][index][*ROW.IDS_RID] = np.uint64(index)
-            self.bvh.insert(row=self.array[mid][index])
-            self.mdx.insert(row=self.array[mid][index])
-
-        self.array[mid][last] = ROW.ARRAY
+        self.array[mid][rid0] = ROW.ARRAY
         self.deln(mat=mat)
         return self
     
