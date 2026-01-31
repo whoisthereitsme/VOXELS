@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T03:05:02
+#Time when generated: 2026-01-31T03:06:05
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -3454,7 +3454,7 @@ class ROWS:
                     arids[mid_new] += 1
 
         self.remove(row=row)
-        self.bvh.fixupwards(node=self.bvh.parent[self.bvh.lidx[(mat0, rid)]])
+        self.bvh.fixupwards(node=self.bvh.root)
         return array, arids
 
     def split1(self, pos:POS=None, mat:str=None) -> ARRAY_ARIDS:
@@ -3735,7 +3735,7 @@ class ROWS:
 
 === RUNNING TEST 1/1: test6 ===
 === TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
-test6: search() [tests=10]: lap 3: 9.6e-05 seconds
+test6: search() [tests=10]: lap 3: 0.000125 seconds
 Traceback (most recent call last):
   File "c:\VOXELS\tests\tests.py", line 19, in tests
     test()
@@ -3749,15 +3749,20 @@ Traceback (most recent call last):
   File "c:\VOXELS\world\rows.py", line 190, in split1
     batch, arids = self.splitrow(pos=pos, p2=p2, mat=mat)
                    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 185, in splitrow
-    self.bvh.fixupwards(node=self.bvh.parent[self.bvh.lidx[(mat0, rid)]])
-                                             ~~~~~~~~~~~~~^^^^^^^^^^^^^
-KeyError: ('STONE', 0)
+  File "c:\VOXELS\world\rows.py", line 152, in splitrow
+    mat0, rid, row = self.search(pos=pos)
+                     ~~~~~~~~~~~^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 142, in search
+    mat, rid, row = self.bvh.search(pos=pos)
+                    ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "c:\VOXELS\utils\bvh.py", line 178, in search
+    raise LookupError("[ERROR] BVH.search() failed: point not found (partition invariant violated or BVH not updated)")
+LookupError: [ERROR] BVH.search() failed: point not found (partition invariant violated or BVH not updated)
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3759
+# Total lines in bundle: 3764
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T03:05:02
+# Generated at the time: 2026-01-31T03:06:05
 --- END OF FILE ---
