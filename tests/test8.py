@@ -6,11 +6,11 @@ import time
 def test8() -> None:
     miners = []
     rows = ROWS()
-    for i in range(60):
+    for i in range(300):
         x = random.randint(a=1000, b=999000)
         y = random.randint(a=1000, b=999000)
-        z = random.randint(a=1000, b=60000)
-        miner = Miner(rows=rows, pos=(x, y, z), size=(5, 5, 900), seconds=1, floor=True)
+        z = random.randint(a=1000, b=9000)
+        miner = Miner(rows=rows, pos=(x, y, z), size=(10, 10, 50000), seconds=1, floor=True)
 
         miners.append(miner)
     print(f"Created {len(miners)} miners.")
