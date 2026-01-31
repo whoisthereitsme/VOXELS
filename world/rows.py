@@ -45,8 +45,8 @@ class ROWS:
         self.mats = Materials()
         self.bvh = BVH(rows=self)
         self.mdx = MDX(rows=self)
-        self.m = 0  # for the total number of rows used
-
+        
+        self.total = 0
         self.array, self.arids = self.requirements(ROWS.SIZE)
         self.shape = self.array.shape
         self.nbytes = self.array.nbytes
@@ -60,7 +60,7 @@ class ROWS:
         mid: int = Materials.name2idx[mat]
         n: int = self.arids[mid]
         self.arids[mid] += 1
-        self.m += 1
+        self.total += 1
         return n
 
 
@@ -71,7 +71,7 @@ class ROWS:
         if self.arids[mid] <= 0:
             raise ValueError("no rows to free")
         self.arids[mid] -= 1
-        self.m -= 1
+        self.total -= 1
         return self.arids[mid]
 
 
@@ -114,15 +114,15 @@ class ROWS:
         return self
 
     def volume(self, mat:str=None) -> int:
-        total = 0
+        volume = 0
         if mat is None:
             for mid in range(MATERIALS.NUM):
-                total += self.volume(mat=Materials.idx2name[mid])   # add up all materials
+                volume += self.volume(mat=Materials.idx2name[mid])   # add up all materials
         else:
             mid = Materials.name2idx[mat]
             for rid in range(self.arids[mid]):
-                total += ROW.VOLUME(row=self.array[mid][rid])
-        return total
+                volume += ROW.VOLUME(row=self.array[mid][rid])
+        return volume
 
     def search(self, pos:POS=None) -> tuple[str, int, NDArray[ROW.DTYPE]]:
         mat, rid, row = self.bvh.search(pos=pos)
@@ -408,7 +408,7 @@ class ROWS:
         return array, arids
 
     def mergeall(self) -> ARRAY_ARIDS:
-        start_m = self.m
+        start_m = self.total
         array, arids = self.requirements(n=start_m)
 
         for mat in self.mats.name2idx.keys():
