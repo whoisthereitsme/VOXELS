@@ -14,8 +14,6 @@ from utils.queue import Queue
 from utils.job import Job
 
 
-
-
 class ROWS:
     """
     PUBLIC (human interface):
@@ -33,7 +31,7 @@ class ROWS:
 
     SIZE = 65536
 
-    def __init__(self)->None:
+    def __init__(self) -> None:
         self.mat = Materials()
         self.bvh = Queue(cls=BVH(rows=self))
         self.mdx = Queue(cls=MDX(rows=self))
@@ -48,25 +46,89 @@ class ROWS:
         self.p0 = (ROW.XMIN, ROW.YMIN, ROW.ZMIN)
         self.p1 = (ROW.XMAX, ROW.YMAX, ROW.ZMAX)
 
+        # local registry so ROWS can poll results by id
+        self.jobs: dict[str, dict[int, Job]] = {"insert": {}, "remove": {}, "search": {}}
+
         # default world row
         self.insert(p0=self.p0, p1=self.p1, mat="STONE")
-        self.jobs: dict[str, dict[int, Job]] = {"insert":{}, "remove":{}, "search":{}}
 
-    def job(self, task:str=None, cls:str=None, row:Row=None, axis:int=None, pos:POS=None)->Job:
-        job: Job = Job(row=row, axis=axis, pos=pos, job=task, cls=cls)
-        if cls=="bvh":
-            self.bvh.job(job=job)        # no need to check everything here -> job itself is validated in Job class
-        if cls=="mdx":
-            self.mdx.job(job=job)
-        self.jobs[task][job.id] = job
-        return job
+    # ============================================================
+    # Job hub
+    # ============================================================
 
-    def reqs(self, n:int=None)->REQS:
+    def job(self, task: str = None, cls: str = None,
+            row: Row = None, axis: int = None, pos: POS = None,
+            callback=None, **cb_kwargs) -> Job:
+        """
+        Create + dispatch a Job to either BVH or MDX queue.
+        Store it locally by (task,id) so callers can poll.
+
+        Optional callback:
+            callback(job=<completed job>, **cb_kwargs)
+        The Queue worker should call job.finish(...), and we will run callback
+        after we observe completion in poll helpers.
+        """
+        j = Job(row=row, axis=axis, pos=pos, job=task, cls=cls)
+        # attach callback dynamically (no Job refactor required yet)
+        j._callback = callback
+        j._cb_kwargs = cb_kwargs
+
+        if cls == "bvh":
+            self.bvh.job(job=j)
+        elif cls == "mdx":
+            self.mdx.job(job=j)
+        else:
+            raise ValueError("ROWS.job(): cls must be 'bvh' or 'mdx'")
+
+        self.jobs[task][j.id] = j
+        return j
+
+    def _poll_job(self, j: Job) -> Job | None:
+        """
+        Non-blocking poll: ask the right queue if this job finished.
+        If finished, store it in local jobs map and run callback once.
+        """
+        q = self.bvh if j.cls == "bvh" else self.mdx
+        done = q.get(task=j.job, id=j.id)
+        if done is None:
+            return None
+
+        # update local registry
+        self.jobs[j.job][j.id] = done
+
+        # fire callback once (if any)
+        cb = getattr(done, "_callback", None)
+        if cb is not None:
+            try:
+                cb(job=done, **getattr(done, "_cb_kwargs", {}))
+            except Exception as e:
+                # don't crash core sim for callback mistakes
+                print(f"[WARN] Job callback failed: {e!r}")
+            done._callback = None
+
+        return done
+
+    def _wait_job(self, j: Job, spins: int = 10_000) -> Job:
+        """
+        Synchronous wait by polling.
+        Keeps ROWS.search API synchronous for tests / existing callers.
+        """
+        for _ in range(spins):
+            done = self._poll_job(j)
+            if done is not None:
+                return done
+        raise TimeoutError(f"Job did not complete in time: {j.cls}.{j.job} id={j.id}")
+
+    # ============================================================
+    # storage helpers
+    # ============================================================
+
+    def reqs(self, n: int = None) -> REQS:
         array: NDARR = np.full((MATERIALS.NUM, n, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
-        arids:dict[int,int] = {mid: 0 for mid in range(MATERIALS.NUM)}
+        arids: dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}
         return (array, arids)
 
-    def newn(self, mat:str=None)->int:
+    def newn(self, mat: str = None) -> int:
         if mat is None:
             raise ValueError("newn requires mat")
         mid = self.mat.mid(name=mat)
@@ -75,7 +137,7 @@ class ROWS:
         self.total += 1
         return rid
 
-    def deln(self, mat:str=None)->int:
+    def deln(self, mat: str = None) -> int:
         if mat is None:
             raise ValueError("deln requires mat")
         mid = self.mat.mid(name=mat)
@@ -85,7 +147,7 @@ class ROWS:
         self.total -= 1
         return self.arids[mid]
 
-    def nrows(self, mat:str=None, mid:int=None)->int:
+    def nrows(self, mat: str = None, mid: int = None) -> int:
         if mid is None:
             if mat is None:
                 raise ValueError("nrows requires mat or mid")
@@ -96,7 +158,7 @@ class ROWS:
     # Row helpers
     # ============================================================
 
-    def get(self, mat:str=None, rid:int=None)->Row:
+    def get(self, mat: str = None, rid: int = None) -> Row:
         if mat is None or rid is None:
             raise ValueError("get requires mat and rid")
         mid = self.mat.mid(name=mat)
@@ -106,77 +168,92 @@ class ROWS:
     # core ops
     # ============================================================
 
-    def insert(self, p0:POS=None, p1:POS=None, mat:str=None,
-               dirty:bool=True, alive:bool=True)->Row:
+    def insert(self, p0: POS = None, p1: POS = None, mat: str = None,
+               dirty: bool = True, alive: bool = True) -> Row:
         if mat is None:
             raise ValueError("insert requires mat")
 
         rid = self.newn(mat=mat)
-        raw:NDARR = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
+        raw: NDARR = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
 
-        mid = ROW.MID(row=raw)
-        rid = ROW.RID(row=raw)
+        mid = int(ROW.MID(row=raw))
+        rid = int(ROW.RID(row=raw))
 
-        # IMPORTANT FIX: actually write RAW into the storage slot
+        # write RAW into storage slot
         slot = self.array[mid][rid]
         slot[:] = raw
-
         stored = Row(mid=mid, rid=rid, row=slot)
 
-        # index the stored row
-        self.job(job="insert", cls="bvh", row=stored)
-        self.job(job="insert", cls="mdx", row=stored)
-        # self.bvh.insert(row=stored)
-        # self.mdx.insert(row=stored)
+        # index async
+        self.job(task="insert", cls="bvh", row=stored)
+        self.job(task="insert", cls="mdx", row=stored)
         return stored
 
-    def remove(self, row:Row=None)->None:
+    def remove(self, row: Row = None) -> None:
         if row is None:
             raise ValueError("remove requires row")
 
-        mid = row.mid
-        rid = row.rid
+        mid = int(row.mid)
+        rid = int(row.rid)
         mat_name = self.mat.name(mid=mid)
         n = self.nrows(mid=mid)
         last = n - 1
 
         # remove target from indices
-        # self.bvh.remove(row=row)
-        # self.mdx.remove(row=row)
-        self.job(job="remove", cls="bvh", row=row)
-        self.job(job="remove", cls="mdx", row=row)
+        self.job(task="remove", cls="bvh", row=row)
+        self.job(task="remove", cls="mdx", row=row)
 
         if rid != last:
             # remove moved's old identity from indices
             moved_old = Row(mid=mid, rid=last, row=self.array[mid][last])
-            # self.bvh.remove(row=moved_old)
-            # self.mdx.remove(row=moved_old)
-            self.job(job="remove", cls="bvh", row=moved_old)
-            self.job(job="remove", cls="mdx", row=moved_old)
+            self.job(task="remove", cls="bvh", row=moved_old)
+            self.job(task="remove", cls="mdx", row=moved_old)
 
-            # move data
+            # move data and patch RID
             moved_data = self.array[mid][last].copy()
-            moved_data[*ROW.IDS_RID] = np.uint64(rid) 
+            moved_data[*ROW.IDS_RID] = np.uint64(rid)
             self.array[mid][rid][:] = moved_data
 
             moved_new = Row(mid=mid, rid=rid, row=self.array[mid][rid])
-            # self.bvh.insert(row=moved_new)
-            # self.mdx.insert(row=moved_new)
-            self.job(job="insert", cls="bvh", row=moved_new)
-            self.job(job="insert", cls="mdx", row=moved_new)
+            self.job(task="insert", cls="bvh", row=moved_new)
+            self.job(task="insert", cls="mdx", row=moved_new)
 
         # invalidate last
         self.array[mid][last][:] = ROW.ARRAY
         self.deln(mat=mat_name)
 
     # ============================================================
-    # queries
+    # queries (sync facade on async jobs)
     # ============================================================
 
-    def size(self)->SIZE:
+    def _bvh_search_row(self, pos: POS) -> Row:
+        j = self.job(task="search", cls="bvh", pos=pos)
+        done = self._wait_job(j)
+        hit = done.get()
+        if hit is None:
+            raise LookupError("BVH search returned no result")
+        return hit
+
+    def _mdx_search_row(self, row: Row, axis: int) -> Row | None:
+        j = self.job(task="search", cls="mdx", row=row, axis=axis)
+        done = self._wait_job(j)
+        return done.get()  # may be None if no neighbor
+
+    def search(self, pos: POS = None) -> tuple[str, int, NDARR]:
+        if pos is None:
+            raise ValueError("search requires pos")
+        hit: Row = self._bvh_search_row(pos)
+        mat = self.mat.name(mid=int(hit.mid))
+        return (mat, int(hit.rid), hit.row)
+
+    # ============================================================
+    # split/merge (only change: use _bvh_search_row / _mdx_search_row)
+    # ============================================================
+
+    def size(self) -> SIZE:
         return (self.p1[0]-self.p0[0], self.p1[1]-self.p0[1], self.p1[2]-self.p0[2])
 
-    def volume(self, mat:str=None)->int:
+    def volume(self, mat: str = None) -> int:
         if mat is None:
             total = 0
             for mid in range(MATERIALS.NUM):
@@ -187,40 +264,10 @@ class ROWS:
         total = 0
         n = self.nrows(mid=mid)
         for rid in range(n):
-            # cast to int so Python doesn't keep uint64 overflow semantics
             total += int(ROW.VOLUME(row=self.array[mid][rid]))
         return int(total)
 
-    """
-    TODO DELETE THIS METHOD AS A WHOLE - REPLACED BY self.job() METHOD ABOVE
-    # it distributes the job to the right queue based on class (not seen here but in the Queue() class itself)
-    """
-    def search(self, pos:POS=None, row:Row=None, axis:int=None)->tuple[str,int,NDARR]:
-        """
-        SOLVED: now we can use this search fro both MDX and BVH searches
-        """
-        if row is not None and axis is not None and pos is None:    # then it is an MDX search
-            self.job(job="search", cls="mdx", row=row, axis=axis)  # FIXED -> jobs are stored in self.jobs to be able to get their results later
-            """
-            TODO # FIX!!! MDX search is currently synchronous, so the job system is not used properly here.
-            """
-            # hit:Row = self.mdx.search(row=row, axis=axis)               # MDX returns Row(mid,rid,row)
-            # mat = self.mat.name(mid=int(hit.mid))
-            # return (mat, int(hit.rid), hit.row)
-        if pos is not None and row is None and axis is None: # then it is a BVH search
-            self.job(job="search", cls="bvh", pos=pos)      # FIXED -> jobs are stored in self.jobs to be able to get their results later
-            # hit:Row = self.bvh.search(pos=pos)               # BVH returns Row(mid,rid,row)
-            """
-            TODO # FIX!!! BVH search is currently synchronous, so the job system is not used properly here.
-            """
-            # mat = self.mat.name(mid=int(hit.mid))
-            # return (mat, int(hit.rid), hit.row)
-
-    # ============================================================
-    # split
-    # ============================================================
-
-    def splitrow(self, p0:POS=None, p1:POS=None, mat:str=None)->REQS:
+    def splitrow(self, p0: POS = None, p1: POS = None, mat: str = None) -> REQS:
         if p0 is None or p1 is None or mat is None:
             raise ValueError("splitrow requires p0,p1,mat")
 
@@ -259,30 +306,28 @@ class ROWS:
                     array[mid_new][arids[mid_new]] = newrow.row
                     arids[mid_new] += 1
 
-        # remove the hit row (need Row object for indices)
         hit_mid = int(ROW.MID(row=hitrow))
         hit_rid = int(ROW.RID(row=hitrow))
         self.remove(row=Row(mid=hit_mid, rid=hit_rid, row=hitrow))
 
         return (array, arids)
 
-    def split1(self, pos:POS=None, pos1:POS=None, mat:str=None)->REQS:
+    def split1(self, pos: POS = None, pos1: POS = None, mat: str = None) -> REQS:
         if pos is None or mat is None:
             raise ValueError("split1 requires pos,mat")
         if pos1 is None:
-            pos1 = (pos[0]+1, pos[1]+1, pos[2]+1) # single point split
+            pos1 = (pos[0]+1, pos[1]+1, pos[2]+1)
         batch, _ = self.splitrow(p0=pos, p1=pos1, mat=mat)
         merged, marids = self.merge(rows=batch)
         return (merged, marids)
 
-    def split2(self, p0:POS=None, p1:POS=None, mat:str=None)->REQS:
+    def split2(self, p0: POS = None, p1: POS = None, mat: str = None) -> REQS:
         def intersect(a0:POS=None,a1:POS=None,b0:POS=None,b1:POS=None)->tuple[POS,POS]|None:
             q0 = (max(a0[0],b0[0]), max(a0[1],b0[1]), max(a0[2],b0[2]))
             q1 = (min(a1[0],b1[0]), min(a1[1],b1[1]), min(a1[2],b1[2]))
             if q0[0]>=q1[0] or q0[1]>=q1[1] or q0[2]>=q1[2]:
                 return None
             return (q0,q1)
-
 
         if p0 is None or p1 is None or mat is None:
             raise ValueError("split2 requires p0,p1,mat")
@@ -291,21 +336,16 @@ class ROWS:
         if p0[0]>=p1[0] or p0[1]>=p1[1] or p0[2]>=p1[2]:
             return self.reqs(n=0)
 
-        acc:list[list[NDARR]] = [[] for _ in range(MATERIALS.NUM)]
+        acc: list[list[NDARR]] = [[] for _ in range(MATERIALS.NUM)]
 
-        # _, _, hitrow1 = self.search(pos=p0)
-        # _, _, hitrow2 = self.search(pos=p1)
-        self.job(job="search", cls="bvh", pos=p0)      # FIXED -> jobs are stored in self.jobs to be able to get their results later
-        self.job(job="search", cls="bvh", pos=p1)      # FIXED -> jobs are stored in self.jobs to be able to get their results later
-        """
-        TODO # FIX!!! BVH search is currently synchronous, so the job system is not used properly here.
-        """
+        _, _, hitrow1 = self.search(pos=p0)
+        _, _, hitrow2 = self.search(pos=p1)
         r0 = ROW.P0(row=hitrow1)
         r1 = ROW.P1(row=hitrow1)
         r2 = ROW.P0(row=hitrow2)
         r3 = ROW.P1(row=hitrow2)
         if r0 == r2 and r1 == r3:
-            return self.split1(pos=p0, pos1=p1, mat=mat) # this is the case where both hits are the same row -> so only one split needed
+            return self.split1(pos=p0, pos1=p1, mat=mat)
 
         hit = intersect(a0=p0, a1=p1, b0=r0, b1=r1)
         if hit is None:
@@ -348,7 +388,7 @@ class ROWS:
 
         return (array, arids)
 
-    def split(self, pos:POS=None, pos1:POS=None, mat:str=None)->REQS:
+    def split(self, pos: POS = None, pos1: POS = None, mat: str = None) -> REQS:
         if mat is None:
             raise ValueError("material must be specified")
         if pos is None and pos1 is None:
@@ -360,8 +400,7 @@ class ROWS:
             return self.split1(pos=pos, mat=mat)
         return self.split1(pos=pos1, mat=mat)
 
-
-    def merge2(self, row0:Row=None, row1:Row=None)->REQS:
+    def merge2(self, row0: Row = None, row1: Row = None) -> REQS:
         if row0 is None or row1 is None:
             return self.reqs(n=0)
 
@@ -375,11 +414,7 @@ class ROWS:
         p0 = ROW.SORT(p0=ROW.P0(row=row0.row), p1=ROW.P0(row=row1.row))[0]
         p1 = ROW.SORT(p0=ROW.P1(row=row0.row), p1=ROW.P1(row=row1.row))[1]
 
-        # remove bigger rid first
-        if int(row0.rid) > int(row1.rid):
-            hi, lo = row0, row1
-        else:
-            hi, lo = row1, row0
+        hi, lo = (row0, row1) if int(row0.rid) > int(row1.rid) else (row1, row0)
 
         self.remove(row=hi)
         self.remove(row=lo)
@@ -392,7 +427,7 @@ class ROWS:
         arids[int(newrow.mid)] = 1
         return (array, arids)
 
-    def mergeax(self, mat:str=None, axis:int=None)->REQS:
+    def mergeax(self, mat: str = None, axis: int = None) -> REQS:
         if mat is None:
             raise ValueError("mergeax requires mat")
         if axis is None:
@@ -403,7 +438,7 @@ class ROWS:
         array, arids = self.reqs(n=start_n)
 
         extra = list(range(self.arids[mid]-1, -1, -1))
-        seen:set[int] = set()
+        seen: set[int] = set()
 
         while extra:
             rid = int(extra.pop())
@@ -413,12 +448,8 @@ class ROWS:
                 continue
             seen.add(rid)
 
-            row0: Row = Row(mid=mid, rid=rid, row=self.array[mid][rid])
-            self.job(job="search", cls="mdx", row=row0, axis=axis)  # FIXED call
-            """
-            TODO # FIX!!! MDX search is currently synchronous, so the job system is not used properly here.
-            """
-            # row1: Row = self.mdx.search(row=row0, axis=axis)
+            row0 = Row(mid=mid, rid=rid, row=self.array[mid][rid])
+            row1 = self._mdx_search_row(row=row0, axis=axis)
             if row1 is None:
                 continue
 
@@ -434,7 +465,7 @@ class ROWS:
 
         return (array, arids)
 
-    def mergemat(self, mat:str=None)->REQS:
+    def mergemat(self, mat: str = None) -> REQS:
         if mat is None:
             raise ValueError("mergemat requires mat")
 
@@ -452,11 +483,12 @@ class ROWS:
 
         return (array, arids)
 
-    def mergerows(self, rows:NDARR=None)->REQS:
+    def mergerows(self, rows: NDARR = None) -> REQS:
+        # unchanged except mdx neighbor lookups now use _mdx_search_row
         if rows is None:
             return self.reqs(n=0)
 
-        mids_present:set[int] = set()
+        mids_present: set[int] = set()
         for mid in range(rows.shape[0]):
             for i in range(rows.shape[1]):
                 if rows[mid][i][*ROW.IDS_RID] != ROW.SENTINEL:
@@ -473,12 +505,12 @@ class ROWS:
             merged_this_round = 0
 
             for ax in (0,1,2):
-                extra:list[tuple[int,int]] = []
+                extra: list[tuple[int,int]] = []
                 for mid in mids_present:
                     for rid in range(self.arids[mid]-1, -1, -1):
                         extra.append((mid,rid))
 
-                seen:set[tuple[int,int]] = set()
+                seen: set[tuple[int,int]] = set()
 
                 while extra:
                     mid,rid = extra.pop()
@@ -491,11 +523,7 @@ class ROWS:
                     seen.add(key)
 
                     row0 = Row(mid=mid, rid=rid, row=self.array[mid][rid])
-                    self.job(job="search", cls="mdx", row=row0, axis=ax)  # FIXED call
-                    """
-                    TODO # FIX!!! MDX search is currently synchronous, so the job system is not used properly here.
-                    """
-                    # row1 = self.mdx.search(row=row0, axis=ax)   # FIXED call
+                    row1 = self._mdx_search_row(row=row0, axis=ax)
                     if row1 is None:
                         continue
 
@@ -515,7 +543,7 @@ class ROWS:
 
         return (array, arids)
 
-    def mergeall(self)->REQS:
+    def mergeall(self) -> REQS:
         array, arids = self.reqs(n=self.total)
         for mat in self.mat.names():
             created, carids = self.mergemat(mat=mat)
@@ -525,12 +553,12 @@ class ROWS:
                     arids[mid] += 1
         return (array, arids)
 
-    def merge(self, rows:NDARR=None)->REQS:
+    def merge(self, rows: NDARR = None) -> REQS:
         if rows is None:
             return self.mergeall()
         return self.mergerows(rows=rows)
 
-    def stats(self)->dict[str,int|float]:
+    def stats(self) -> str:
         sizes = []
         for mid in range(MATERIALS.NUM):
             mat = self.mat.name(mid=mid)
@@ -552,8 +580,8 @@ class ROWS:
             string += f"  MAT={entry['mat']:10s} ROWS={entry['rows']:6d} VOL={entry['vol']:12d} PERC={entry['perc']:6.2f}%\n"
         return string
 
-    def __repr__(self)->str:
+    def __repr__(self) -> str:
         return self.stats()
 
-    def __str__(self)->str:
+    def __str__(self) -> str:
         return self.stats()

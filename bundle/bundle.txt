@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T12:35:05
+#Time when generated: 2026-01-31T12:57:08
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -3808,8 +3808,6 @@ from utils.queue import Queue
 from utils.job import Job
 
 
-
-
 class ROWS:
     """
     PUBLIC (human interface):
@@ -3827,7 +3825,7 @@ class ROWS:
 
     SIZE = 65536
 
-    def __init__(self)->None:
+    def __init__(self) -> None:
         self.mat = Materials()
         self.bvh = Queue(cls=BVH(rows=self))
         self.mdx = Queue(cls=MDX(rows=self))
@@ -3842,25 +3840,89 @@ class ROWS:
         self.p0 = (ROW.XMIN, ROW.YMIN, ROW.ZMIN)
         self.p1 = (ROW.XMAX, ROW.YMAX, ROW.ZMAX)
 
+        # local registry so ROWS can poll results by id
+        self.jobs: dict[str, dict[int, Job]] = {"insert": {}, "remove": {}, "search": {}}
+
         # default world row
         self.insert(p0=self.p0, p1=self.p1, mat="STONE")
-        self.jobs: dict[str, dict[int, Job]] = {"insert":{}, "remove":{}, "search":{}}
 
-    def job(self, task:str=None, cls:str=None, row:Row=None, axis:int=None, pos:POS=None)->Job:
-        job: Job = Job(row=row, axis=axis, pos=pos, job=task, cls=cls)
-        if cls=="bvh":
-            self.bvh.job(job=job)        # no need to check everything here -> job itself is validated in Job class
-        if cls=="mdx":
-            self.mdx.job(job=job)
-        self.jobs[task][job.id] = job
-        return job
+    # ============================================================
+    # Job hub
+    # ============================================================
 
-    def reqs(self, n:int=None)->REQS:
+    def job(self, task: str = None, cls: str = None,
+            row: Row = None, axis: int = None, pos: POS = None,
+            callback=None, **cb_kwargs) -> Job:
+        """
+        Create + dispatch a Job to either BVH or MDX queue.
+        Store it locally by (task,id) so callers can poll.
+
+        Optional callback:
+            callback(job=<completed job>, **cb_kwargs)
+        The Queue worker should call job.finish(...), and we will run callback
+        after we observe completion in poll helpers.
+        """
+        j = Job(row=row, axis=axis, pos=pos, job=task, cls=cls)
+        # attach callback dynamically (no Job refactor required yet)
+        j._callback = callback
+        j._cb_kwargs = cb_kwargs
+
+        if cls == "bvh":
+            self.bvh.job(job=j)
+        elif cls == "mdx":
+            self.mdx.job(job=j)
+        else:
+            raise ValueError("ROWS.job(): cls must be 'bvh' or 'mdx'")
+
+        self.jobs[task][j.id] = j
+        return j
+
+    def _poll_job(self, j: Job) -> Job | None:
+        """
+        Non-blocking poll: ask the right queue if this job finished.
+        If finished, store it in local jobs map and run callback once.
+        """
+        q = self.bvh if j.cls == "bvh" else self.mdx
+        done = q.get(task=j.job, id=j.id)
+        if done is None:
+            return None
+
+        # update local registry
+        self.jobs[j.job][j.id] = done
+
+        # fire callback once (if any)
+        cb = getattr(done, "_callback", None)
+        if cb is not None:
+            try:
+                cb(job=done, **getattr(done, "_cb_kwargs", {}))
+            except Exception as e:
+                # don't crash core sim for callback mistakes
+                print(f"[WARN] Job callback failed: {e!r}")
+            done._callback = None
+
+        return done
+
+    def _wait_job(self, j: Job, spins: int = 10_000) -> Job:
+        """
+        Synchronous wait by polling.
+        Keeps ROWS.search API synchronous for tests / existing callers.
+        """
+        for _ in range(spins):
+            done = self._poll_job(j)
+            if done is not None:
+                return done
+        raise TimeoutError(f"Job did not complete in time: {j.cls}.{j.job} id={j.id}")
+
+    # ============================================================
+    # storage helpers
+    # ============================================================
+
+    def reqs(self, n: int = None) -> REQS:
         array: NDARR = np.full((MATERIALS.NUM, n, *ROW.SHAPE), fill_value=ROW.SENTINEL, dtype=ROW.DTYPE)
-        arids:dict[int,int] = {mid: 0 for mid in range(MATERIALS.NUM)}
+        arids: dict[int, int] = {mid: 0 for mid in range(MATERIALS.NUM)}
         return (array, arids)
 
-    def newn(self, mat:str=None)->int:
+    def newn(self, mat: str = None) -> int:
         if mat is None:
             raise ValueError("newn requires mat")
         mid = self.mat.mid(name=mat)
@@ -3869,7 +3931,7 @@ class ROWS:
         self.total += 1
         return rid
 
-    def deln(self, mat:str=None)->int:
+    def deln(self, mat: str = None) -> int:
         if mat is None:
             raise ValueError("deln requires mat")
         mid = self.mat.mid(name=mat)
@@ -3879,7 +3941,7 @@ class ROWS:
         self.total -= 1
         return self.arids[mid]
 
-    def nrows(self, mat:str=None, mid:int=None)->int:
+    def nrows(self, mat: str = None, mid: int = None) -> int:
         if mid is None:
             if mat is None:
                 raise ValueError("nrows requires mat or mid")
@@ -3890,7 +3952,7 @@ class ROWS:
     # Row helpers
     # ============================================================
 
-    def get(self, mat:str=None, rid:int=None)->Row:
+    def get(self, mat: str = None, rid: int = None) -> Row:
         if mat is None or rid is None:
             raise ValueError("get requires mat and rid")
         mid = self.mat.mid(name=mat)
@@ -3900,77 +3962,92 @@ class ROWS:
     # core ops
     # ============================================================
 
-    def insert(self, p0:POS=None, p1:POS=None, mat:str=None,
-               dirty:bool=True, alive:bool=True)->Row:
+    def insert(self, p0: POS = None, p1: POS = None, mat: str = None,
+               dirty: bool = True, alive: bool = True) -> Row:
         if mat is None:
             raise ValueError("insert requires mat")
 
         rid = self.newn(mat=mat)
-        raw:NDARR = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
+        raw: NDARR = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
 
-        mid = ROW.MID(row=raw)
-        rid = ROW.RID(row=raw)
+        mid = int(ROW.MID(row=raw))
+        rid = int(ROW.RID(row=raw))
 
-        # IMPORTANT FIX: actually write RAW into the storage slot
+        # write RAW into storage slot
         slot = self.array[mid][rid]
         slot[:] = raw
-
         stored = Row(mid=mid, rid=rid, row=slot)
 
-        # index the stored row
-        self.job(job="insert", cls="bvh", row=stored)
-        self.job(job="insert", cls="mdx", row=stored)
-        # self.bvh.insert(row=stored)
-        # self.mdx.insert(row=stored)
+        # index async
+        self.job(task="insert", cls="bvh", row=stored)
+        self.job(task="insert", cls="mdx", row=stored)
         return stored
 
-    def remove(self, row:Row=None)->None:
+    def remove(self, row: Row = None) -> None:
         if row is None:
             raise ValueError("remove requires row")
 
-        mid = row.mid
-        rid = row.rid
+        mid = int(row.mid)
+        rid = int(row.rid)
         mat_name = self.mat.name(mid=mid)
         n = self.nrows(mid=mid)
         last = n - 1
 
         # remove target from indices
-        # self.bvh.remove(row=row)
-        # self.mdx.remove(row=row)
-        self.job(job="remove", cls="bvh", row=row)
-        self.job(job="remove", cls="mdx", row=row)
+        self.job(task="remove", cls="bvh", row=row)
+        self.job(task="remove", cls="mdx", row=row)
 
         if rid != last:
             # remove moved's old identity from indices
             moved_old = Row(mid=mid, rid=last, row=self.array[mid][last])
-            # self.bvh.remove(row=moved_old)
-            # self.mdx.remove(row=moved_old)
-            self.job(job="remove", cls="bvh", row=moved_old)
-            self.job(job="remove", cls="mdx", row=moved_old)
+            self.job(task="remove", cls="bvh", row=moved_old)
+            self.job(task="remove", cls="mdx", row=moved_old)
 
-            # move data
+            # move data and patch RID
             moved_data = self.array[mid][last].copy()
-            moved_data[*ROW.IDS_RID] = np.uint64(rid) 
+            moved_data[*ROW.IDS_RID] = np.uint64(rid)
             self.array[mid][rid][:] = moved_data
 
             moved_new = Row(mid=mid, rid=rid, row=self.array[mid][rid])
-            # self.bvh.insert(row=moved_new)
-            # self.mdx.insert(row=moved_new)
-            self.job(job="insert", cls="bvh", row=moved_new)
-            self.job(job="insert", cls="mdx", row=moved_new)
+            self.job(task="insert", cls="bvh", row=moved_new)
+            self.job(task="insert", cls="mdx", row=moved_new)
 
         # invalidate last
         self.array[mid][last][:] = ROW.ARRAY
         self.deln(mat=mat_name)
 
     # ============================================================
-    # queries
+    # queries (sync facade on async jobs)
     # ============================================================
 
-    def size(self)->SIZE:
+    def _bvh_search_row(self, pos: POS) -> Row:
+        j = self.job(task="search", cls="bvh", pos=pos)
+        done = self._wait_job(j)
+        hit = done.get()
+        if hit is None:
+            raise LookupError("BVH search returned no result")
+        return hit
+
+    def _mdx_search_row(self, row: Row, axis: int) -> Row | None:
+        j = self.job(task="search", cls="mdx", row=row, axis=axis)
+        done = self._wait_job(j)
+        return done.get()  # may be None if no neighbor
+
+    def search(self, pos: POS = None) -> tuple[str, int, NDARR]:
+        if pos is None:
+            raise ValueError("search requires pos")
+        hit: Row = self._bvh_search_row(pos)
+        mat = self.mat.name(mid=int(hit.mid))
+        return (mat, int(hit.rid), hit.row)
+
+    # ============================================================
+    # split/merge (only change: use _bvh_search_row / _mdx_search_row)
+    # ============================================================
+
+    def size(self) -> SIZE:
         return (self.p1[0]-self.p0[0], self.p1[1]-self.p0[1], self.p1[2]-self.p0[2])
 
-    def volume(self, mat:str=None)->int:
+    def volume(self, mat: str = None) -> int:
         if mat is None:
             total = 0
             for mid in range(MATERIALS.NUM):
@@ -3981,40 +4058,10 @@ class ROWS:
         total = 0
         n = self.nrows(mid=mid)
         for rid in range(n):
-            # cast to int so Python doesn't keep uint64 overflow semantics
             total += int(ROW.VOLUME(row=self.array[mid][rid]))
         return int(total)
 
-    """
-    TODO DELETE THIS METHOD AS A WHOLE - REPLACED BY self.job() METHOD ABOVE
-    # it distributes the job to the right queue based on class (not seen here but in the Queue() class itself)
-    """
-    def search(self, pos:POS=None, row:Row=None, axis:int=None)->tuple[str,int,NDARR]:
-        """
-        SOLVED: now we can use this search fro both MDX and BVH searches
-        """
-        if row is not None and axis is not None and pos is None:    # then it is an MDX search
-            self.job(job="search", cls="mdx", row=row, axis=axis)  # FIXED -> jobs are stored in self.jobs to be able to get their results later
-            """
-            TODO # FIX!!! MDX search is currently synchronous, so the job system is not used properly here.
-            """
-            # hit:Row = self.mdx.search(row=row, axis=axis)               # MDX returns Row(mid,rid,row)
-            # mat = self.mat.name(mid=int(hit.mid))
-            # return (mat, int(hit.rid), hit.row)
-        if pos is not None and row is None and axis is None: # then it is a BVH search
-            self.job(job="search", cls="bvh", pos=pos)      # FIXED -> jobs are stored in self.jobs to be able to get their results later
-            # hit:Row = self.bvh.search(pos=pos)               # BVH returns Row(mid,rid,row)
-            """
-            TODO # FIX!!! BVH search is currently synchronous, so the job system is not used properly here.
-            """
-            # mat = self.mat.name(mid=int(hit.mid))
-            # return (mat, int(hit.rid), hit.row)
-
-    # ============================================================
-    # split
-    # ============================================================
-
-    def splitrow(self, p0:POS=None, p1:POS=None, mat:str=None)->REQS:
+    def splitrow(self, p0: POS = None, p1: POS = None, mat: str = None) -> REQS:
         if p0 is None or p1 is None or mat is None:
             raise ValueError("splitrow requires p0,p1,mat")
 
@@ -4053,30 +4100,28 @@ class ROWS:
                     array[mid_new][arids[mid_new]] = newrow.row
                     arids[mid_new] += 1
 
-        # remove the hit row (need Row object for indices)
         hit_mid = int(ROW.MID(row=hitrow))
         hit_rid = int(ROW.RID(row=hitrow))
         self.remove(row=Row(mid=hit_mid, rid=hit_rid, row=hitrow))
 
         return (array, arids)
 
-    def split1(self, pos:POS=None, pos1:POS=None, mat:str=None)->REQS:
+    def split1(self, pos: POS = None, pos1: POS = None, mat: str = None) -> REQS:
         if pos is None or mat is None:
             raise ValueError("split1 requires pos,mat")
         if pos1 is None:
-            pos1 = (pos[0]+1, pos[1]+1, pos[2]+1) # single point split
+            pos1 = (pos[0]+1, pos[1]+1, pos[2]+1)
         batch, _ = self.splitrow(p0=pos, p1=pos1, mat=mat)
         merged, marids = self.merge(rows=batch)
         return (merged, marids)
 
-    def split2(self, p0:POS=None, p1:POS=None, mat:str=None)->REQS:
+    def split2(self, p0: POS = None, p1: POS = None, mat: str = None) -> REQS:
         def intersect(a0:POS=None,a1:POS=None,b0:POS=None,b1:POS=None)->tuple[POS,POS]|None:
             q0 = (max(a0[0],b0[0]), max(a0[1],b0[1]), max(a0[2],b0[2]))
             q1 = (min(a1[0],b1[0]), min(a1[1],b1[1]), min(a1[2],b1[2]))
             if q0[0]>=q1[0] or q0[1]>=q1[1] or q0[2]>=q1[2]:
                 return None
             return (q0,q1)
-
 
         if p0 is None or p1 is None or mat is None:
             raise ValueError("split2 requires p0,p1,mat")
@@ -4085,21 +4130,16 @@ class ROWS:
         if p0[0]>=p1[0] or p0[1]>=p1[1] or p0[2]>=p1[2]:
             return self.reqs(n=0)
 
-        acc:list[list[NDARR]] = [[] for _ in range(MATERIALS.NUM)]
+        acc: list[list[NDARR]] = [[] for _ in range(MATERIALS.NUM)]
 
-        # _, _, hitrow1 = self.search(pos=p0)
-        # _, _, hitrow2 = self.search(pos=p1)
-        self.job(job="search", cls="bvh", pos=p0)      # FIXED -> jobs are stored in self.jobs to be able to get their results later
-        self.job(job="search", cls="bvh", pos=p1)      # FIXED -> jobs are stored in self.jobs to be able to get their results later
-        """
-        TODO # FIX!!! BVH search is currently synchronous, so the job system is not used properly here.
-        """
+        _, _, hitrow1 = self.search(pos=p0)
+        _, _, hitrow2 = self.search(pos=p1)
         r0 = ROW.P0(row=hitrow1)
         r1 = ROW.P1(row=hitrow1)
         r2 = ROW.P0(row=hitrow2)
         r3 = ROW.P1(row=hitrow2)
         if r0 == r2 and r1 == r3:
-            return self.split1(pos=p0, pos1=p1, mat=mat) # this is the case where both hits are the same row -> so only one split needed
+            return self.split1(pos=p0, pos1=p1, mat=mat)
 
         hit = intersect(a0=p0, a1=p1, b0=r0, b1=r1)
         if hit is None:
@@ -4142,7 +4182,7 @@ class ROWS:
 
         return (array, arids)
 
-    def split(self, pos:POS=None, pos1:POS=None, mat:str=None)->REQS:
+    def split(self, pos: POS = None, pos1: POS = None, mat: str = None) -> REQS:
         if mat is None:
             raise ValueError("material must be specified")
         if pos is None and pos1 is None:
@@ -4154,8 +4194,7 @@ class ROWS:
             return self.split1(pos=pos, mat=mat)
         return self.split1(pos=pos1, mat=mat)
 
-
-    def merge2(self, row0:Row=None, row1:Row=None)->REQS:
+    def merge2(self, row0: Row = None, row1: Row = None) -> REQS:
         if row0 is None or row1 is None:
             return self.reqs(n=0)
 
@@ -4169,11 +4208,7 @@ class ROWS:
         p0 = ROW.SORT(p0=ROW.P0(row=row0.row), p1=ROW.P0(row=row1.row))[0]
         p1 = ROW.SORT(p0=ROW.P1(row=row0.row), p1=ROW.P1(row=row1.row))[1]
 
-        # remove bigger rid first
-        if int(row0.rid) > int(row1.rid):
-            hi, lo = row0, row1
-        else:
-            hi, lo = row1, row0
+        hi, lo = (row0, row1) if int(row0.rid) > int(row1.rid) else (row1, row0)
 
         self.remove(row=hi)
         self.remove(row=lo)
@@ -4186,7 +4221,7 @@ class ROWS:
         arids[int(newrow.mid)] = 1
         return (array, arids)
 
-    def mergeax(self, mat:str=None, axis:int=None)->REQS:
+    def mergeax(self, mat: str = None, axis: int = None) -> REQS:
         if mat is None:
             raise ValueError("mergeax requires mat")
         if axis is None:
@@ -4197,7 +4232,7 @@ class ROWS:
         array, arids = self.reqs(n=start_n)
 
         extra = list(range(self.arids[mid]-1, -1, -1))
-        seen:set[int] = set()
+        seen: set[int] = set()
 
         while extra:
             rid = int(extra.pop())
@@ -4207,12 +4242,8 @@ class ROWS:
                 continue
             seen.add(rid)
 
-            row0: Row = Row(mid=mid, rid=rid, row=self.array[mid][rid])
-            self.job(job="search", cls="mdx", row=row0, axis=axis)  # FIXED call
-            """
-            TODO # FIX!!! MDX search is currently synchronous, so the job system is not used properly here.
-            """
-            # row1: Row = self.mdx.search(row=row0, axis=axis)
+            row0 = Row(mid=mid, rid=rid, row=self.array[mid][rid])
+            row1 = self._mdx_search_row(row=row0, axis=axis)
             if row1 is None:
                 continue
 
@@ -4228,7 +4259,7 @@ class ROWS:
 
         return (array, arids)
 
-    def mergemat(self, mat:str=None)->REQS:
+    def mergemat(self, mat: str = None) -> REQS:
         if mat is None:
             raise ValueError("mergemat requires mat")
 
@@ -4246,11 +4277,12 @@ class ROWS:
 
         return (array, arids)
 
-    def mergerows(self, rows:NDARR=None)->REQS:
+    def mergerows(self, rows: NDARR = None) -> REQS:
+        # unchanged except mdx neighbor lookups now use _mdx_search_row
         if rows is None:
             return self.reqs(n=0)
 
-        mids_present:set[int] = set()
+        mids_present: set[int] = set()
         for mid in range(rows.shape[0]):
             for i in range(rows.shape[1]):
                 if rows[mid][i][*ROW.IDS_RID] != ROW.SENTINEL:
@@ -4267,12 +4299,12 @@ class ROWS:
             merged_this_round = 0
 
             for ax in (0,1,2):
-                extra:list[tuple[int,int]] = []
+                extra: list[tuple[int,int]] = []
                 for mid in mids_present:
                     for rid in range(self.arids[mid]-1, -1, -1):
                         extra.append((mid,rid))
 
-                seen:set[tuple[int,int]] = set()
+                seen: set[tuple[int,int]] = set()
 
                 while extra:
                     mid,rid = extra.pop()
@@ -4285,11 +4317,7 @@ class ROWS:
                     seen.add(key)
 
                     row0 = Row(mid=mid, rid=rid, row=self.array[mid][rid])
-                    self.job(job="search", cls="mdx", row=row0, axis=ax)  # FIXED call
-                    """
-                    TODO # FIX!!! MDX search is currently synchronous, so the job system is not used properly here.
-                    """
-                    # row1 = self.mdx.search(row=row0, axis=ax)   # FIXED call
+                    row1 = self._mdx_search_row(row=row0, axis=ax)
                     if row1 is None:
                         continue
 
@@ -4309,7 +4337,7 @@ class ROWS:
 
         return (array, arids)
 
-    def mergeall(self)->REQS:
+    def mergeall(self) -> REQS:
         array, arids = self.reqs(n=self.total)
         for mat in self.mat.names():
             created, carids = self.mergemat(mat=mat)
@@ -4319,12 +4347,12 @@ class ROWS:
                     arids[mid] += 1
         return (array, arids)
 
-    def merge(self, rows:NDARR=None)->REQS:
+    def merge(self, rows: NDARR = None) -> REQS:
         if rows is None:
             return self.mergeall()
         return self.mergerows(rows=rows)
 
-    def stats(self)->dict[str,int|float]:
+    def stats(self) -> str:
         sizes = []
         for mid in range(MATERIALS.NUM):
             mat = self.mat.name(mid=mid)
@@ -4346,10 +4374,10 @@ class ROWS:
             string += f"  MAT={entry['mat']:10s} ROWS={entry['rows']:6d} VOL={entry['vol']:12d} PERC={entry['perc']:6.2f}%\n"
         return string
 
-    def __repr__(self)->str:
+    def __repr__(self) -> str:
         return self.stats()
 
-    def __str__(self)->str:
+    def __str__(self) -> str:
         return self.stats()
 
 ################################################################################
@@ -4363,24 +4391,365 @@ class ROWS:
 
 
 === RUNNING TEST 1/1: test8 ===
+Creating Miner id=0 at pos=(438248, 616255, 4287) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=1 at pos=(331565, 630050, 1637) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=2 at pos=(322885, 700974, 8757) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=3 at pos=(954125, 120973, 2934) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=4 at pos=(634299, 991371, 2681) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=5 at pos=(545350, 431678, 6779) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=6 at pos=(101310, 554946, 3714) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=7 at pos=(35373, 409522, 3297) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=8 at pos=(677485, 866064, 7326) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=9 at pos=(416231, 627546, 6443) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=10 at pos=(341129, 1532, 2955) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=11 at pos=(132403, 868770, 2303) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=12 at pos=(862166, 603849, 5655) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=13 at pos=(84653, 139120, 5254) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=14 at pos=(501986, 347441, 8388) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=15 at pos=(125202, 278583, 7989) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=16 at pos=(161047, 671775, 4667) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=17 at pos=(543103, 371867, 1650) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=18 at pos=(10589, 430813, 2230) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=19 at pos=(475381, 379477, 5799) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=20 at pos=(112376, 553725, 8039) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=21 at pos=(10290, 387717, 7406) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=22 at pos=(568592, 319381, 7697) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=23 at pos=(896409, 93589, 2810) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=24 at pos=(846162, 21387, 4698) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=25 at pos=(571890, 416218, 8237) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=26 at pos=(251840, 243346, 8632) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=27 at pos=(982212, 281133, 1493) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=28 at pos=(499983, 383879, 4576) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=29 at pos=(108624, 763284, 6302) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=30 at pos=(252462, 241763, 1675) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=31 at pos=(956641, 131272, 7065) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=32 at pos=(584152, 456024, 4758) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=33 at pos=(659444, 279817, 1502) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=34 at pos=(15837, 264163, 6032) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=35 at pos=(645183, 39028, 6503) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=36 at pos=(379471, 534689, 7667) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=37 at pos=(322432, 766981, 6363) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=38 at pos=(534801, 461848, 3857) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=39 at pos=(998732, 708515, 7153) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=40 at pos=(81326, 499322, 1979) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=41 at pos=(656868, 684458, 6025) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=42 at pos=(18217, 512794, 6810) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=43 at pos=(532862, 774054, 1278) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=44 at pos=(937000, 300208, 6705) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=45 at pos=(413957, 503606, 2393) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=46 at pos=(652488, 950851, 7029) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=47 at pos=(97248, 243547, 4420) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=48 at pos=(278164, 949282, 5748) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=49 at pos=(630306, 306213, 3217) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=50 at pos=(105608, 437655, 6367) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=51 at pos=(61737, 72997, 8767) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=52 at pos=(303153, 80201, 3347) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=53 at pos=(420604, 607317, 3612) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=54 at pos=(583567, 693765, 7104) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=55 at pos=(124071, 391286, 3183) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=56 at pos=(672000, 473342, 4072) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=57 at pos=(36990, 205080, 5357) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=58 at pos=(980411, 206529, 6508) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=59 at pos=(207160, 429353, 2507) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=60 at pos=(221628, 325513, 1752) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=61 at pos=(849718, 684370, 2946) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=62 at pos=(810318, 666962, 6872) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=63 at pos=(860756, 147199, 1898) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=64 at pos=(191865, 110389, 1163) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=65 at pos=(579825, 720962, 8207) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=66 at pos=(524296, 283580, 6156) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=67 at pos=(217835, 483242, 8172) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=68 at pos=(490540, 511051, 5691) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=69 at pos=(168768, 374056, 2878) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=70 at pos=(338903, 276875, 2412) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=71 at pos=(291170, 230013, 7341) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=72 at pos=(839554, 938775, 5271) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=73 at pos=(26523, 662475, 6335) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=74 at pos=(111575, 195747, 7800) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=75 at pos=(240518, 783351, 7444) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=76 at pos=(83936, 330019, 6536) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=77 at pos=(677211, 680824, 1730) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=78 at pos=(323009, 216892, 7993) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=79 at pos=(557740, 758415, 6612) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=80 at pos=(932833, 441034, 6348) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=81 at pos=(177864, 599816, 2198) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=82 at pos=(705683, 540468, 6344) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=83 at pos=(117562, 880857, 6442) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=84 at pos=(812626, 659228, 8029) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=85 at pos=(775846, 461069, 5738) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=86 at pos=(789303, 131000, 7317) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=87 at pos=(500029, 54599, 8470) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=88 at pos=(57462, 199926, 2278) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=89 at pos=(792767, 453889, 3878) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=90 at pos=(527741, 653197, 6239) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=91 at pos=(766359, 656861, 5860) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=92 at pos=(327443, 914388, 2432) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=93 at pos=(557377, 863545, 5737) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=94 at pos=(895562, 600374, 2758) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=95 at pos=(129315, 529817, 1468) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=96 at pos=(448862, 621169, 8932) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=97 at pos=(725083, 159750, 6308) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=98 at pos=(622727, 289778, 2694) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=99 at pos=(458195, 907272, 6711) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=100 at pos=(896708, 474530, 4913) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=101 at pos=(227983, 486268, 3009) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=102 at pos=(680134, 466333, 5199) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=103 at pos=(550314, 337483, 1879) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=104 at pos=(103037, 858881, 4107) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=105 at pos=(128721, 683079, 4829) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=106 at pos=(98688, 944407, 6125) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=107 at pos=(473129, 786316, 6466) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=108 at pos=(43678, 774337, 2983) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=109 at pos=(949407, 34071, 8044) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=110 at pos=(691552, 723917, 3736) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=111 at pos=(78383, 179261, 6176) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=112 at pos=(441251, 758379, 3594) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=113 at pos=(434350, 452695, 1138) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=114 at pos=(741229, 203866, 4835) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=115 at pos=(987600, 559862, 4218) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=116 at pos=(63098, 548922, 4375) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=117 at pos=(518400, 187665, 2775) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=118 at pos=(797884, 868998, 4518) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=119 at pos=(860033, 882275, 7411) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=120 at pos=(958820, 656042, 6949) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=121 at pos=(397232, 579520, 3018) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=122 at pos=(714871, 482373, 2008) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=123 at pos=(325135, 266156, 3731) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=124 at pos=(465905, 481812, 2671) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=125 at pos=(374407, 623984, 4024) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=126 at pos=(671785, 168721, 5254) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=127 at pos=(690706, 626093, 8754) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=128 at pos=(267745, 785824, 6900) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=129 at pos=(219247, 538725, 3291) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=130 at pos=(590394, 243403, 4517) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=131 at pos=(285640, 536207, 5903) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=132 at pos=(703159, 708146, 1099) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=133 at pos=(919154, 662658, 5356) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=134 at pos=(471434, 659006, 8370) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=135 at pos=(372248, 576088, 2841) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=136 at pos=(705613, 911991, 5798) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=137 at pos=(933419, 925296, 3178) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=138 at pos=(458561, 898619, 6126) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=139 at pos=(817121, 130712, 1164) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=140 at pos=(944205, 324790, 5583) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=141 at pos=(619522, 536728, 1244) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=142 at pos=(279372, 740627, 5005) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=143 at pos=(768418, 395700, 5096) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=144 at pos=(138797, 611885, 8998) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=145 at pos=(899725, 144018, 6788) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=146 at pos=(976710, 517096, 4624) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=147 at pos=(897611, 91162, 4583) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=148 at pos=(474938, 524659, 7431) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=149 at pos=(45457, 565321, 8394) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=150 at pos=(645547, 124123, 8270) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=151 at pos=(31705, 417356, 7883) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=152 at pos=(67383, 655557, 1800) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=153 at pos=(551815, 295589, 3492) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=154 at pos=(728501, 548556, 7345) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=155 at pos=(230627, 503230, 2914) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=156 at pos=(669158, 737110, 5505) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=157 at pos=(568744, 610983, 2943) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=158 at pos=(551480, 320127, 4082) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=159 at pos=(221387, 220087, 3187) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=160 at pos=(893774, 587183, 4551) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=161 at pos=(171930, 22766, 6183) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=162 at pos=(785303, 33884, 7615) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=163 at pos=(6990, 450526, 8870) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=164 at pos=(765379, 57489, 5686) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=165 at pos=(580178, 414666, 3098) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=166 at pos=(945056, 288166, 7474) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=167 at pos=(788867, 685823, 8967) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=168 at pos=(485960, 874972, 6975) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=169 at pos=(368585, 732021, 8482) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=170 at pos=(125886, 68666, 2562) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=171 at pos=(649773, 273882, 7297) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=172 at pos=(150690, 95101, 7949) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=173 at pos=(590285, 795930, 6329) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=174 at pos=(629314, 672845, 4342) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=175 at pos=(135819, 95730, 4968) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=176 at pos=(602848, 734053, 3675) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=177 at pos=(866130, 547059, 8605) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=178 at pos=(811550, 977461, 8885) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=179 at pos=(629989, 585114, 6191) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=180 at pos=(326696, 791733, 8854) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=181 at pos=(218713, 150642, 7324) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=182 at pos=(786924, 742152, 6774) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=183 at pos=(938219, 566011, 4807) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=184 at pos=(432536, 423041, 5496) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=185 at pos=(567903, 671163, 2253) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=186 at pos=(298343, 862569, 5502) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=187 at pos=(966194, 287023, 3254) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=188 at pos=(909045, 582868, 8804) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=189 at pos=(40068, 867653, 8524) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=190 at pos=(202897, 214875, 1421) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=191 at pos=(962246, 571332, 1375) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=192 at pos=(125840, 59968, 8680) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=193 at pos=(577392, 483655, 3214) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=194 at pos=(704163, 610673, 6385) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=195 at pos=(400293, 520346, 4888) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=196 at pos=(287557, 59316, 2070) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=197 at pos=(562253, 791608, 6860) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=198 at pos=(680714, 22185, 4188) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=199 at pos=(368060, 631949, 4878) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=200 at pos=(922229, 139148, 8711) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=201 at pos=(295523, 459031, 7238) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=202 at pos=(683458, 329920, 4915) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=203 at pos=(610439, 403410, 3582) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=204 at pos=(684932, 523759, 7343) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=205 at pos=(288519, 75468, 4632) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=206 at pos=(508249, 359658, 4828) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=207 at pos=(853349, 604107, 4062) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=208 at pos=(52106, 302356, 6881) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=209 at pos=(86186, 43690, 7179) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=210 at pos=(560265, 626644, 7630) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=211 at pos=(575593, 738797, 6445) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=212 at pos=(848235, 402675, 3056) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=213 at pos=(542024, 444614, 5474) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=214 at pos=(375796, 605500, 1072) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=215 at pos=(615467, 280663, 7837) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=216 at pos=(950368, 573220, 2111) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=217 at pos=(94988, 712692, 3903) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=218 at pos=(741254, 807212, 7771) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=219 at pos=(559541, 711727, 2382) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=220 at pos=(8807, 443231, 2325) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=221 at pos=(254584, 79792, 5536) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=222 at pos=(792480, 515773, 5589) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=223 at pos=(546903, 576608, 8861) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=224 at pos=(420196, 921336, 5243) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=225 at pos=(570493, 87549, 7251) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=226 at pos=(973735, 588409, 8559) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=227 at pos=(17181, 54495, 8331) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=228 at pos=(144749, 690836, 1363) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=229 at pos=(273621, 650321, 2924) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=230 at pos=(254540, 274623, 3245) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=231 at pos=(388712, 481633, 4465) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=232 at pos=(101697, 61917, 8453) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=233 at pos=(932892, 285294, 4691) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=234 at pos=(178311, 717062, 4863) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=235 at pos=(948233, 372220, 2763) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=236 at pos=(401410, 721284, 4678) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=237 at pos=(270761, 790044, 3166) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=238 at pos=(571048, 125365, 6658) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=239 at pos=(51754, 112952, 2583) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=240 at pos=(786426, 130809, 8618) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=241 at pos=(285457, 881070, 7119) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=242 at pos=(599625, 319668, 1967) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=243 at pos=(779494, 963082, 7522) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=244 at pos=(34525, 863179, 8501) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=245 at pos=(997417, 537803, 8306) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=246 at pos=(711957, 460580, 2369) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=247 at pos=(694534, 315626, 8589) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=248 at pos=(659028, 123144, 2955) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=249 at pos=(438810, 865377, 4777) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=250 at pos=(191301, 753101, 4916) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=251 at pos=(636188, 386071, 2952) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=252 at pos=(890383, 797616, 1801) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=253 at pos=(77652, 207685, 6340) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=254 at pos=(630221, 447332, 7285) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=255 at pos=(188106, 101767, 2321) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=256 at pos=(383151, 720198, 4193) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=257 at pos=(592770, 500140, 3445) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=258 at pos=(902513, 434835, 5824) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=259 at pos=(523047, 834919, 5992) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=260 at pos=(965810, 731769, 4757) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=261 at pos=(954892, 867111, 7799) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=262 at pos=(54486, 473334, 4587) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=263 at pos=(875961, 667260, 1043) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=264 at pos=(979823, 127043, 6050) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=265 at pos=(471366, 815685, 8801) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=266 at pos=(747891, 644159, 1447) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=267 at pos=(22609, 346935, 8434) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=268 at pos=(63586, 171921, 3517) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=269 at pos=(787288, 211415, 8145) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=270 at pos=(687913, 408181, 7562) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=271 at pos=(198291, 807074, 8845) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=272 at pos=(921942, 339162, 5229) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=273 at pos=(13601, 413380, 2644) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=274 at pos=(950035, 884429, 7533) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=275 at pos=(252846, 80812, 4642) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=276 at pos=(963830, 141914, 1167) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=277 at pos=(395614, 832933, 7890) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=278 at pos=(632033, 359741, 6220) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=279 at pos=(201696, 43418, 6537) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=280 at pos=(99968, 151559, 1538) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=281 at pos=(457979, 913569, 1612) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=282 at pos=(171000, 918357, 5123) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=283 at pos=(90817, 182359, 2724) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=284 at pos=(400138, 270265, 7328) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=285 at pos=(398152, 273647, 2598) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=286 at pos=(782285, 921651, 7642) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=287 at pos=(473164, 108430, 7664) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=288 at pos=(684429, 360786, 2363) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=289 at pos=(64574, 623872, 4051) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=290 at pos=(237814, 953618, 6379) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=291 at pos=(152610, 198874, 3952) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=292 at pos=(103981, 797930, 3820) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=293 at pos=(128608, 981931, 7350) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=294 at pos=(260118, 322993, 1973) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=295 at pos=(952983, 139380, 1481) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=296 at pos=(565125, 980118, 4557) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=297 at pos=(951526, 135456, 6019) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=298 at pos=(130056, 641219, 2187) size=(20, 20, 50000) seconds=1 floor=True
+Creating Miner id=299 at pos=(963161, 85766, 4316) size=(20, 20, 50000) seconds=1 floor=True
+Created 300 miners.
+Simulating 1200 seconds of mining...
+Exception in thread Exception in thread Thread-5 (runinsert)Thread-1 (runinsert):
+:
+Traceback (most recent call last):
+  File "c:\Program Files\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+Traceback (most recent call last):
+  File "c:\Program Files\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)    
+self._context.run(self.run)  File "c:\Program Files\Python314\Lib\threading.py", line 1024, in run
+
+  File "c:\Program Files\Python314\Lib\threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+      File "c:\VOXELS\utils\queue.py", line 55, in runinsert
+self._target(*self._args, **self._kwargs)
+  File "c:\VOXELS\utils\queue.py", line 55, in runinsert
+    res: Job = self.cls.insert(job=job)
+    TypeErrorres: Job = self.cls.insert(job=job): 
+BVH.insert() got an unexpected keyword argument 'job'TypeError
+: MDX.insert() got an unexpected keyword argument 'job'
+Exception in thread Thread-3 (runsearch):
+Traceback (most recent call last):
+  File "c:\Program Files\Python314\Lib\threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+  File "c:\Program Files\Python314\Lib\threading.py", line 1024, in run
 Traceback (most recent call last):
   File "c:\VOXELS\tests\tests.py", line 19, in tests
     test()
     ~~~~^^
-  File "c:\VOXELS\tests\test8.py", line 8, in test8
-    rows = ROWS()
-  File "c:\VOXELS\world\rows.py", line 52, in __init__
-    self.insert(p0=self.p0, p1=self.p1, mat="STONE")
-    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 127, in insert
-    self.job(job="insert", cls="bvh", row=stored)
-    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: ROWS.job() got an unexpected keyword argument 'job'
+      File "c:\VOXELS\tests\test8.py", line 24, in test8
+    miner.update(frame=frame)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^
+self._target(*self._args, **self._kwargs)  File "c:\VOXELS\world\buildings\miner.py", line 75, in update
+    self.mine(frame=frame)
+    ~~~~~~~~~^^^^^^^^^^^^^
+
+  File "c:\VOXELS\utils\queue.py", line 67, in runsearch
+  File "c:\VOXELS\world\buildings\miner.py", line 82, in mine
+    self.rows.split(pos=pos0, pos1=pos1, mat="AIR")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 398, in split
+    return self.split2(p0=pos, p1=pos1, mat=mat)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 341, in split2
+    _, _, hitrow1 = self.search(pos=p0)
+                    ~~~~~~~~~~~^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 245, in search
+    hit: Row = self._bvh_search_row(pos)
+               ~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "c:\VOXELS\world\rows.py", line 231, in _bvh_search_row
+    done = self._wait_job(j)
+  File "c:\VOXELS\world\rows.py", line 120, in _wait_job
+    raise TimeoutError(f"Job did not complete in time: {j.cls}.{j.job} id={j.id}")
+TimeoutError: Job did not complete in time: bvh.search id=2
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 4382
+# Total lines in bundle: 4751
 # Total files in bundle: 44
-# Generated at the time: 2026-01-31T12:35:05
+# Generated at the time: 2026-01-31T12:57:20
 --- END OF FILE ---
