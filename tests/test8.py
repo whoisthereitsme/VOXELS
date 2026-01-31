@@ -1,7 +1,7 @@
 from world.buildings.miner import Miner
 import random
 from world import ROWS
-
+import time
 
 def test8() -> None:
     miners = []
@@ -14,8 +14,16 @@ def test8() -> None:
         miners.append(miner)
     print(f"Created {len(miners)} miners.")
 
-    # Simulate updates for 120 frames (~2 seconds)
-    for frame in range(300):
+    duration = 60  # seconds
+    print(f"Simulating {duration} seconds of mining...")
+    t0 = time.time()
+    for frame in range(duration * 60):
         for miner in miners:
             miner: Miner = miner
             miner.update(frame=frame)
+        if (frame + 1) % 60 == 0:
+            print(f"  Simulated {(frame + 1) // 60} seconds...")
+    t1 = time.time()
+    dt = t1 - t0
+    remaining = duration - dt
+    print(f"Simulated {duration} seconds in {dt:.2f} seconds. Remaining time: {remaining:.2f} seconds.")
