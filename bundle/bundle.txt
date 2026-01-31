@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T04:11:14
+#Time when generated: 2026-01-31T04:14:37
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -1572,12 +1572,12 @@ class BVH:
 
     def insert(self, mat:str=None, rid:int=None, row:NDARR=None) -> None:
         if row is None:
-            mid = self.rows.mat.name2idx[mat]
+            mid = self.rows.mat.mid(name=mat)
             row = self.rows.array[mid][rid]
         else:
-            mid = self.rows.mat.name2idx[row[*ROW.IDS_MAT]]
-            rid = int(row[*ROW.IDS_ID])
-
+            mid = ROW.MID(row=row)
+            rid = ROW.RID(row=row)
+            
         x0, y0, z0 = ROW.P0(row=row)
         x1, y1, z1 = ROW.P1(row=row)
 
@@ -1624,9 +1624,9 @@ class BVH:
 
     def remove(self, mat:str=None, rid:int=None, row:NDARR=None) -> None:
         if row is not None:
-            mid, rid = self.rows.mat.name2idx[row[*ROW.IDS_MAT]], row[*ROW.IDS_ID]
+            mid, rid = ROW.MID(row=row), ROW.RID(row=row)
         else:
-            mid = self.rows.mat.name2idx[mat]
+            mid = self.rows.mat.mid(name=mat)
 
         try:
             found = self.lidx.pop((mid, rid))
@@ -1674,7 +1674,7 @@ class BVH:
             if mid != -1:
                 row = self.rows.array[mid][lr[n]]
                 if ROW.CONTAINS(row=row, pos=pos):
-                    mat = self.rows.mat.idx2name[mid]
+                    mat = self.rows.mat.name(mid=mid)
                     return mat, lr[n], row
                 continue
 
@@ -3953,18 +3953,21 @@ Traceback (most recent call last):
   File "c:\VOXELS\world\rows.py", line 54, in __init__
     self.insert(p0=self.p0, p1=self.p1, mat="STONE")
     ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 87, in insert
-    self.bvh.insert(row=row)
+  File "c:\VOXELS\world\rows.py", line 88, in insert
+    self.mdx.insert(row=row)
     ~~~~~~~~~~~~~~~^^^^^^^^^
-  File "c:\VOXELS\utils\bvh.py", line 65, in insert
-    mid = self.rows.mat.name2idx[row[*ROW.IDS_MAT]]
-                                      ^^^^^^^^^^^
-AttributeError: type object 'ROW' has no attribute 'IDS_MAT'. Did you mean: 'IDS_MID'?
+  File "c:\VOXELS\utils\mdx.py", line 76, in insert
+    mid = self.rows.mat.name2idx[ROW.MAT(row=row)]
+                                 ~~~~~~~^^^^^^^^^
+  File "c:\VOXELS\world\row.py", line 202, in MAT
+    return Materials.name(mid=ROW.MID(row=row))
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Materials.name() missing 1 required positional argument: 'self'
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3966
+# Total lines in bundle: 3969
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T04:11:14
+# Generated at the time: 2026-01-31T04:14:37
 --- END OF FILE ---

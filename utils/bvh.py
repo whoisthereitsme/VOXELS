@@ -59,12 +59,12 @@ class BVH:
 
     def insert(self, mat:str=None, rid:int=None, row:NDARR=None) -> None:
         if row is None:
-            mid = self.rows.mat.name2idx[mat]
+            mid = self.rows.mat.mid(name=mat)
             row = self.rows.array[mid][rid]
         else:
-            mid = self.rows.mat.name2idx[row[*ROW.IDS_MAT]]
-            rid = int(row[*ROW.IDS_ID])
-
+            mid = ROW.MID(row=row)
+            rid = ROW.RID(row=row)
+            
         x0, y0, z0 = ROW.P0(row=row)
         x1, y1, z1 = ROW.P1(row=row)
 
@@ -111,9 +111,9 @@ class BVH:
 
     def remove(self, mat:str=None, rid:int=None, row:NDARR=None) -> None:
         if row is not None:
-            mid, rid = self.rows.mat.name2idx[row[*ROW.IDS_MAT]], row[*ROW.IDS_ID]
+            mid, rid = ROW.MID(row=row), ROW.RID(row=row)
         else:
-            mid = self.rows.mat.name2idx[mat]
+            mid = self.rows.mat.mid(name=mat)
 
         try:
             found = self.lidx.pop((mid, rid))
@@ -161,7 +161,7 @@ class BVH:
             if mid != -1:
                 row = self.rows.array[mid][lr[n]]
                 if ROW.CONTAINS(row=row, pos=pos):
-                    mat = self.rows.mat.idx2name[mid]
+                    mat = self.rows.mat.name(mid=mid)
                     return mat, lr[n], row
                 continue
 
