@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T03:29:34
+#Time when generated: 2026-01-31T03:33:33
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -1575,8 +1575,7 @@ class BVH:
             mid = self.rows.mat.name2idx[mat]
             row = self.rows.array[mid][rid]
         else:
-            mat_id = int(row[*ROW.IDS_MAT])
-            mid = self.rows.mat.id2idx[mat_id]
+            mid = self.rows.mat.name2idx[row[*ROW.IDS_MAT]]
             rid = int(row[*ROW.IDS_ID])
 
         x0, y0, z0 = ROW.P0(row=row)
@@ -1625,7 +1624,7 @@ class BVH:
 
     def remove(self, mat:str=None, rid:int=None, row:NDARR=None) -> None:
         if row is not None:
-            mid, rid = self.rows.mat.id2idx[row[*ROW.IDS_MAT]], row[*ROW.IDS_ID]
+            mid, rid = self.rows.mat.name2idx[row[*ROW.IDS_MAT]], row[*ROW.IDS_ID]
         else:
             mid = self.rows.mat.name2idx[mat]
 
@@ -3441,7 +3440,7 @@ class ROWS:
                     use_mat = mat if center else mat0
 
                     newrow = self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=use_mat)
-                    mid_new = self.mat.name2id[ROW.MID(row=newrow)]
+                    mid_new = self.mat.name2idx[ROW.MAT(row=newrow)]
                     array[mid_new][arids[mid_new]] = newrow
                     arids[mid_new] += 1
 
@@ -3726,23 +3725,24 @@ class ROWS:
 
 === RUNNING TEST 1/1: test6 ===
 === TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
-test6: search() [tests=10]: lap 3: 9.8e-05 seconds
 Traceback (most recent call last):
   File "c:\VOXELS\tests\tests.py", line 19, in tests
     test()
     ~~~~^^
-  File "c:\VOXELS\tests\test6.py", line 55, in test6
-    rows.split(pos=pos, mat="AIR")
-    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 251, in split
-    return self.split1(pos=pos, mat=mat)
-           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 177, in split1
-    batch, arids = self.splitrow(pos=pos, p2=p2, mat=mat)
-                   ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 168, in splitrow
-    mid_new = self.mat.name2id[ROW.MID(row=newrow)]
-              ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\tests\test6.py", line 43, in test6
+    rows, cell, max_x, max_y, max_z = make_world()
+                                      ~~~~~~~~~~^^
+  File "c:\VOXELS\tests\test6.py", line 18, in make_world
+    rows = ROWS()
+  File "c:\VOXELS\world\rows.py", line 54, in __init__
+    self.insert(p0=self.p0, p1=self.p1, mat="STONE")
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 87, in insert
+    self.bvh.insert(row=row)
+    ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "c:\VOXELS\utils\bvh.py", line 65, in insert
+    mid = self.rows.mat.name2idx[row[*ROW.IDS_MAT]]
+          ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
 KeyError: 65536
 
 ################################################################################
@@ -3750,5 +3750,5 @@ KeyError: 65536
 ################################################################################
 # Total lines in bundle: 3750
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T03:29:34
+# Generated at the time: 2026-01-31T03:33:33
 --- END OF FILE ---

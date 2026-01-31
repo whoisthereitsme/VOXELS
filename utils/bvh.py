@@ -62,8 +62,7 @@ class BVH:
             mid = self.rows.mat.name2idx[mat]
             row = self.rows.array[mid][rid]
         else:
-            mat_id = int(row[*ROW.IDS_MAT])
-            mid = self.rows.mat.id2idx[mat_id]
+            mid = self.rows.mat.name2idx[row[*ROW.IDS_MAT]]
             rid = int(row[*ROW.IDS_ID])
 
         x0, y0, z0 = ROW.P0(row=row)
@@ -112,7 +111,7 @@ class BVH:
 
     def remove(self, mat:str=None, rid:int=None, row:NDARR=None) -> None:
         if row is not None:
-            mid, rid = self.rows.mat.id2idx[row[*ROW.IDS_MAT]], row[*ROW.IDS_ID]
+            mid, rid = self.rows.mat.name2idx[row[*ROW.IDS_MAT]], row[*ROW.IDS_ID]
         else:
             mid = self.rows.mat.name2idx[mat]
 
