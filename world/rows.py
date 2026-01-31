@@ -165,7 +165,7 @@ class ROWS:
                     use_mat = mat if center else mat0
 
                     newrow = self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=use_mat)
-                    mid_new = self.mat.name2idx[ROW.MID(row=newrow)]
+                    mid_new = self.mat.name2id[ROW.MID(row=newrow)]
                     array[mid_new][arids[mid_new]] = newrow
                     arids[mid_new] += 1
 

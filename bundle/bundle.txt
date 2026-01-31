@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T03:28:17
+#Time when generated: 2026-01-31T03:29:34
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -3441,7 +3441,7 @@ class ROWS:
                     use_mat = mat if center else mat0
 
                     newrow = self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=use_mat)
-                    mid_new = self.mat.name2idx[ROW.MID(row=newrow)]
+                    mid_new = self.mat.name2id[ROW.MID(row=newrow)]
                     array[mid_new][arids[mid_new]] = newrow
                     arids[mid_new] += 1
 
@@ -3726,7 +3726,7 @@ class ROWS:
 
 === RUNNING TEST 1/1: test6 ===
 === TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
-test6: search() [tests=10]: lap 3: 9.2e-05 seconds
+test6: search() [tests=10]: lap 3: 9.8e-05 seconds
 Traceback (most recent call last):
   File "c:\VOXELS\tests\tests.py", line 19, in tests
     test()
@@ -3741,8 +3741,8 @@ Traceback (most recent call last):
     batch, arids = self.splitrow(pos=pos, p2=p2, mat=mat)
                    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
   File "c:\VOXELS\world\rows.py", line 168, in splitrow
-    mid_new = self.mat.name2idx[ROW.MID(row=newrow)]
-              ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+    mid_new = self.mat.name2id[ROW.MID(row=newrow)]
+              ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
 KeyError: 65536
 
 ################################################################################
@@ -3750,5 +3750,5 @@ KeyError: 65536
 ################################################################################
 # Total lines in bundle: 3750
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T03:28:17
+# Generated at the time: 2026-01-31T03:29:34
 --- END OF FILE ---
