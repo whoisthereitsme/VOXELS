@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T04:14:37
+#Time when generated: 2026-01-31T04:15:40
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -3107,7 +3107,7 @@ from world.materials import Material, Materials
 
 
 
-
+mats = Materials()
 
 class ROW:
     """
@@ -3286,13 +3286,13 @@ class ROW:
         """
         return row[*ROW.IDS_MID]
     
-    @staticmethod # get meterial string name
+    @staticmethod # get material string name
     def MAT(row:NDARR=None) -> str:
         """
         PUBLIC!
         RETURN: material name string (Material Name)
         """
-        return Materials.name(mid=ROW.MID(row=row))
+        return mats.name(mid=ROW.MID(row=row))
     
     @staticmethod # get row id
     def RID(row:NDARR=None) -> int:
@@ -3948,26 +3948,15 @@ Traceback (most recent call last):
   File "c:\VOXELS\tests\test6.py", line 43, in test6
     rows, cell, max_x, max_y, max_z = make_world()
                                       ~~~~~~~~~~^^
-  File "c:\VOXELS\tests\test6.py", line 18, in make_world
-    rows = ROWS()
-  File "c:\VOXELS\world\rows.py", line 54, in __init__
-    self.insert(p0=self.p0, p1=self.p1, mat="STONE")
-    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 88, in insert
-    self.mdx.insert(row=row)
-    ~~~~~~~~~~~~~~~^^^^^^^^^
-  File "c:\VOXELS\utils\mdx.py", line 76, in insert
-    mid = self.rows.mat.name2idx[ROW.MAT(row=row)]
-                                 ~~~~~~~^^^^^^^^^
-  File "c:\VOXELS\world\row.py", line 202, in MAT
-    return Materials.name(mid=ROW.MID(row=row))
-           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
-TypeError: Materials.name() missing 1 required positional argument: 'self'
+  File "c:\VOXELS\tests\test6.py", line 19, in make_world
+    row0 = rows.array[MATERIALS.IDX["STONE"]][0]
+                      ^^^^^^^^^^^^^
+AttributeError: type object 'MATERIALS' has no attribute 'IDX'
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3969
+# Total lines in bundle: 3958
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T04:14:37
+# Generated at the time: 2026-01-31T04:15:40
 --- END OF FILE ---

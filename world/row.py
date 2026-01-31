@@ -14,7 +14,7 @@ from world.materials import Material, Materials
 
 
 
-
+mats = Materials()
 
 class ROW:
     """
@@ -193,13 +193,13 @@ class ROW:
         """
         return row[*ROW.IDS_MID]
     
-    @staticmethod # get meterial string name
+    @staticmethod # get material string name
     def MAT(row:NDARR=None) -> str:
         """
         PUBLIC!
         RETURN: material name string (Material Name)
         """
-        return Materials.name(mid=ROW.MID(row=row))
+        return mats.name(mid=ROW.MID(row=row))
     
     @staticmethod # get row id
     def RID(row:NDARR=None) -> int:
