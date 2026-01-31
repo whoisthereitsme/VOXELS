@@ -2,12 +2,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
     from world.rows import ROWS
-    from utils.types import POS
 
 from world.row import ROW
-
+from utils.types import POS, NDARR
 
 
 
@@ -59,13 +57,13 @@ class BVH:
             node = self.parent[node]
 
 
-    def insert(self, mat:str=None, rid:int=None, row:NDArray[ROW.DTYPE]=None) -> None:
+    def insert(self, mat:str=None, rid:int=None, row:NDARR=None) -> None:
         if row is None:
-            mid = self.rows.mats.name2idx[mat]
+            mid = self.rows.mat.name2idx[mat]
             row = self.rows.array[mid][rid]
         else:
             mat_id = int(row[*ROW.IDS_MAT])
-            mid = self.rows.mats.id2idx[mat_id]
+            mid = self.rows.mat.id2idx[mat_id]
             rid = int(row[*ROW.IDS_ID])
 
         x0, y0, z0 = ROW.P0(row=row)
@@ -112,11 +110,11 @@ class BVH:
         self.fixupwards(node=parent0)
         return root
 
-    def remove(self, mat:str=None, rid:int=None, row:NDArray[ROW.DTYPE]=None) -> None:
+    def remove(self, mat:str=None, rid:int=None, row:NDARR=None) -> None:
         if row is not None:
-            mid, rid = self.rows.mats.id2idx[row[*ROW.IDS_MAT]], row[*ROW.IDS_ID]
+            mid, rid = self.rows.mat.id2idx[row[*ROW.IDS_MAT]], row[*ROW.IDS_ID]
         else:
-            mid = self.rows.mats.name2idx[mat]
+            mid = self.rows.mat.name2idx[mat]
 
         try:
             found = self.lidx.pop((mid, rid))
@@ -142,7 +140,7 @@ class BVH:
             self.parent[sibling] = grand
             self.fixupwards(grand)
 
-    def search(self, pos:POS=None) -> tuple[str, int, "NDArray[ROW.DTYPE]"]:
+    def search(self, pos:POS=None) -> tuple[str, int, "NDARR"]:
         if self.root == -1:
             raise LookupError("[ERROR] BVH.search() failed: empty BVH")
 
@@ -164,8 +162,8 @@ class BVH:
             if mid != -1:
                 row = self.rows.array[mid][lr[n]]
                 if ROW.CONTAINS(row=row, pos=pos):
-                    mid = self.rows.mats.idx2name[mid]
-                    return mid, lr[n], row
+                    mat = self.rows.mat.idx2name[mid]
+                    return mat, lr[n], row
                 continue
 
             l, r = l0[n], r0[n]

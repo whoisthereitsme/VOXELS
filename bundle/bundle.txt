@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T03:24:08
+#Time when generated: 2026-01-31T03:28:17
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -1515,12 +1515,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
     from world.rows import ROWS
-    from utils.types import POS
 
 from world.row import ROW
-
+from utils.types import POS, NDARR
 
 
 
@@ -1572,13 +1570,13 @@ class BVH:
             node = self.parent[node]
 
 
-    def insert(self, mat:str=None, rid:int=None, row:NDArray[ROW.DTYPE]=None) -> None:
+    def insert(self, mat:str=None, rid:int=None, row:NDARR=None) -> None:
         if row is None:
-            mid = self.rows.mats.name2idx[mat]
+            mid = self.rows.mat.name2idx[mat]
             row = self.rows.array[mid][rid]
         else:
             mat_id = int(row[*ROW.IDS_MAT])
-            mid = self.rows.mats.id2idx[mat_id]
+            mid = self.rows.mat.id2idx[mat_id]
             rid = int(row[*ROW.IDS_ID])
 
         x0, y0, z0 = ROW.P0(row=row)
@@ -1625,11 +1623,11 @@ class BVH:
         self.fixupwards(node=parent0)
         return root
 
-    def remove(self, mat:str=None, rid:int=None, row:NDArray[ROW.DTYPE]=None) -> None:
+    def remove(self, mat:str=None, rid:int=None, row:NDARR=None) -> None:
         if row is not None:
-            mid, rid = self.rows.mats.id2idx[row[*ROW.IDS_MAT]], row[*ROW.IDS_ID]
+            mid, rid = self.rows.mat.id2idx[row[*ROW.IDS_MAT]], row[*ROW.IDS_ID]
         else:
-            mid = self.rows.mats.name2idx[mat]
+            mid = self.rows.mat.name2idx[mat]
 
         try:
             found = self.lidx.pop((mid, rid))
@@ -1655,7 +1653,7 @@ class BVH:
             self.parent[sibling] = grand
             self.fixupwards(grand)
 
-    def search(self, pos:POS=None) -> tuple[str, int, "NDArray[ROW.DTYPE]"]:
+    def search(self, pos:POS=None) -> tuple[str, int, "NDARR"]:
         if self.root == -1:
             raise LookupError("[ERROR] BVH.search() failed: empty BVH")
 
@@ -1677,8 +1675,8 @@ class BVH:
             if mid != -1:
                 row = self.rows.array[mid][lr[n]]
                 if ROW.CONTAINS(row=row, pos=pos):
-                    mid = self.rows.mats.idx2name[mid]
-                    return mid, lr[n], row
+                    mat = self.rows.mat.idx2name[mid]
+                    return mat, lr[n], row
                 continue
 
             l, r = l0[n], r0[n]
@@ -1917,7 +1915,7 @@ class MDX:
         return ROWFACES(x0=kx0, x1=kx1, y0=ky0, y1=ky1, z0=kz0, z1=kz1)
 
     def insert(self, row:NDArray[ROW.DTYPE]=None) -> None:
-        mid = self.rows.mats.name2idx[ROW.MAT(row=row)]
+        mid = self.rows.mat.name2idx[ROW.MAT(row=row)]
         rid = ROW.RID(row=row)
         loc: Loc = (mid, rid)
         faces = self.faces(mid=mid, row=row)
@@ -1931,7 +1929,7 @@ class MDX:
         self.pos[self.AX_Z][faces.z1].add(loc)
 
     def remove(self, mat:str=None, rid:int=None) -> None:
-        mid = self.rows.mats.name2idx[mat]
+        mid = self.rows.mat.name2idx[mat]
         loc: Loc = (mid, rid)
         faces: ROWFACES = self._faces.pop(loc, None)
         if faces is None:
@@ -3728,30 +3726,29 @@ class ROWS:
 
 === RUNNING TEST 1/1: test6 ===
 === TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
+test6: search() [tests=10]: lap 3: 9.2e-05 seconds
 Traceback (most recent call last):
   File "c:\VOXELS\tests\tests.py", line 19, in tests
     test()
     ~~~~^^
-  File "c:\VOXELS\tests\test6.py", line 43, in test6
-    rows, cell, max_x, max_y, max_z = make_world()
-                                      ~~~~~~~~~~^^
-  File "c:\VOXELS\tests\test6.py", line 18, in make_world
-    rows = ROWS()
-  File "c:\VOXELS\world\rows.py", line 54, in __init__
-    self.insert(p0=self.p0, p1=self.p1, mat="STONE")
-    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\VOXELS\world\rows.py", line 87, in insert
-    self.bvh.insert(row=row)
-    ~~~~~~~~~~~~~~~^^^^^^^^^
-  File "c:\VOXELS\utils\bvh.py", line 68, in insert
-    mid = self.rows.mats.id2idx[mat_id]
-          ^^^^^^^^^^^^^^
-AttributeError: 'ROWS' object has no attribute 'mats'. Did you mean: 'mat'?
+  File "c:\VOXELS\tests\test6.py", line 55, in test6
+    rows.split(pos=pos, mat="AIR")
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 251, in split
+    return self.split1(pos=pos, mat=mat)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 177, in split1
+    batch, arids = self.splitrow(pos=pos, p2=p2, mat=mat)
+                   ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 168, in splitrow
+    mid_new = self.mat.name2idx[ROW.MID(row=newrow)]
+              ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 65536
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3753
+# Total lines in bundle: 3750
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T03:24:08
+# Generated at the time: 2026-01-31T03:28:17
 --- END OF FILE ---
