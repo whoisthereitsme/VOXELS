@@ -1,4 +1,5 @@
 from __future__ import annotations
+import random
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from world.rows import ROWS
@@ -28,7 +29,7 @@ class Miner:
 
     def init(self) -> None:
         self.id:int         = self.getid()
-        self.nframes:int    = self.seconds * 60 if not self.floor else self.seconds * 60 * (self.size[0] * self.size[1])
+        self.nframes:int    = self.seconds * 60 if not self.floor else self.seconds * 60 * (self.size[0] * self.size[1]) + random.randint(0, 59) # to spread out floor miners
         self.frame:int      = self.getframe()
 
         self.minepos0:POS    = self.pos
