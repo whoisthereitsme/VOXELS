@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T02:01:01
+#Time when generated: 2026-01-31T02:12:51
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -1526,11 +1526,7 @@ from world.row import ROW
 
 
 class BVH:
-    __slots__ = (
-        "rows", "root", "left", "right", "parent",
-        "xmin", "ymin", "zmin", "xmax", "ymax", "zmax",
-        "leaf_mid", "leaf_rid", "leaf_index",
-    )
+    __slots__ = ("rows", "root", "left", "right", "parent", "xmin", "ymin", "zmin", "xmax", "ymax", "zmax", "lmid", "lrid", "lidx")
 
     def __init__(self, rows: ROWS) -> None:
         self.rows = rows
@@ -1547,43 +1543,26 @@ class BVH:
         self.ymax: list[int] = []
         self.zmax: list[int] = []
 
-        self.leaf_mid: list[int] = []
-        self.leaf_rid: list[int] = []
-        self.leaf_index: dict[tuple[int, int], int] = {}
+        self.lmid: list[int] = []
+        self.lrid: list[int] = []
+        self.lidx: dict[tuple[int, int], int] = {}
 
-    # ------------------------------------------------------------------
-    # node alloc
-    # ------------------------------------------------------------------
-
-    def _new_node(
-        self,
-        xmin: int,
-        ymin: int,
-        zmin: int,
-        xmax: int,
-        ymax: int,
-        zmax: int,
-        leaf_mid: int = -1,
-        leaf_rid: int = -1,
-        left: int = -1,
-        right: int = -1,
-        parent: int = -1,
-    ) -> int:
+    def _new_node(self, x0:int=None, y0:int=None, z0:int=None, x1:int=None, y1:int=None, z1:int=None, lmid:int=-1, lrid:int=-1, left:int=-1, right:int=-1, parent:int=-1) -> int:
         i = len(self.left)
 
         self.left.append(left)
         self.right.append(right)
         self.parent.append(parent)
 
-        self.xmin.append(xmin)
-        self.ymin.append(ymin)
-        self.zmin.append(zmin)
-        self.xmax.append(xmax)
-        self.ymax.append(ymax)
-        self.zmax.append(zmax)
+        self.xmin.append(x0)
+        self.ymin.append(y0)
+        self.zmin.append(z0)
+        self.xmax.append(x1)
+        self.ymax.append(y1)
+        self.zmax.append(z1)
 
-        self.leaf_mid.append(leaf_mid)
-        self.leaf_rid.append(leaf_rid)
+        self.lmid.append(lmid)
+        self.lrid.append(lrid)
         return i
 
     # ------------------------------------------------------------------
@@ -1591,52 +1570,32 @@ class BVH:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _volume(xmin: int, ymin: int, zmin: int, xmax: int, ymax: int, zmax: int) -> int:
+    def volume(xmin:int=None, ymin:int=None, zmin:int=None, xmax:int=None, ymax:int=None, zmax:int=None) -> int:
         return (xmax - xmin) * (ymax - ymin) * (zmax - zmin)
 
-    def _merged_volume_with_node(
-        self,
-        node: int,
-        bxmin: int,
-        bymin: int,
-        bzmin: int,
-        bxmax: int,
-        bymax: int,
-        bzmax: int,
-    ) -> int:
-        axmin = self.xmin[node]
-        aymin = self.ymin[node]
-        azmin = self.zmin[node]
-        axmax = self.xmax[node]
-        aymax = self.ymax[node]
-        azmax = self.zmax[node]
+    def _merged_volume_with_node(self, node:int=None, bxmin:int=None, bymin:int=None, bzmin:int=None, bxmax:int=None, bymax:int=None, bzmax:int=None) -> int:
+        ax0, ay0, az0 = self.xmin[node], self.ymin[node], self.zmin[node]
+        ax1, ay1, az1 = self.xmax[node], self.ymax[node], self.zmax[node]
 
-        mxmin = axmin if axmin < bxmin else bxmin
-        mymin = aymin if aymin < bymin else bymin
-        mzmin = azmin if azmin < bzmin else bzmin
-        mxmax = axmax if axmax > bxmax else bxmax
-        mymax = aymax if aymax > bymax else bymax
-        mzmax = azmax if azmax > bzmax else bzmax
+        x0, x1 = min(ax0, bxmin), max(ax1, bxmax)
+        y0, y1 = min(ay0, bymin), max(ay1, bymax)
+        z0, z1 = min(az0, bzmin), max(az1, bzmax)
 
-        return self._volume(mxmin, mymin, mzmin, mxmax, mymax, mzmax)
+        return self.volume(xmin=x0, ymin=y0, zmin=z0, xmax=x1, ymax=y1, zmax=z1)
 
-    def _fix_upwards(self, node:int=None) -> None:
+    def fixupwards(self, node:int=None) -> None:
         while node != -1:
-            l = self.left[node]
-            r = self.right[node]
+            l, r = self.left[node], self.right[node]
 
-            self.xmin[node] = self.xmin[l] if self.xmin[l] < self.xmin[r] else self.xmin[r]
-            self.ymin[node] = self.ymin[l] if self.ymin[l] < self.ymin[r] else self.ymin[r]
-            self.zmin[node] = self.zmin[l] if self.zmin[l] < self.zmin[r] else self.zmin[r]
-            self.xmax[node] = self.xmax[l] if self.xmax[l] > self.xmax[r] else self.xmax[r]
-            self.ymax[node] = self.ymax[l] if self.ymax[l] > self.ymax[r] else self.ymax[r]
-            self.zmax[node] = self.zmax[l] if self.zmax[l] > self.zmax[r] else self.zmax[r]
+            self.xmin[node] = min(self.xmin[l], self.xmin[r])
+            self.ymin[node] = min(self.ymin[l], self.ymin[r])
+            self.zmin[node] = min(self.zmin[l], self.zmin[r])
+            self.xmax[node] = max(self.xmax[l], self.xmax[r])
+            self.ymax[node] = max(self.ymax[l], self.ymax[r])
+            self.zmax[node] = max(self.zmax[l], self.zmax[r])
 
             node = self.parent[node]
 
-    # ------------------------------------------------------------------
-    # insertion
-    # ------------------------------------------------------------------
 
     def insert(self, mat:str=None, rid:int=None, row:NDArray[ROW.DTYPE]=None) -> None:
         if row is None:
@@ -1651,13 +1610,13 @@ class BVH:
         xmax, ymax, zmax = ROW.P1(row)
 
         leaf_node = self._new_node(
-            xmin, ymin, zmin,
-            xmax, ymax, zmax,
-            leaf_mid=mid,
-            leaf_rid=rid,
+            x0=xmin, y0=ymin, z0=zmin,
+            x1=xmax, y1=ymax, z1=zmax,
+            lmid=mid,
+            lrid=rid,
         )
 
-        self.leaf_index[(mid, rid)] = leaf_node
+        self.lidx[(mid, rid)] = leaf_node
 
         if self.root == -1:
             self.root = leaf_node
@@ -1670,28 +1629,28 @@ class BVH:
         bxmax = self.xmax[leaf_node]; bymax = self.ymax[leaf_node]; bzmax = self.zmax[leaf_node]
 
         node = root
-        while self.leaf_mid[node] == -1:
+        while self.lmid[node] == -1:
             l = self.left[node]
             r = self.right[node]
             node = (
-                l if self._merged_volume_with_node(l, bxmin, bymin, bzmin, bxmax, bymax, bzmax)
-                < self._merged_volume_with_node(r, bxmin, bymin, bzmin, bxmax, bymax, bzmax)
+                l if self._merged_volume_with_node(node=l, bxmin=bxmin, bymin=bymin, bzmin=bzmin, bxmax=bxmax, bymax=bymax, bzmax=bzmax)
+                < self._merged_volume_with_node(node=r, bxmin=bxmin, bymin=bymin, bzmin=bzmin, bxmax=bxmax, bymax=bymax, bzmax=bzmax)
                 else r
             )
 
         old_leaf = node
         parent = self.parent[old_leaf]
 
-        axmin = self.xmin[old_leaf]; aymin = self.ymin[old_leaf]; azmin = self.zmin[old_leaf]
-        axmax = self.xmax[old_leaf]; aymax = self.ymax[old_leaf]; azmax = self.zmax[old_leaf]
+        ax0, ay0, az0 = self.xmin[old_leaf], self.ymin[old_leaf], self.zmin[old_leaf]
+        ax1, ay1, az1 = self.xmax[old_leaf], self.ymax[old_leaf], self.zmax[old_leaf]
 
         new_parent = self._new_node(
-            axmin if axmin < bxmin else bxmin,
-            aymin if aymin < bymin else bymin,
-            azmin if azmin < bzmin else bzmin,
-            axmax if axmax > bxmax else bxmax,
-            aymax if aymax > bymax else bymax,
-            azmax if azmax > bzmax else bzmax,
+            min(ax0, bxmin),
+            min(ay0, bymin),
+            min(az0, bzmin),
+            max(ax1, bxmax),
+            max(ay1, bymax),
+            max(az1, bzmax),
         )
 
         self.left[new_parent] = old_leaf
@@ -1708,7 +1667,7 @@ class BVH:
             self.right[parent] = new_parent
 
         self.parent[new_parent] = parent
-        self._fix_upwards(parent)
+        self.fixupwards(parent)
         return root
 
     # ------------------------------------------------------------------
@@ -1724,7 +1683,7 @@ class BVH:
             mid = self.rows.mats.name2idx[mat]
 
         try:
-            found = self.leaf_index.pop((mid, rid))
+            found = self.lidx.pop((mid, rid))
         except KeyError:
             raise KeyError("[ERROR] BVH.remove() failed: row not found in BVH")
 
@@ -1745,11 +1704,7 @@ class BVH:
             else:
                 self.right[grand] = sibling
             self.parent[sibling] = grand
-            self._fix_upwards(grand)
-
-    # ------------------------------------------------------------------
-    # search
-    # ------------------------------------------------------------------
+            self.fixupwards(grand)
 
     def search(self, pos:POS=None) -> tuple[str, int, "NDArray[ROW.DTYPE]"]:
         if self.root == -1:
@@ -1761,7 +1716,7 @@ class BVH:
         x0, y0, z0 = self.xmin, self.ymin, self.zmin
         x1, y1, z1 = self.xmax, self.ymax, self.zmax
         l0, r0 = self.left, self.right
-        lm, lr = self.leaf_mid, self.leaf_rid
+        lm, lr = self.lmid, self.lrid
 
         while stack:
             n = stack.pop()
@@ -3832,12 +3787,12 @@ class ROWS:
 
 === RUNNING TEST 1/5: test6 ===
 === TEST6: TIMING BENCHMARK (100 calls per op, fresh world per op) ===
-test6: search() [tests=10]: lap 3: 8.4e-05 seconds
-test6: split1 (point split) [tests=10]: lap 5: 0.046039 seconds
-test6: split2 (region split) [tests=10]: lap 7: 0.081975 seconds
-test6: merge() [tests=10]: lap 9: 0.047427 seconds
-test6: remove() [tests=10]: lap 11: 3.2e-05 seconds
-test6: insert() [tests=10]: lap 13: 0.000428 seconds
+test6: search() [tests=10]: lap 3: 9.5e-05 seconds
+test6: split1 (point split) [tests=10]: lap 5: 0.044376 seconds
+test6: split2 (region split) [tests=10]: lap 7: 0.097263 seconds
+test6: merge() [tests=10]: lap 9: 0.041241 seconds
+test6: remove() [tests=10]: lap 11: 4e-05 seconds
+test6: insert() [tests=10]: lap 13: 0.000427 seconds
 === TEST6 DONE ===
 === TEST 1/5: test6 PASSED in 0.000 seconds ===
 
@@ -3849,7 +3804,7 @@ test6: insert() [tests=10]: lap 13: 0.000428 seconds
  - Resources ingest/transfer OK
  - Warehouse give/take invariants OK
 === TEST7 DONE ===
-=== TEST 2/5: test7 PASSED in 0.004 seconds ===
+=== TEST 2/5: test7 PASSED in 0.003 seconds ===
 
 
 === RUNNING TEST 3/5: test8 ===
@@ -3867,7 +3822,7 @@ test6: insert() [tests=10]: lap 13: 0.000428 seconds
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3869
+# Total lines in bundle: 3824
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T02:01:01
+# Generated at the time: 2026-01-31T02:12:51
 --- END OF FILE ---
