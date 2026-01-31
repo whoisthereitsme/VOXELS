@@ -5,18 +5,15 @@ if TYPE_CHECKING:
 
 
 import numpy as np
-from numpy.typing import NDArray
-
+from world.materials import Materials, MATERIALS
 from world.row import ROW
 from utils.bvh import BVH
 from utils.mdx import MDX
-from world.materials import Materials, MATERIALS
-from utils.types import POS, SIZE
+from utils.types import POS, SIZE, NDARR, REQS
 
 
 
-NDARR = NDArray[ROW.DTYPE]
-REQS = tuple[NDARR, dict[int, int]]
+
 
 
 class ROWS:
@@ -42,7 +39,7 @@ class ROWS:
     """
     SIZE = 65536
     def __init__(self) -> None:
-        self.mats = Materials()
+        self.mat = Materials()
         self.bvh = BVH(rows=self)
         self.mdx = MDX(rows=self)
 
@@ -59,7 +56,7 @@ class ROWS:
         self.vol = self.volume()
 
     def newn(self, mat:str=None) -> int:
-        mid: int = Materials.name2idx[mat]
+        mid: int = self.mat.name2idx[mat]
         n: int = self.arids[mid]
         self.arids[mid] += 1
         self.total += 1
@@ -69,7 +66,7 @@ class ROWS:
     def deln(self, mat:str=None) -> int:
         if mat is None:
             raise ValueError("material must be specified")
-        mid = Materials.name2idx[mat]
+        mid = self.mat.name2idx[mat]
         if self.arids[mid] <= 0:
             raise ValueError("no rows to free")
         self.arids[mid] -= 1
@@ -83,7 +80,7 @@ class ROWS:
         return (array, arids)
 
     def insert(self, p0:POS=None, p1:POS=None, mat:str=None, dirty:bool=True, alive:bool=True) -> NDARR:
-        mid: int = Materials.name2idx[mat]
+        mid: int = self.mat.name2idx[mat]
         rid: int = self.newn(mat=mat)
         row = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
         self.array[mid][rid] = row
@@ -95,7 +92,7 @@ class ROWS:
         if row is not None and index is None and mat is None:
             mat = ROW.MAT(row=row)
             index = ROW.RID(row=row)
-        mid = Materials.name2idx[mat]
+        mid = self.mat.name2idx[mat]
         n = self.arids[mid]
         if index < 0 or index >= n:
             raise IndexError("index out of range")
@@ -122,9 +119,9 @@ class ROWS:
         volume = 0
         if mat is None:
             for mid in range(MATERIALS.NUM):
-                volume += self.volume(mat=Materials.idx2name[mid])   # add up all materials
+                volume += self.volume(mat=self.mat.idx2name[mid])   # add up all materials
         else:
-            mid = Materials.name2idx[mat]
+            mid = self.mat.name2idx[mat]
             for rid in range(self.arids[mid]):
                 volume += ROW.VOLUME(row=self.array[mid][rid])
         return volume
@@ -134,10 +131,10 @@ class ROWS:
         return (mat, rid, row)
 
     def get(self, mat:str=None, rid:int=None) -> NDARR:
-        return self.array[Materials.name2idx[mat]][rid]
+        return self.array[self.mat.name2idx[mat]][rid]
 
     def nrows(self, mat:str=None) -> int:
-        return self.arids[Materials.name2idx[mat]]
+        return self.arids[self.mat.name2idx[mat]]
 
     def splitrow(self, pos:POS=None, p2:POS=None, mat:str=None) -> REQS:
         mat0, rid, row = self.search(pos=pos)
@@ -168,7 +165,7 @@ class ROWS:
                     use_mat = mat if center else mat0
 
                     newrow = self.insert(p0=(X0, Y0, Z0), p1=(X1, Y1, Z1), mat=use_mat)
-                    mid_new = self.mats.id2idx[ROW.MID(row=newrow)]
+                    mid_new = self.mat.name2idx[ROW.MID(row=newrow)]
                     array[mid_new][arids[mid_new]] = newrow
                     arids[mid_new] += 1
 
@@ -255,7 +252,7 @@ class ROWS:
         return self.split1(pos=pos1, mat=mat)
 
     def merge2(self, mat:str=None, rid0:int=None, rid1:int=None) -> REQS:
-        mid = Materials.name2idx[mat]
+        mid = self.mat.name2idx[mat]
         n = self.arids[mid]
         if rid0 < 0 or rid0 >= n or rid1 < 0 or rid1 >= n or rid0 == rid1:
             return self.reqs(n=0)
@@ -282,7 +279,7 @@ class ROWS:
         return array, arids
 
     def mergeax(self, mat:str=None, axis:int=None) -> REQS:
-        mid = Materials.name2idx[mat]
+        mid = self.mat.name2idx[mat]
         start_n = self.arids[mid]
         array, arids = self.reqs(n=start_n)
 
@@ -331,7 +328,7 @@ class ROWS:
         return array, arids
 
     def mergemat(self, mat:str=None) -> REQS:
-        mid = Materials.name2idx[mat]
+        mid = self.mat.name2idx[mat]
         start_n = self.arids[mid]
         array, arids = self.reqs(n=start_n)
 
@@ -393,7 +390,7 @@ class ROWS:
                     if pmid != mid or prid < 0 or prid >= self.arids[mid]:
                         continue
 
-                    mat = self.mats.idx2name[mid]
+                    mat = self.mat.idx2name[mid]
                     created, carids = self.merge2(mat=mat, rid0=rid, rid1=prid)
                     if carids[mid] > 0:
                         array[mid][arids[mid]] = created[mid][0]
@@ -416,7 +413,7 @@ class ROWS:
         start_m = self.total
         array, arids = self.reqs(n=start_m)
 
-        for mat in self.mats.name2idx.keys():
+        for mat in self.mat.name2idx.keys():
             created, carids = self.mergemat(mat=mat)
             for mid in range(MATERIALS.NUM):
                 for i in range(carids[mid]):
