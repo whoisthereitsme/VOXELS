@@ -13,7 +13,7 @@ from world.row import ROW
 
 
 class BVH:
-    __slots__ = ("rows", "root", "left", "right", "parent", "xmin", "ymin", "zmin", "xmax", "ymax", "zmax", "lmid", "lrid", "lidx")
+    __slots__ = ("rows", "root", "left", "right", "parent", "x0", "y0", "z0", "x1", "y1", "z1", "lmid", "lrid", "lidx")
 
     def __init__(self, rows:ROWS=None) -> None:
         self.rows = rows

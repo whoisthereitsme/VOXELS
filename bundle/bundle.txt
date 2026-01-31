@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T02:19:02
+#Time when generated: 2026-01-31T02:19:34
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -1526,7 +1526,7 @@ from world.row import ROW
 
 
 class BVH:
-    __slots__ = ("rows", "root", "left", "right", "parent", "xmin", "ymin", "zmin", "xmax", "ymax", "zmax", "lmid", "lrid", "lidx")
+    __slots__ = ("rows", "root", "left", "right", "parent", "x0", "y0", "z0", "x1", "y1", "z1", "lmid", "lrid", "lidx")
 
     def __init__(self, rows:ROWS=None) -> None:
         self.rows = rows
@@ -3788,23 +3788,20 @@ Traceback (most recent call last):
   File "c:\VOXELS\tests\tests.py", line 19, in tests
     test()
     ~~~~^^
-  File "c:\VOXELS\tests\test6.py", line 43, in test6
-    rows, cell, max_x, max_y, max_z = make_world()
-                                      ~~~~~~~~~~^^
-  File "c:\VOXELS\tests\test6.py", line 18, in make_world
-    rows = ROWS()
-  File "c:\VOXELS\world\rows.py", line 46, in __init__
-    self.bvh = BVH(rows=self)
-               ~~~^^^^^^^^^^^
-  File "c:\VOXELS\utils\bvh.py", line 26, in __init__
-    self.x0 = self.y0 = self.z0 = []
-    ^^^^^^^
-AttributeError: 'BVH' object has no attribute 'x0' and no __dict__ for setting new attributes
+  File "c:\VOXELS\tests\test6.py", line 47, in test6
+    rows.search(pos=pos)
+    ~~~~~~~~~~~^^^^^^^^^
+  File "c:\VOXELS\world\rows.py", line 142, in search
+    mat, rid, row = self.bvh.search(pos=pos)
+                    ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "c:\VOXELS\utils\bvh.py", line 228, in search
+    raise LookupError("[ERROR] BVH.search() failed: point not found (partition invariant violated or BVH not updated)")
+LookupError: [ERROR] BVH.search() failed: point not found (partition invariant violated or BVH not updated)
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3806
+# Total lines in bundle: 3803
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T02:19:02
+# Generated at the time: 2026-01-31T02:19:34
 --- END OF FILE ---
