@@ -1,4 +1,4 @@
-#Time when generated: 2026-01-31T04:03:50
+#Time when generated: 2026-01-31T04:04:39
 
 ### PROJECT BUNDLE ###
 Root: C:\VOXELS
@@ -3382,7 +3382,7 @@ class ROW:
         """
         p0, p1 = ROW.SORT(p0=ROW.CLIP(pos=p0), p1=ROW.CLIP(pos=p1))
         mats: Materials = Materials()
-        mat: Material = mats.mat(name=mat)
+        mat: Material = mats.mat(mat=mat)
         flags: int = ROW.ENCODE(dirty=dirty, alive=alive, solid=mat.issolid(), destructable=not mat.isindestructible(), visible=not mat.isinvisible())
         copy: NDARR = ROW.COPY()
 
@@ -3885,14 +3885,16 @@ Traceback (most recent call last):
   File "c:\VOXELS\world\rows.py", line 85, in insert
     row = ROW.new(p0=p0, p1=p1, mat=mat, rid=rid, dirty=dirty, alive=alive)
   File "c:\VOXELS\world\row.py", line 292, in new
-    mat: Material = mats.mat(name=mat)
-                    ~~~~~~~~^^^^^^^^^^
-TypeError: Materials.mat() got an unexpected keyword argument 'name'
+    mat: Material = mats.mat(mat=mat)
+                    ~~~~~~~~^^^^^^^^^
+  File "c:\VOXELS\world\materials.py", line 129, in mat
+    return getattr(self, mat)
+AttributeError: 'Materials' object has no attribute 'STONE'
 
 ################################################################################
 ### END OF CAPTURED OUTPUT ###
 ################################################################################
-# Total lines in bundle: 3894
+# Total lines in bundle: 3896
 # Total files in bundle: 42
-# Generated at the time: 2026-01-31T04:03:50
+# Generated at the time: 2026-01-31T04:04:39
 --- END OF FILE ---

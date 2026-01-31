@@ -289,7 +289,7 @@ class ROW:
         """
         p0, p1 = ROW.SORT(p0=ROW.CLIP(pos=p0), p1=ROW.CLIP(pos=p1))
         mats: Materials = Materials()
-        mat: Material = mats.mat(name=mat)
+        mat: Material = mats.mat(mat=mat)
         flags: int = ROW.ENCODE(dirty=dirty, alive=alive, solid=mat.issolid(), destructable=not mat.isindestructible(), visible=not mat.isinvisible())
         copy: NDARR = ROW.COPY()
 
