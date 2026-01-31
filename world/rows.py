@@ -121,18 +121,22 @@ class ROWS:
         if row is None:
             raise ValueError("set requires row")
 
+        mid = int(ROW.MID(row=row))
+        rid = int(ROW.RID(row=row))
+
+        if mid == int(ROW.SENTINEL) or rid == int(ROW.SENTINEL):
+            raise RuntimeError("set called on invalidated row")
+
         if newrid is not None:
-            row[*ROW.IDS_RID]=np.uint64(int(newrid))
+            rid = int(newrid)
+            row[*ROW.IDS_RID] = np.uint64(rid)
 
         if newmat is not None:
-            mid=int(self.mat.mid(name=newmat))
-            row[*ROW.IDS_MID]=np.uint64(mid)
+            mid = int(self.mat.mid(name=newmat))
+            row[*ROW.IDS_MID] = np.uint64(mid)
 
-        mid=self.mid(row=row)
-        rid=self.rid(row=row)
-
-        slot=self.array[mid][rid]
-        slot[:]=row
+        slot = self.array[mid][rid]
+        slot[:] = row
         return slot
 
     def reset(self, row:NDARR=None)->None:
@@ -158,40 +162,35 @@ class ROWS:
         if row is None:
             raise ValueError("remove requires row")
 
-        mid=self.mid(row=row)
-        rid=self.rid(row=row)
-        mat_name=self.mat.name(mid=mid)
+        mid = self.mid(row=row)
+        rid = self.rid(row=row)
+        mat_name = self.mat.name(mid=mid)
 
-        n=self.nrows(mid=mid)
-        if rid<0 or rid>=n:
-            raise IndexError("index out of range")
+        n = self.nrows(mid=mid)
+        last = n - 1
 
-        last=n-1
+        # remove target
+        self.bvh.remove(mat=mat_name, rid=rid)
+        self.mdx.remove(mat=mat_name, rid=rid)
 
-        # ALWAYS remove target using captured ids
-        self.bvh.remove(mat=mat_name,rid=rid)
-        self.mdx.remove(mat=mat_name,rid=rid)
+        if rid != last:
+            moved = self.array[mid][last].copy()   # 🔑 COPY, NOT VIEW
 
-        if rid!=last:
-            moved=self.array[mid][last]
+            # remove moved using ORIGINAL identity
+            self.bvh.remove(mat=mat_name, rid=last)
+            self.mdx.remove(mat=mat_name, rid=last)
 
-            moved_mid=mid
-            moved_rid=last
+            # write moved into rid slot
+            moved[*ROW.IDS_RID] = np.uint64(rid)
+            self.array[mid][rid][:] = moved
 
-            # remove moved using its ORIGINAL ids
-            self.bvh.remove(mat=mat_name,rid=moved_rid)
-            self.mdx.remove(mat=mat_name,rid=moved_rid)
+            self.bvh.insert(row=self.array[mid][rid])
+            self.mdx.insert(row=self.array[mid][rid])
 
-            # overwrite + fix RID
-            moved2=self.set(row=moved,newrid=rid)
-
-            self.bvh.insert(row=moved2)
-            self.mdx.insert(row=moved2)
-
-        # now it is safe to invalidate memory
-        self.reset(row=self.array[mid][last])
+        # now it is safe to invalidate
+        self.array[mid][last][:] = ROW.ARRAY
         self.deln(mat=mat_name)
-        return self
+
 
 
     # ============================================================
